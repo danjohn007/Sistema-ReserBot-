@@ -1,0 +1,484 @@
+<?php
+/**
+ * ReserBot - Controlador de Reservaciones
+ */
+
+require_once __DIR__ . '/BaseController.php';
+
+class ReservationController extends BaseController {
+    
+    /**
+     * Lista de reservaciones
+     */
+    public function index() {
+        $this->requireAuth();
+        
+        $user = currentUser();
+        $filters = [];
+        
+        // Filtros
+        $estado = $this->get('estado');
+        $fecha = $this->get('fecha');
+        $sucursal_id = $this->get('sucursal_id');
+        
+        $sql = "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+                       s.nombre as servicio_nombre, suc.nombre as sucursal_nombre,
+                       ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+                FROM reservaciones r
+                JOIN usuarios u ON r.cliente_id = u.id
+                JOIN servicios s ON r.servicio_id = s.id
+                JOIN sucursales suc ON r.sucursal_id = suc.id
+                JOIN especialistas e ON r.especialista_id = e.id
+                JOIN usuarios ue ON e.usuario_id = ue.id
+                WHERE 1=1";
+        
+        // Aplicar filtros según rol
+        if ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
+            $sql .= " AND r.sucursal_id = ?";
+            $filters[] = $user['sucursal_id'];
+        } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
+            $specialist = $this->db->fetch("SELECT id FROM especialistas WHERE usuario_id = ?", [$user['id']]);
+            if ($specialist) {
+                $sql .= " AND r.especialista_id = ?";
+                $filters[] = $specialist['id'];
+            }
+        } elseif ($user['rol_id'] == ROLE_CLIENT) {
+            $sql .= " AND r.cliente_id = ?";
+            $filters[] = $user['id'];
+        }
+        
+        if ($estado) {
+            $sql .= " AND r.estado = ?";
+            $filters[] = $estado;
+        }
+        
+        if ($fecha) {
+            $sql .= " AND r.fecha_cita = ?";
+            $filters[] = $fecha;
+        }
+        
+        if ($sucursal_id && $user['rol_id'] == ROLE_SUPERADMIN) {
+            $sql .= " AND r.sucursal_id = ?";
+            $filters[] = $sucursal_id;
+        }
+        
+        $sql .= " ORDER BY r.fecha_cita DESC, r.hora_inicio DESC";
+        
+        $reservations = $this->db->fetchAll($sql, $filters);
+        
+        // Obtener sucursales para filtro
+        $branches = [];
+        if ($user['rol_id'] == ROLE_SUPERADMIN) {
+            $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre");
+        }
+        
+        $this->render('reservations/index', [
+            'title' => 'Reservaciones',
+            'reservations' => $reservations,
+            'branches' => $branches,
+            'currentFilters' => [
+                'estado' => $estado,
+                'fecha' => $fecha,
+                'sucursal_id' => $sucursal_id
+            ]
+        ]);
+    }
+    
+    /**
+     * Crear reservación
+     */
+    public function create() {
+        $this->requireAuth();
+        
+        $user = currentUser();
+        $error = '';
+        
+        // Obtener sucursales
+        $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre");
+        
+        // Paso actual del wizard
+        $step = $this->get('step') ?: 1;
+        $sucursal_id = $this->get('sucursal_id');
+        $especialista_id = $this->get('especialista_id');
+        $servicio_id = $this->get('servicio_id');
+        $fecha = $this->get('fecha');
+        $hora = $this->get('hora');
+        
+        $specialists = [];
+        $services = [];
+        $availableSlots = [];
+        
+        if ($sucursal_id) {
+            // Obtener especialistas de la sucursal
+            $specialists = $this->db->fetchAll(
+                "SELECT e.*, u.nombre, u.apellidos
+                 FROM especialistas e
+                 JOIN usuarios u ON e.usuario_id = u.id
+                 WHERE e.sucursal_id = ? AND e.activo = 1
+                 ORDER BY u.nombre, u.apellidos",
+                [$sucursal_id]
+            );
+        }
+        
+        if ($especialista_id) {
+            // Obtener servicios del especialista
+            $services = $this->db->fetchAll(
+                "SELECT s.*, es.precio_personalizado, es.duracion_personalizada
+                 FROM servicios s
+                 JOIN especialistas_servicios es ON s.id = es.servicio_id
+                 WHERE es.especialista_id = ? AND s.activo = 1
+                 ORDER BY s.nombre",
+                [$especialista_id]
+            );
+        }
+        
+        if ($especialista_id && $servicio_id && $fecha) {
+            // Obtener horarios disponibles
+            $availableSlots = $this->getAvailableSlots($especialista_id, $servicio_id, $fecha);
+        }
+        
+        if ($this->isPost()) {
+            $cliente_id = ($user['rol_id'] == ROLE_CLIENT) ? $user['id'] : $this->post('cliente_id');
+            $sucursal_id = $this->post('sucursal_id');
+            $especialista_id = $this->post('especialista_id');
+            $servicio_id = $this->post('servicio_id');
+            $fecha_cita = $this->post('fecha_cita');
+            $hora_inicio = $this->post('hora_inicio');
+            $notas_cliente = $this->post('notas_cliente');
+            
+            if (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
+                $error = 'Todos los campos son obligatorios.';
+            } else {
+                // Obtener información del servicio
+                $service = $this->db->fetch("SELECT * FROM servicios WHERE id = ?", [$servicio_id]);
+                
+                if ($service) {
+                    $duracion = $service['duracion_minutos'];
+                    $precio = $service['precio'];
+                    $hora_fin = date('H:i:s', strtotime($hora_inicio) + ($duracion * 60));
+                    
+                    // Verificar disponibilidad
+                    $conflict = $this->db->fetch(
+                        "SELECT id FROM reservaciones 
+                         WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')
+                         AND ((hora_inicio <= ? AND hora_fin > ?) OR (hora_inicio < ? AND hora_fin >= ?))",
+                        [$especialista_id, $fecha_cita, $hora_inicio, $hora_inicio, $hora_fin, $hora_fin]
+                    );
+                    
+                    if ($conflict) {
+                        $error = 'El horario seleccionado ya no está disponible. Por favor seleccione otro.';
+                    } else {
+                        // Generar código único
+                        $codigo = generateReservationCode();
+                        
+                        // Determinar estado inicial
+                        $estado = (getConfig('confirmacion_automatica', '0') == '1') ? 'confirmada' : 'pendiente';
+                        
+                        // Crear reservación
+                        $reservationId = $this->db->insert(
+                            "INSERT INTO reservaciones (codigo, cliente_id, especialista_id, servicio_id, sucursal_id, 
+                             fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, notas_cliente, creado_por) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            [$codigo, $cliente_id, $especialista_id, $servicio_id, $sucursal_id, 
+                             $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $notas_cliente, $user['id']]
+                        );
+                        
+                        if ($reservationId) {
+                            // Crear notificación
+                            $this->createNotification($cliente_id, 'cita_nueva', 
+                                'Nueva cita programada', 
+                                "Se ha programado una cita para el " . formatDate($fecha_cita) . " a las " . formatTime($hora_inicio));
+                            
+                            logAction('reservation_create', 'Reservación creada: ' . $codigo);
+                            setFlashMessage('success', 'Reservación creada exitosamente. Código: ' . $codigo);
+                            redirect('/reservaciones');
+                        } else {
+                            $error = 'Error al crear la reservación.';
+                        }
+                    }
+                }
+            }
+        }
+        
+        $this->render('reservations/create', [
+            'title' => 'Nueva Reservación',
+            'branches' => $branches,
+            'specialists' => $specialists,
+            'services' => $services,
+            'availableSlots' => $availableSlots,
+            'step' => $step,
+            'selectedBranch' => $sucursal_id,
+            'selectedSpecialist' => $especialista_id,
+            'selectedService' => $servicio_id,
+            'selectedDate' => $fecha,
+            'error' => $error
+        ]);
+    }
+    
+    /**
+     * Ver detalle de reservación
+     */
+    public function view() {
+        $this->requireAuth();
+        
+        $id = $this->get('id');
+        
+        $reservation = $this->db->fetch(
+            "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos, u.email as cliente_email, u.telefono as cliente_telefono,
+                    s.nombre as servicio_nombre, s.descripcion as servicio_descripcion,
+                    suc.nombre as sucursal_nombre, suc.direccion as sucursal_direccion, suc.telefono as sucursal_telefono,
+                    ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+             FROM reservaciones r
+             JOIN usuarios u ON r.cliente_id = u.id
+             JOIN servicios s ON r.servicio_id = s.id
+             JOIN sucursales suc ON r.sucursal_id = suc.id
+             JOIN especialistas e ON r.especialista_id = e.id
+             JOIN usuarios ue ON e.usuario_id = ue.id
+             WHERE r.id = ?",
+            [$id]
+        );
+        
+        if (!$reservation) {
+            setFlashMessage('error', 'Reservación no encontrada.');
+            redirect('/reservaciones');
+        }
+        
+        // Verificar permisos
+        $user = currentUser();
+        if ($user['rol_id'] == ROLE_CLIENT && $reservation['cliente_id'] != $user['id']) {
+            setFlashMessage('error', 'No tiene permisos para ver esta reservación.');
+            redirect('/reservaciones');
+        }
+        
+        $this->render('reservations/view', [
+            'title' => 'Reservación ' . $reservation['codigo'],
+            'reservation' => $reservation
+        ]);
+    }
+    
+    /**
+     * Confirmar reservación
+     */
+    public function confirm() {
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST, ROLE_RECEPTIONIST]);
+        
+        $id = $this->get('id');
+        
+        $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
+        
+        if ($reservation && $reservation['estado'] == 'pendiente') {
+            $this->db->update("UPDATE reservaciones SET estado = 'confirmada' WHERE id = ?", [$id]);
+            
+            // Notificar al cliente
+            $this->createNotification($reservation['cliente_id'], 'cita_confirmada', 
+                'Cita confirmada', 
+                "Su cita del " . formatDate($reservation['fecha_cita']) . " ha sido confirmada.");
+            
+            logAction('reservation_confirm', 'Reservación confirmada: ' . $reservation['codigo']);
+            setFlashMessage('success', 'Reservación confirmada.');
+        }
+        
+        redirect('/reservaciones/ver?id=' . $id);
+    }
+    
+    /**
+     * Cancelar reservación
+     */
+    public function cancel() {
+        $this->requireAuth();
+        
+        $id = $this->get('id');
+        $user = currentUser();
+        
+        $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
+        
+        if (!$reservation) {
+            setFlashMessage('error', 'Reservación no encontrada.');
+            redirect('/reservaciones');
+        }
+        
+        // Verificar permisos
+        if ($user['rol_id'] == ROLE_CLIENT) {
+            if ($reservation['cliente_id'] != $user['id']) {
+                setFlashMessage('error', 'No tiene permisos para cancelar esta reservación.');
+                redirect('/reservaciones');
+            }
+            
+            // Verificar anticipación mínima
+            $horasAnticipacion = getConfig('horas_anticipacion_cancelacion', 24);
+            $fechaCita = strtotime($reservation['fecha_cita'] . ' ' . $reservation['hora_inicio']);
+            if ($fechaCita - time() < ($horasAnticipacion * 3600)) {
+                setFlashMessage('error', 'No puede cancelar con menos de ' . $horasAnticipacion . ' horas de anticipación.');
+                redirect('/reservaciones/ver?id=' . $id);
+            }
+        }
+        
+        $motivo = $this->get('motivo') ?: 'Cancelada por el usuario';
+        
+        if ($reservation['estado'] != 'cancelada' && $reservation['estado'] != 'completada') {
+            $this->db->update(
+                "UPDATE reservaciones SET estado = 'cancelada', cancelado_por = ?, motivo_cancelacion = ?, fecha_cancelacion = NOW() WHERE id = ?",
+                [$user['id'], $motivo, $id]
+            );
+            
+            // Notificar al cliente
+            $this->createNotification($reservation['cliente_id'], 'cita_cancelada', 
+                'Cita cancelada', 
+                "Su cita del " . formatDate($reservation['fecha_cita']) . " ha sido cancelada.");
+            
+            logAction('reservation_cancel', 'Reservación cancelada: ' . $reservation['codigo']);
+            setFlashMessage('success', 'Reservación cancelada.');
+        }
+        
+        redirect('/reservaciones');
+    }
+    
+    /**
+     * Mis citas (para clientes)
+     */
+    public function myAppointments() {
+        $this->requireRole([ROLE_CLIENT]);
+        
+        $user = currentUser();
+        
+        $upcomingAppointments = $this->db->fetchAll(
+            "SELECT r.*, s.nombre as servicio_nombre, suc.nombre as sucursal_nombre, suc.direccion as sucursal_direccion,
+                    ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+             FROM reservaciones r
+             JOIN servicios s ON r.servicio_id = s.id
+             JOIN sucursales suc ON r.sucursal_id = suc.id
+             JOIN especialistas e ON r.especialista_id = e.id
+             JOIN usuarios ue ON e.usuario_id = ue.id
+             WHERE r.cliente_id = ? AND r.fecha_cita >= CURDATE() AND r.estado NOT IN ('cancelada', 'completada')
+             ORDER BY r.fecha_cita, r.hora_inicio",
+            [$user['id']]
+        );
+        
+        $pastAppointments = $this->db->fetchAll(
+            "SELECT r.*, s.nombre as servicio_nombre, suc.nombre as sucursal_nombre,
+                    ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+             FROM reservaciones r
+             JOIN servicios s ON r.servicio_id = s.id
+             JOIN sucursales suc ON r.sucursal_id = suc.id
+             JOIN especialistas e ON r.especialista_id = e.id
+             JOIN usuarios ue ON e.usuario_id = ue.id
+             WHERE r.cliente_id = ? AND (r.fecha_cita < CURDATE() OR r.estado IN ('cancelada', 'completada'))
+             ORDER BY r.fecha_cita DESC, r.hora_inicio DESC
+             LIMIT 20",
+            [$user['id']]
+        );
+        
+        $this->render('reservations/my-appointments', [
+            'title' => 'Mis Citas',
+            'upcomingAppointments' => $upcomingAppointments,
+            'pastAppointments' => $pastAppointments
+        ]);
+    }
+    
+    /**
+     * API para verificar disponibilidad
+     */
+    public function availability() {
+        $especialista_id = $this->get('especialista_id');
+        $servicio_id = $this->get('servicio_id');
+        $fecha = $this->get('fecha');
+        
+        if (!$especialista_id || !$servicio_id || !$fecha) {
+            $this->json(['error' => 'Parámetros incompletos'], 400);
+        }
+        
+        $slots = $this->getAvailableSlots($especialista_id, $servicio_id, $fecha);
+        
+        $this->json(['slots' => $slots]);
+    }
+    
+    /**
+     * Obtiene los horarios disponibles
+     */
+    private function getAvailableSlots($especialista_id, $servicio_id, $fecha) {
+        // Obtener duración del servicio
+        $service = $this->db->fetch("SELECT duracion_minutos FROM servicios WHERE id = ?", [$servicio_id]);
+        if (!$service) return [];
+        
+        $duracion = $service['duracion_minutos'];
+        
+        // Obtener día de la semana (1=Lunes, 7=Domingo)
+        $dayOfWeek = date('N', strtotime($fecha));
+        
+        // Obtener horario del especialista para ese día
+        $schedule = $this->db->fetch(
+            "SELECT * FROM horarios_especialistas WHERE especialista_id = ? AND dia_semana = ? AND activo = 1",
+            [$especialista_id, $dayOfWeek]
+        );
+        
+        if (!$schedule) return [];
+        
+        // Verificar bloqueos
+        $block = $this->db->fetch(
+            "SELECT id FROM bloqueos_horario 
+             WHERE especialista_id = ? AND ? BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)",
+            [$especialista_id, $fecha]
+        );
+        
+        if ($block) return [];
+        
+        // Obtener citas existentes para ese día
+        $existingAppointments = $this->db->fetchAll(
+            "SELECT hora_inicio, hora_fin FROM reservaciones 
+             WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')",
+            [$especialista_id, $fecha]
+        );
+        
+        // Generar slots disponibles
+        $slots = [];
+        $currentTime = strtotime($schedule['hora_inicio']);
+        $endTime = strtotime($schedule['hora_fin']);
+        
+        while ($currentTime + ($duracion * 60) <= $endTime) {
+            $slotStart = date('H:i:s', $currentTime);
+            $slotEnd = date('H:i:s', $currentTime + ($duracion * 60));
+            
+            $available = true;
+            
+            foreach ($existingAppointments as $appt) {
+                $apptStart = strtotime($appt['hora_inicio']);
+                $apptEnd = strtotime($appt['hora_fin']);
+                
+                if (($currentTime >= $apptStart && $currentTime < $apptEnd) ||
+                    ($currentTime + ($duracion * 60) > $apptStart && $currentTime + ($duracion * 60) <= $apptEnd)) {
+                    $available = false;
+                    break;
+                }
+            }
+            
+            if ($available) {
+                // No mostrar horarios pasados si es hoy
+                if ($fecha == date('Y-m-d') && $currentTime < time()) {
+                    $available = false;
+                }
+            }
+            
+            if ($available) {
+                $slots[] = [
+                    'hora_inicio' => $slotStart,
+                    'hora_fin' => $slotEnd,
+                    'display' => formatTime($slotStart) . ' - ' . formatTime($slotEnd)
+                ];
+            }
+            
+            $currentTime += 30 * 60; // Incrementar en intervalos de 30 minutos
+        }
+        
+        return $slots;
+    }
+    
+    /**
+     * Crea una notificación
+     */
+    private function createNotification($userId, $tipo, $titulo, $mensaje) {
+        $this->db->insert(
+            "INSERT INTO notificaciones (usuario_id, tipo, titulo, mensaje) VALUES (?, ?, ?, ?)",
+            [$userId, $tipo, $titulo, $mensaje]
+        );
+    }
+}
