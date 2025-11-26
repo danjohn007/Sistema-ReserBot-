@@ -70,9 +70,18 @@ define('PAYPAL_SECRET', '');
 // Zona horaria
 date_default_timezone_set(APP_TIMEZONE);
 
-// Configuración de errores para desarrollo
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Entorno de la aplicación (development, production)
+define('APP_ENV', getenv('APP_ENV') ?: 'development');
+
+// Configuración de errores basada en entorno
+if (APP_ENV === 'production') {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+}
 
 // Roles de usuario
 define('ROLE_SUPERADMIN', 1);

@@ -13,8 +13,9 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../helpers/functions.php';
 
-// Obtener la ruta solicitada
+// Obtener la ruta solicitada y sanitizarla
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+$requestUri = filter_var($requestUri, FILTER_SANITIZE_URL);
 $basePath = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
 
 // Remover el basePath y /public de la URI
@@ -22,6 +23,9 @@ $route = str_replace($basePath, '', $requestUri);
 $route = preg_replace('/^\/public/', '', $route);
 $route = strtok($route, '?'); // Remover query string
 $route = rtrim($route, '/');
+
+// Validar que la ruta solo contiene caracteres válidos
+$route = preg_replace('/[^a-zA-Z0-9\-\/]/', '', $route);
 
 if (empty($route)) {
     $route = '/';

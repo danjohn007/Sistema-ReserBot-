@@ -232,7 +232,7 @@
                         
                         <!-- User Menu -->
                         <div class="relative" x-data="{ open: false }">
-                            <button onclick="toggleUserMenu()" class="flex items-center space-x-2 text-gray-700 hover:text-primary">
+                            <button id="user-menu-btn" onclick="toggleUserMenu()" class="flex items-center space-x-2 text-gray-700 hover:text-primary">
                                 <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
                                     <?php $user = currentUser(); ?>
                                     <?= strtoupper(substr($user['nombre'] ?? 'U', 0, 1)) ?>
@@ -309,11 +309,11 @@
         // Close menu when clicking outside
         document.addEventListener('click', function(e) {
             const menu = document.getElementById('user-menu');
-            const button = e.target.closest('button');
-            if (!button || !button.onclick?.toString().includes('toggleUserMenu')) {
-                if (!e.target.closest('#user-menu')) {
-                    menu.classList.add('hidden');
-                }
+            const menuBtn = document.getElementById('user-menu-btn');
+            
+            // Close if click is outside both the menu and the button
+            if (menu && menuBtn && !menu.contains(e.target) && !menuBtn.contains(e.target)) {
+                menu.classList.add('hidden');
             }
         });
         

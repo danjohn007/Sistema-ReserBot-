@@ -10,10 +10,6 @@
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
-# Configuración de errores
-php_flag display_errors On
-php_value error_reporting E_ALL
-
 # Configuración de seguridad
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
