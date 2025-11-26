@@ -56,5 +56,5 @@
 <div class="mt-6 p-4 bg-gray-50 rounded-lg">
     <p class="text-xs text-gray-500 text-center mb-2">Credenciales de prueba:</p>
     <p class="text-xs text-gray-600 text-center"><strong>Email:</strong> admin@reserbot.com</p>
-    <p class="text-xs text-gray-600 text-center"><strong>Password:</strong> password</p>
+    <p class="text-xs text-gray-600 text-center"><strong>Password:</strong> admin123</p>
 </div>
