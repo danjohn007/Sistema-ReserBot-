@@ -275,9 +275,15 @@ function showStatus($condition, $successMsg, $errorMsg) {
             El sistema ReserBot está listo para usarse.
         </div>
         
-        <a href="<?= BASE_URL ?>/public/" class="btn">
+        <a href="<?= BASE_URL ?>/" class="btn">
             Ir al Sistema →
         </a>
+        
+        <p style="margin-top: 15px; color: #6B7280;">
+            <strong>Enlaces directos:</strong><br>
+            <a href="<?= BASE_URL ?>/login.php" style="color: #3B82F6;">Iniciar Sesión</a> | 
+            <a href="<?= BASE_URL ?>/registro.php" style="color: #3B82F6;">Registrarse</a>
+        </p>
         
         <?php else: ?>
         <div class="error">
