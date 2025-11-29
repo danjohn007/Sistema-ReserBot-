@@ -1,0 +1,142 @@
+<?php
+/**
+ * ReserBot - Controlador de Calendario
+ */
+
+require_once __DIR__ . '/BaseController.php';
+
+class CalendarController extends BaseController {
+    
+    /**
+     * Vista del calendario
+     */
+    public function index() {
+        $this->requireAuth();
+        
+        $user = currentUser();
+        
+        // Obtener sucursales y especialistas para filtros
+        $branches = [];
+        $specialists = [];
+        
+        if ($user['rol_id'] == ROLE_SUPERADMIN) {
+            $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre");
+            $specialists = $this->db->fetchAll(
+                "SELECT e.id, u.nombre, u.apellidos, s.nombre as sucursal_nombre
+                 FROM especialistas e
+                 JOIN usuarios u ON e.usuario_id = u.id
+                 JOIN sucursales s ON e.sucursal_id = s.id
+                 WHERE e.activo = 1
+                 ORDER BY u.nombre, u.apellidos"
+            );
+        } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
+            $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE id = ?", [$user['sucursal_id']]);
+            $specialists = $this->db->fetchAll(
+                "SELECT e.id, u.nombre, u.apellidos
+                 FROM especialistas e
+                 JOIN usuarios u ON e.usuario_id = u.id
+                 WHERE e.sucursal_id = ? AND e.activo = 1
+                 ORDER BY u.nombre, u.apellidos",
+                [$user['sucursal_id']]
+            );
+        }
+        
+        $this->render('calendar/index', [
+            'title' => 'Calendario',
+            'branches' => $branches,
+            'specialists' => $specialists
+        ]);
+    }
+    
+    /**
+     * API para obtener eventos del calendario
+     */
+    public function events() {
+        $this->requireAuth();
+        
+        $user = currentUser();
+        $start = $this->get('start');
+        $end = $this->get('end');
+        $especialista_id = $this->get('especialista_id');
+        $sucursal_id = $this->get('sucursal_id');
+        
+        $filters = [];
+        $sql = "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+                       s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+                FROM reservaciones r
+                JOIN usuarios u ON r.cliente_id = u.id
+                JOIN servicios s ON r.servicio_id = s.id
+                JOIN especialistas e ON r.especialista_id = e.id
+                JOIN usuarios ue ON e.usuario_id = ue.id
+                WHERE r.fecha_cita BETWEEN ? AND ? AND r.estado NOT IN ('cancelada')";
+        
+        $filters[] = $start;
+        $filters[] = $end;
+        
+        // Aplicar filtros según rol
+        if ($user['rol_id'] == ROLE_SPECIALIST) {
+            $specialist = $this->db->fetch("SELECT id FROM especialistas WHERE usuario_id = ?", [$user['id']]);
+            if ($specialist) {
+                $sql .= " AND r.especialista_id = ?";
+                $filters[] = $specialist['id'];
+            }
+        } elseif ($user['rol_id'] == ROLE_CLIENT) {
+            $sql .= " AND r.cliente_id = ?";
+            $filters[] = $user['id'];
+        } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
+            $sql .= " AND r.sucursal_id = ?";
+            $filters[] = $user['sucursal_id'];
+        }
+        
+        if ($especialista_id) {
+            $sql .= " AND r.especialista_id = ?";
+            $filters[] = $especialista_id;
+        }
+        
+        if ($sucursal_id && $user['rol_id'] == ROLE_SUPERADMIN) {
+            $sql .= " AND r.sucursal_id = ?";
+            $filters[] = $sucursal_id;
+        }
+        
+        $reservations = $this->db->fetchAll($sql, $filters);
+        
+        $events = [];
+        foreach ($reservations as $r) {
+            $color = $this->getEventColor($r['estado']);
+            
+            $events[] = [
+                'id' => $r['id'],
+                'title' => $r['servicio_nombre'] . ' - ' . $r['cliente_nombre'] . ' ' . $r['cliente_apellidos'],
+                'start' => $r['fecha_cita'] . 'T' . $r['hora_inicio'],
+                'end' => $r['fecha_cita'] . 'T' . $r['hora_fin'],
+                'backgroundColor' => $color,
+                'borderColor' => $color,
+                'extendedProps' => [
+                    'codigo' => $r['codigo'],
+                    'estado' => $r['estado'],
+                    'cliente' => $r['cliente_nombre'] . ' ' . $r['cliente_apellidos'],
+                    'especialista' => $r['especialista_nombre'] . ' ' . $r['especialista_apellidos'],
+                    'servicio' => $r['servicio_nombre'],
+                    'precio' => formatMoney($r['precio_total'])
+                ]
+            ];
+        }
+        
+        $this->json($events);
+    }
+    
+    /**
+     * Obtiene el color según el estado
+     */
+    private function getEventColor($estado) {
+        $colors = [
+            'pendiente' => '#F59E0B',
+            'confirmada' => '#10B981',
+            'en_progreso' => '#3B82F6',
+            'completada' => '#6B7280',
+            'no_asistio' => '#EF4444'
+        ];
+        
+        return $colors[$estado] ?? '#6B7280';
+    }
+}
