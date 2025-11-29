@@ -7,10 +7,8 @@
  * o cuando .htaccess no es procesado por el servidor.
  */
 
-// Establecer la ruta deseada si se accede directamente a index.php
-if (basename($_SERVER['SCRIPT_NAME']) === 'index.php') {
-    define('RESERBOT_ROUTE', '/');
-}
+// Establecer la ruta deseada para la página de inicio
+define('RESERBOT_ROUTE', '/');
 
 // Incluir el punto de entrada principal
 require_once __DIR__ . '/public/index.php';
