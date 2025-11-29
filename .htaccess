@@ -1,10 +1,13 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Redirigir todo al directorio public
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ public/$1 [L]
+    # Permitir acceso a archivos y directorios existentes (CSS, JS, imágenes)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Redirigir todo al punto de entrada principal
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
 # Fallback para cuando mod_rewrite no está disponible
