@@ -1,9 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Detectar base automáticamente
-    RewriteBase /
-    
     # Redirigir todo al index.php excepto archivos y carpetas existentes
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
