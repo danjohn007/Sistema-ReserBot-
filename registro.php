@@ -6,8 +6,8 @@
  * no está habilitado o .htaccess no es procesado.
  */
 
-// Simular la ruta /registro
-$_SERVER['REQUEST_URI'] = '/registro';
+// Establecer la ruta deseada
+define('RESERBOT_ROUTE', '/registro');
 
 // Incluir el punto de entrada principal
 require_once __DIR__ . '/public/index.php';

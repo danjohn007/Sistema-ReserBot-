@@ -7,10 +7,9 @@
  * o cuando .htaccess no es procesado por el servidor.
  */
 
-// Si acceden directamente a index.php, mostrar la página de inicio
-if (basename($_SERVER['SCRIPT_NAME']) === 'index.php' && 
-    strpos($_SERVER['REQUEST_URI'], '/index.php') !== false) {
-    $_SERVER['REQUEST_URI'] = '/';
+// Establecer la ruta deseada si se accede directamente a index.php
+if (basename($_SERVER['SCRIPT_NAME']) === 'index.php') {
+    define('RESERBOT_ROUTE', '/');
 }
 
 // Incluir el punto de entrada principal
