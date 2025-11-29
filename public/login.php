@@ -10,4 +10,4 @@
 define('RESERBOT_ROUTE', '/login');
 
 // Incluir el punto de entrada principal
-require_once __DIR__ . '/public/index.php';
+require_once __DIR__ . '/index.php';
