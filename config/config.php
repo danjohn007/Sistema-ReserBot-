@@ -28,9 +28,9 @@ function detectBaseUrl() {
 
 // Configuración de la base de datos
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'reserbot_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'aiderese_reserbot');
+define('DB_USER', 'aiderese_reserbot');
+define('DB_PASS', 'Danjohn007!');
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de la aplicación
