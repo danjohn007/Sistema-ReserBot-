@@ -6,3 +6,13 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
+
+# Fallback para cuando mod_rewrite no está disponible
+<IfModule !mod_rewrite.c>
+    # Si mod_rewrite no está disponible, los usuarios pueden acceder
+    # directamente a los archivos PHP de respaldo:
+    # - /index.php (página principal)
+    # - /login.php (inicio de sesión)
+    # - /registro.php (registro de usuarios)
+    DirectoryIndex index.php
+</IfModule>

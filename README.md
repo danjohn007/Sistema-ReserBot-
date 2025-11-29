@@ -98,7 +98,13 @@ http://tu-dominio.com/ruta/test_connection.php
 
 Una vez verificada la instalación:
 ```
-http://tu-dominio.com/ruta/public/
+http://tu-dominio.com/ruta/
+```
+
+**Acceso alternativo (si mod_rewrite no está disponible):**
+```
+http://tu-dominio.com/ruta/login.php
+http://tu-dominio.com/ruta/registro.php
 ```
 
 ## 🔐 Credenciales por Defecto

@@ -14,21 +14,26 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../helpers/functions.php';
 
 // Obtener la ruta solicitada y sanitizarla
-$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-$requestUri = filter_var($requestUri, FILTER_SANITIZE_URL);
-$basePath = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
+// Si RESERBOT_ROUTE está definida (desde los archivos fallback), usarla directamente
+if (defined('RESERBOT_ROUTE')) {
+    $route = RESERBOT_ROUTE;
+} else {
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $requestUri = filter_var($requestUri, FILTER_SANITIZE_URL);
+    $basePath = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
 
-// Remover el basePath y /public de la URI
-$route = str_replace($basePath, '', $requestUri);
-$route = preg_replace('/^\/public/', '', $route);
-$route = strtok($route, '?'); // Remover query string
-$route = rtrim($route, '/');
+    // Remover el basePath y /public de la URI
+    $route = str_replace($basePath, '', $requestUri);
+    $route = preg_replace('/^\/public/', '', $route);
+    $route = strtok($route, '?'); // Remover query string
+    $route = rtrim($route, '/');
 
-// Validar que la ruta solo contiene caracteres válidos
-$route = preg_replace('/[^a-zA-Z0-9\-\/]/', '', $route);
+    // Validar que la ruta solo contiene caracteres válidos
+    $route = preg_replace('/[^a-zA-Z0-9\-\/]/', '', $route);
 
-if (empty($route)) {
-    $route = '/';
+    if (empty($route)) {
+        $route = '/';
+    }
 }
 
 // Definir rutas
