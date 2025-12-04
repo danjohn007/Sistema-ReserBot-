@@ -39,7 +39,9 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                     <input type="tel" name="telefono"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                           placeholder="4421234567" maxlength="10" pattern="[0-9]{10}"
+                           title="Ingrese un número de 10 dígitos">
                 </div>
                 
                 <div class="md:col-span-2">
@@ -99,25 +101,30 @@
             
             <h3 class="text-lg font-semibold text-gray-700 mb-4">Servicios que Ofrece</h3>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            <div class="mb-6">
                 <?php 
                 $currentCategory = '';
                 foreach ($services as $service): 
                     if ($currentCategory != $service['categoria_nombre']):
-                        if ($currentCategory != '') echo '</div>';
+                        if ($currentCategory != ''): ?>
+            </div>
+                        <?php endif;
                         $currentCategory = $service['categoria_nombre'];
                 ?>
-                <div class="col-span-2 md:col-span-3 font-medium text-gray-600 mt-2">
-                    <?= e($currentCategory) ?>
-                </div>
+                <div class="mb-4">
+                    <h4 class="font-medium text-gray-700 mb-2 border-b pb-1"><?= e($currentCategory) ?></h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <?php endif; ?>
                 
-                <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                    <input type="checkbox" name="servicios[]" value="<?= $service['id'] ?>"
-                           class="rounded border-gray-300 text-primary focus:ring-primary">
-                    <span class="ml-2 text-sm text-gray-700"><?= e($service['nombre']) ?></span>
-                </label>
+                        <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition">
+                            <input type="checkbox" name="servicios[]" value="<?= $service['id'] ?>"
+                                   class="rounded border-gray-300 text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-gray-700"><?= e($service['nombre']) ?></span>
+                        </label>
+                
                 <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
             
             <div class="flex justify-end space-x-3">

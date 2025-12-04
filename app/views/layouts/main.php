@@ -44,6 +44,31 @@
         .sidebar-link:hover:not(.active) {
             background-color: rgba(59, 130, 246, 0.1);
         }
+        
+        /* Scrollbar personalizada para el sidebar */
+        aside nav::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        aside nav::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        aside nav::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        aside nav::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Para Firefox */
+        aside nav {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f1f1;
+        }
     </style>
     
     <script>
@@ -63,8 +88,8 @@
 <body class="bg-gray-50">
     <div class="min-h-screen flex">
         <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-lg fixed h-full z-30 hidden md:block">
-            <div class="p-4 border-b">
+        <aside class="w-64 bg-white shadow-lg fixed h-screen z-30 hidden md:flex md:flex-col">
+            <div class="p-4 border-b flex-shrink-0">
                 <a href="<?= url('/dashboard') ?>" class="flex items-center space-x-2">
                     <?php if (getConfig('logotipo')): ?>
                         <img src="<?= asset(getConfig('logotipo')) ?>" alt="Logo" class="h-8">
@@ -75,7 +100,7 @@
                 </a>
             </div>
             
-            <nav class="p-4">
+            <nav class="p-4 overflow-y-auto flex-1" style="max-height: calc(100vh - 80px);">
                 <ul class="space-y-2">
                     <li>
                         <a href="<?= url('/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '' ?>">
@@ -290,14 +315,16 @@
     <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
     
     <!-- Mobile Sidebar -->
-    <div id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50 transform -translate-x-full transition-transform duration-300 md:hidden">
-        <div class="p-4 border-b flex justify-between items-center">
+    <div id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
             <span class="text-xl font-bold text-gray-800"><?= e(getConfig('nombre_sitio', 'ReserBot')) ?></span>
             <button id="close-mobile-menu" class="text-gray-600">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        <!-- Mobile nav content same as desktop -->
+        <div class="p-4 overflow-y-auto flex-1">
+            <!-- Mobile nav content same as desktop -->
+        </div>
     </div>
     
     <script>

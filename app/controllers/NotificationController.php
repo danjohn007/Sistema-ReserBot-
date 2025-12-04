@@ -106,14 +106,28 @@ class NotificationController extends BaseController {
                         "UPDATE plantillas_notificaciones SET tipo = ?, canal = ?, asunto = ?, contenido = ?, sucursal_id = ? WHERE id = ?",
                         [$tipo, $canal, $asunto, $contenido, $sucursal_id, $id]
                     );
+                    logAction('template_update', 'Plantilla de notificación actualizada');
                 } else {
                     $this->db->insert(
                         "INSERT INTO plantillas_notificaciones (tipo, canal, asunto, contenido, sucursal_id) VALUES (?, ?, ?, ?, ?)",
                         [$tipo, $canal, $asunto, $contenido, $sucursal_id]
                     );
+                    logAction('template_create', 'Plantilla de notificación creada');
                 }
                 
                 $success = 'Plantilla guardada correctamente.';
+            } elseif ($action == 'toggle') {
+                $id = $this->post('id');
+                $activo = $this->post('activo');
+                
+                $this->db->update(
+                    "UPDATE plantillas_notificaciones SET activo = ? WHERE id = ?",
+                    [$activo, $id]
+                );
+                
+                if ($this->isAjax()) {
+                    $this->json(['success' => true]);
+                }
             }
             
             // Recargar

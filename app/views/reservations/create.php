@@ -15,6 +15,25 @@
         <?php endif; ?>
         
         <form method="POST" action="<?= url('/reservaciones/nueva') ?>" id="reservationForm">
+            <!-- Step 0: Client Selection (only for admins/receptionists) -->
+            <?php if (!empty($clients) && count($clients) > 0): ?>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Cliente *</label>
+                <select name="cliente_id" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    <option value="">-- Seleccione un cliente --</option>
+                    <?php foreach ($clients as $client): ?>
+                    <option value="<?= $client['id'] ?>">
+                        <?= e($client['nombre'] . ' ' . $client['apellidos']) ?> 
+                        <?php if ($client['email']): ?>
+                        - <?= e($client['email']) ?>
+                        <?php endif; ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            
             <!-- Step 1: Branch -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">1. Seleccione una Sucursal *</label>

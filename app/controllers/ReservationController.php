@@ -96,6 +96,17 @@ class ReservationController extends BaseController {
         // Obtener sucursales
         $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre");
         
+        // Obtener clientes (si no es cliente)
+        $clients = [];
+        if ($user['rol_id'] != ROLE_CLIENT) {
+            $clients = $this->db->fetchAll(
+                "SELECT id, nombre, apellidos, email, telefono FROM usuarios 
+                 WHERE rol_id = ? AND activo = 1 
+                 ORDER BY nombre, apellidos",
+                [ROLE_CLIENT]
+            );
+        }
+        
         // Paso actual del wizard
         $step = $this->get('step') ?: 1;
         $sucursal_id = $this->get('sucursal_id');
@@ -146,7 +157,10 @@ class ReservationController extends BaseController {
             $hora_inicio = $this->post('hora_inicio');
             $notas_cliente = $this->post('notas_cliente');
             
-            if (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
+            // Validar que el cliente_id no sea null
+            if (empty($cliente_id)) {
+                $error = 'Debe seleccionar un cliente para la reservación.';
+            } elseif (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
                 $error = 'Todos los campos son obligatorios.';
             } else {
                 // Obtener información del servicio
@@ -203,6 +217,7 @@ class ReservationController extends BaseController {
         $this->render('reservations/create', [
             'title' => 'Nueva Reservación',
             'branches' => $branches,
+            'clients' => $clients,
             'specialists' => $specialists,
             'services' => $services,
             'availableSlots' => $availableSlots,

@@ -1,0 +1,897 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: localhost:3306
+-- Tiempo de generación: 04-12-2025 a las 09:17:30
+-- Versión del servidor: 5.7.23-23
+-- Versión de PHP: 8.1.33
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `aiderese_reserbot`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `bloqueos_horario`
+--
+
+CREATE TABLE `bloqueos_horario` (
+  `id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL,
+  `fecha_inicio` datetime NOT NULL,
+  `fecha_fin` datetime NOT NULL,
+  `motivo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tipo` enum('vacaciones','pausa','personal','otro') COLLATE utf8mb4_unicode_ci DEFAULT 'otro',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `categorias_servicios`
+--
+
+CREATE TABLE `categorias_servicios` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `icono` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'fas fa-concierge-bell',
+  `color` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT '#3B82F6',
+  `orden` int(11) DEFAULT '0',
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `categorias_servicios`
+--
+
+INSERT INTO `categorias_servicios` (`id`, `nombre`, `descripcion`, `icono`, `color`, `orden`, `activo`, `created_at`, `updated_at`) VALUES
+(1, 'Medicina General', 'Consultas médicas generales y especialidades', 'fas fa-stethoscope', '#EF4444', 1, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(2, 'Belleza y Estética', 'Servicios de belleza, spa y estética', 'fas fa-spa', '#EC4899', 2, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 'Barbería', 'Cortes de cabello, barba y tratamientos capilares', 'fas fa-cut', '#8B5CF6', 3, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'Asesoría Legal', 'Consultoría y asesoría jurídica', 'fas fa-balance-scale', '#6366F1', 4, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(5, 'Consultoría Financiera', 'Asesoría en finanzas e inversiones', 'fas fa-chart-line', '#10B981', 5, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(6, 'Psicología', 'Terapia y consulta psicológica', 'fas fa-brain', '#F59E0B', 6, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(7, 'Categoria Ejemplo', 'Descripción ejemplo', 'fas fa-concierge-bell', '#009942', 6, 1, '2025-12-02 17:39:26', '2025-12-02 17:39:44');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `configuraciones`
+--
+
+CREATE TABLE `configuraciones` (
+  `id` int(11) NOT NULL,
+  `clave` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `valor` text COLLATE utf8mb4_unicode_ci,
+  `tipo` enum('text','number','boolean','json','color','image') COLLATE utf8mb4_unicode_ci DEFAULT 'text',
+  `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `configuraciones`
+--
+
+INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `tipo`, `descripcion`, `created_at`, `updated_at`) VALUES
+(1, 'nombre_sitio', 'Medical Cloud', 'text', 'Nombre del sistema', '2025-11-29 03:20:01', '2025-11-29 07:48:38'),
+(2, 'logotipo', NULL, 'image', 'Logotipo del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 'email_sistema', 'contacto@reserbot.com', 'text', 'Correo principal del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'telefono_contacto', '+52 442 123 4567', 'text', 'Teléfono de contacto', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(5, 'horario_atencion', 'Lunes a Viernes 8:00 - 20:00', 'text', 'Horario de atención', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(6, 'color_primario', '#3B82F6', 'color', 'Color primario del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(7, 'color_secundario', '#1E40AF', 'color', 'Color secundario del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(8, 'color_acento', '#10B981', 'color', 'Color de acento', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(9, 'paypal_client_id', '', 'text', 'Client ID de PayPal', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(10, 'paypal_secret', '', 'text', 'Secret de PayPal', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(11, 'paypal_modo', 'sandbox', 'text', 'Modo de PayPal (sandbox/live)', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(12, 'qr_api_url', '', 'text', 'URL de API para QRs masivos', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(13, 'confirmacion_automatica', '0', 'boolean', 'Confirmar citas automáticamente', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(14, 'recordatorio_24h', '1', 'boolean', 'Enviar recordatorio 24h antes', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(15, 'recordatorio_1h', '1', 'boolean', 'Enviar recordatorio 1h antes', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(16, 'permitir_cancelacion_cliente', '1', 'boolean', 'Permitir que clientes cancelen citas', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(17, 'horas_anticipacion_cancelacion', '24', 'number', 'Horas mínimas de anticipación para cancelar', '2025-11-29 03:20:01', '2025-11-29 03:20:01');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `dias_feriados`
+--
+
+CREATE TABLE `dias_feriados` (
+  `id` int(11) NOT NULL,
+  `sucursal_id` int(11) DEFAULT NULL COMMENT 'NULL = aplica a todas',
+  `fecha` date NOT NULL,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `recurrente` tinyint(1) DEFAULT '0' COMMENT 'Se repite cada año',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `dias_feriados`
+--
+
+INSERT INTO `dias_feriados` (`id`, `sucursal_id`, `fecha`, `nombre`, `recurrente`, `created_at`) VALUES
+(1, NULL, '2024-01-01', 'Año Nuevo', 1, '2025-11-29 03:20:01'),
+(2, NULL, '2024-02-05', 'Día de la Constitución', 1, '2025-11-29 03:20:01'),
+(3, NULL, '2024-03-18', 'Natalicio de Benito Juárez', 1, '2025-11-29 03:20:01'),
+(4, NULL, '2024-05-01', 'Día del Trabajo', 1, '2025-11-29 03:20:01'),
+(5, NULL, '2024-09-16', 'Día de la Independencia', 1, '2025-11-29 03:20:01'),
+(6, NULL, '2024-11-18', 'Revolución Mexicana', 1, '2025-11-29 03:20:01'),
+(7, NULL, '2024-12-25', 'Navidad', 1, '2025-11-29 03:20:01'),
+(8, NULL, '2024-09-25', 'Aniversario de la Fundación de Querétaro', 1, '2025-11-29 03:20:01');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `especialistas`
+--
+
+CREATE TABLE `especialistas` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `sucursal_id` int(11) NOT NULL,
+  `profesion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `especialidad` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `experiencia_anos` int(11) DEFAULT '0',
+  `tarifa_base` decimal(10,2) DEFAULT '0.00',
+  `duracion_cita_default` int(11) DEFAULT '30' COMMENT 'minutos',
+  `calificacion_promedio` decimal(3,2) DEFAULT '0.00',
+  `total_resenas` int(11) DEFAULT '0',
+  `foto` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `especialistas`
+--
+
+INSERT INTO `especialistas` (`id`, `usuario_id`, `sucursal_id`, `profesion`, `especialidad`, `descripcion`, `experiencia_anos`, `tarifa_base`, `duracion_cita_default`, `calificacion_promedio`, `total_resenas`, `foto`, `activo`, `created_at`, `updated_at`) VALUES
+(1, 4, 1, 'Médico', 'Medicina General', 'Médico general con amplia experiencia en diagnóstico y tratamiento de enfermedades comunes. Egresado de la UAQ.', 15, 500.00, 30, 4.80, 120, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(2, 5, 1, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 4.90, 85, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 6, 2, 'Psicólogo', 'Psicología Clínica', 'Maestro en Psicología Clínica con especialidad en terapia cognitivo-conductual. Atención a adultos y parejas.', 8, 700.00, 30, 4.70, 95, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 11, 4, 'EjemploProfesion', 'Dr en Ejemplo', 'Descripción de ejemplo', 10, 1500.00, 30, 0.00, 0, NULL, 1, '2025-12-02 18:14:19', '2025-12-03 16:21:52'),
+(5, 12, 5, 'Psicóloga', 'Cognitiva', 'Dra Elsa Molina', 3, 1000.00, 30, 0.00, 0, NULL, 1, '2025-12-02 21:47:22', '2025-12-02 21:48:29');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `especialistas_servicios`
+--
+
+CREATE TABLE `especialistas_servicios` (
+  `id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL,
+  `servicio_id` int(11) NOT NULL,
+  `precio_personalizado` decimal(10,2) DEFAULT NULL,
+  `duracion_personalizada` int(11) DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `especialistas_servicios`
+--
+
+INSERT INTO `especialistas_servicios` (`id`, `especialista_id`, `servicio_id`, `precio_personalizado`, `duracion_personalizada`, `activo`) VALUES
+(1, 1, 1, NULL, NULL, 1),
+(2, 1, 2, NULL, NULL, 1),
+(3, 1, 3, NULL, NULL, 1),
+(4, 2, 10, NULL, NULL, 1),
+(5, 2, 11, NULL, NULL, 1),
+(6, 3, 14, NULL, NULL, 1),
+(7, 3, 15, NULL, NULL, 1),
+(11, 5, 1, NULL, NULL, 1),
+(14, 4, 2, NULL, NULL, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `horarios_especialistas`
+--
+
+CREATE TABLE `horarios_especialistas` (
+  `id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL,
+  `dia_semana` tinyint(4) NOT NULL COMMENT '1=Lunes, 7=Domingo',
+  `hora_inicio` time NOT NULL,
+  `hora_fin` time NOT NULL,
+  `activo` tinyint(1) DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `horarios_especialistas`
+--
+
+INSERT INTO `horarios_especialistas` (`id`, `especialista_id`, `dia_semana`, `hora_inicio`, `hora_fin`, `activo`) VALUES
+(1, 1, 1, '09:00:00', '14:00:00', 1),
+(2, 1, 1, '16:00:00', '19:00:00', 1),
+(3, 1, 2, '09:00:00', '14:00:00', 1),
+(4, 1, 2, '16:00:00', '19:00:00', 1),
+(5, 1, 3, '09:00:00', '14:00:00', 1),
+(6, 1, 3, '16:00:00', '19:00:00', 1),
+(7, 1, 4, '09:00:00', '14:00:00', 1),
+(8, 1, 4, '16:00:00', '19:00:00', 1),
+(9, 1, 5, '09:00:00', '14:00:00', 1),
+(10, 2, 1, '10:00:00', '14:00:00', 1),
+(11, 2, 1, '16:00:00', '20:00:00', 1),
+(12, 2, 2, '10:00:00', '14:00:00', 1),
+(13, 2, 2, '16:00:00', '20:00:00', 1),
+(14, 2, 3, '10:00:00', '14:00:00', 1),
+(15, 2, 3, '16:00:00', '20:00:00', 1),
+(16, 2, 4, '10:00:00', '14:00:00', 1),
+(17, 3, 2, '08:00:00', '13:00:00', 1),
+(18, 3, 2, '15:00:00', '18:00:00', 1),
+(19, 3, 3, '08:00:00', '13:00:00', 1),
+(20, 3, 3, '15:00:00', '18:00:00', 1),
+(21, 3, 4, '08:00:00', '13:00:00', 1),
+(22, 3, 4, '15:00:00', '18:00:00', 1),
+(23, 3, 5, '08:00:00', '13:00:00', 1),
+(24, 3, 6, '09:00:00', '14:00:00', 1),
+(25, 5, 1, '09:00:00', '18:00:00', 1),
+(26, 5, 3, '09:00:00', '18:00:00', 1),
+(27, 5, 4, '09:00:00', '18:00:00', 1),
+(31, 4, 1, '09:00:00', '18:00:00', 1),
+(32, 4, 3, '09:00:00', '18:00:00', 1),
+(33, 4, 5, '09:00:00', '18:00:00', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `logs_seguridad`
+--
+
+CREATE TABLE `logs_seguridad` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `datos_adicionales` json DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `logs_seguridad`
+--
+
+INSERT INTO `logs_seguridad` (`id`, `usuario_id`, `accion`, `descripcion`, `ip_address`, `user_agent`, `datos_adicionales`, `created_at`) VALUES
+(1, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 07:47:05'),
+(2, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@ejemplo.com\"}', '2025-11-29 07:47:09'),
+(3, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 07:47:20'),
+(4, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 07:48:15'),
+(5, 1, 'settings_update', 'Configuraciones generales actualizadas', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-11-29 07:48:38'),
+(6, 1, 'logout', 'Cierre de sesión', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-11-29 07:49:43'),
+(7, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 07:50:02'),
+(8, 1, 'settings_email', 'Configuración de correo actualizada', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-11-29 07:55:08'),
+(9, 1, 'settings_email', 'Configuración de correo actualizada', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-11-29 07:55:38'),
+(10, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 15:32:59'),
+(11, 1, 'logout', 'Cierre de sesión', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-11-29 15:33:12'),
+(12, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.120.253', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"admin@reserverbot.com\"}', '2025-11-29 18:25:12'),
+(13, 1, 'login', 'Inicio de sesión exitoso', '189.128.120.253', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-11-29 18:25:56'),
+(14, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-02 16:58:36'),
+(15, 1, 'branch_update', 'Sucursal actualizada: ReserBot Centro', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:08:40'),
+(16, 1, 'branch_create', 'Sucursal creada: ReserBot Ejemplo', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:10:01'),
+(17, 1, 'service_create', 'Servicio creado: Asesoria ejemplo', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:38:33'),
+(18, 1, 'service_update', 'Servicio actualizado: Asesoria ejemplo', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:38:46'),
+(19, 1, 'category_create', 'Categoría creada: Categoria Ejemplo', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:39:26'),
+(20, 1, 'category_update', 'Categoría actualizada: Categoria Ejemplo', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 17:39:44'),
+(21, 1, 'specialist_create', 'Especialista creado: Ejemplo ejemploso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 18:14:19'),
+(22, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-02 20:51:18'),
+(23, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-02 21:42:14'),
+(24, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@ejemplo.com\"}', '2025-12-02 21:45:29'),
+(25, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-02 21:45:34'),
+(26, 1, 'specialist_create', 'Especialista creado: Elsa Molina', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 21:47:22'),
+(27, 1, 'branch_create', 'Sucursal creada: Consultorio Elsa Molina', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 21:47:51'),
+(28, 1, 'specialist_update', 'Especialista actualizado: Elsa Molina', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 21:48:29'),
+(29, 1, 'specialist_update', 'Especialista actualizado: Ejemplo ejemplar', '187.145.46.170', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-02 21:50:00'),
+(30, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-03 15:18:14'),
+(31, 1, 'specialist_update', 'Especialista actualizado: Ejemplo ejemplar', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-03 16:21:38'),
+(32, 1, 'specialist_update', 'Especialista actualizado: Ejemplo ejemplar', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', NULL, '2025-12-03 16:21:52'),
+(33, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-03 18:34:51'),
+(34, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-03 19:36:08'),
+(35, 1, 'login', 'Inicio de sesión exitoso', '187.145.46.170', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2025-12-03 21:04:13');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `notificaciones`
+--
+
+CREATE TABLE `notificaciones` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `tipo` enum('cita_nueva','cita_confirmada','cita_cancelada','cita_reprogramada','recordatorio','sistema') COLLATE utf8mb4_unicode_ci DEFAULT 'sistema',
+  `titulo` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `mensaje` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `enlace` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `leida` tinyint(1) DEFAULT '0',
+  `enviada_email` tinyint(1) DEFAULT '0',
+  `enviada_sms` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pagos`
+--
+
+CREATE TABLE `pagos` (
+  `id` int(11) NOT NULL,
+  `reservacion_id` int(11) NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `metodo_pago` enum('paypal','efectivo','tarjeta','transferencia') COLLATE utf8mb4_unicode_ci DEFAULT 'efectivo',
+  `estado` enum('pendiente','completado','fallido','reembolsado') COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente',
+  `referencia_pago` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID de transacción PayPal u otro',
+  `comprobante` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notas` text COLLATE utf8mb4_unicode_ci,
+  `fecha_pago` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `paquetes_servicios`
+--
+
+CREATE TABLE `paquetes_servicios` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `precio` decimal(10,2) NOT NULL,
+  `descuento_porcentaje` decimal(5,2) DEFAULT '0.00',
+  `imagen` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `paquetes_servicios_items`
+--
+
+CREATE TABLE `paquetes_servicios_items` (
+  `id` int(11) NOT NULL,
+  `paquete_id` int(11) NOT NULL,
+  `servicio_id` int(11) NOT NULL,
+  `cantidad` int(11) DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `plantillas_notificaciones`
+--
+
+CREATE TABLE `plantillas_notificaciones` (
+  `id` int(11) NOT NULL,
+  `sucursal_id` int(11) DEFAULT NULL,
+  `tipo` enum('cita_nueva','confirmacion','recordatorio_24h','recordatorio_1h','cancelacion','reprogramacion') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `canal` enum('email','sms','whatsapp') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `asunto` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contenido` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `reservaciones`
+--
+
+CREATE TABLE `reservaciones` (
+  `id` int(11) NOT NULL,
+  `codigo` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Código único de reservación',
+  `cliente_id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL,
+  `servicio_id` int(11) NOT NULL,
+  `sucursal_id` int(11) NOT NULL,
+  `fecha_cita` date NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `hora_fin` time NOT NULL,
+  `duracion_minutos` int(11) NOT NULL,
+  `precio_total` decimal(10,2) NOT NULL,
+  `estado` enum('pendiente','confirmada','en_progreso','completada','cancelada','no_asistio') COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente',
+  `notas_cliente` text COLLATE utf8mb4_unicode_ci,
+  `notas_especialista` text COLLATE utf8mb4_unicode_ci,
+  `calificacion` tinyint(4) DEFAULT NULL COMMENT '1-5 estrellas',
+  `comentario_resena` text COLLATE utf8mb4_unicode_ci,
+  `recordatorio_enviado` tinyint(1) DEFAULT '0',
+  `creado_por` int(11) DEFAULT NULL COMMENT 'Usuario que creó la cita (recepcionista)',
+  `cancelado_por` int(11) DEFAULT NULL,
+  `motivo_cancelacion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_cancelacion` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `reservaciones`
+--
+
+INSERT INTO `reservaciones` (`id`, `codigo`, `cliente_id`, `especialista_id`, `servicio_id`, `sucursal_id`, `fecha_cita`, `hora_inicio`, `hora_fin`, `duracion_minutos`, `precio_total`, `estado`, `notas_cliente`, `notas_especialista`, `calificacion`, `comentario_resena`, `recordatorio_enviado`, `creado_por`, `cancelado_por`, `motivo_cancelacion`, `fecha_cancelacion`, `created_at`, `updated_at`) VALUES
+(1, 'RES-2024-001', 8, 1, 1, 1, '2025-11-29', '10:00:00', '10:30:00', 30, 500.00, 'confirmada', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(2, 'RES-2024-002', 9, 1, 2, 1, '2025-11-30', '11:00:00', '12:00:00', 60, 1500.00, 'pendiente', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 'RES-2024-003', 10, 2, 10, 1, '2025-12-01', '10:00:00', '10:30:00', 30, 800.00, 'confirmada', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'RES-2024-004', 8, 3, 14, 2, '2025-12-02', '15:00:00', '15:50:00', 50, 700.00, 'pendiente', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(5, 'RES-2025-001', 11, 2, 3, 4, '2025-12-22', '18:00:00', '18:30:00', 30, 600.00, 'pendiente', NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2025-12-02 20:28:23', '2025-12-02 20:28:23'),
+(6, 'RES-2025-002', 12, 2, 10, 1, '2026-01-06', '12:00:00', '12:30:00', 30, 800.00, 'pendiente', NULL, NULL, NULL, 'Ok', 0, NULL, NULL, NULL, NULL, '2025-12-03 21:36:38', '2025-12-03 21:36:38');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `servicios`
+--
+
+CREATE TABLE `servicios` (
+  `id` int(11) NOT NULL,
+  `categoria_id` int(11) NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `duracion_minutos` int(11) DEFAULT '30',
+  `precio` decimal(10,2) DEFAULT '0.00',
+  `precio_oferta` decimal(10,2) DEFAULT NULL,
+  `imagen` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `servicios`
+--
+
+INSERT INTO `servicios` (`id`, `categoria_id`, `nombre`, `descripcion`, `duracion_minutos`, `precio`, `precio_oferta`, `imagen`, `activo`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Consulta General', 'Consulta médica general con diagnóstico', 30, 500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(2, 1, 'Chequeo Completo', 'Examen médico completo con análisis básicos', 60, 1500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 1, 'Consulta Pediatría', 'Atención médica para niños y adolescentes', 30, 600.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 2, 'Facial Hidratante', 'Tratamiento facial de hidratación profunda', 45, 450.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(5, 2, 'Manicure Completo', 'Manicure con esmaltado y tratamiento de cutículas', 30, 200.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(6, 2, 'Masaje Relajante', 'Masaje corporal completo de relajación', 60, 600.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(7, 3, 'Corte de Cabello', 'Corte de cabello clásico o moderno', 30, 150.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(8, 3, 'Arreglo de Barba', 'Recorte y diseño de barba', 20, 100.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(9, 3, 'Corte + Barba', 'Servicio completo de corte y arreglo de barba', 45, 220.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(10, 4, 'Consulta Legal Básica', 'Asesoría legal general de 30 minutos', 30, 800.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(11, 4, 'Revisión de Contratos', 'Análisis y revisión de contratos', 60, 1500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(12, 5, 'Asesoría de Inversiones', 'Consultoría en inversiones y portafolios', 45, 1000.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(13, 5, 'Planificación Financiera', 'Desarrollo de plan financiero personal', 60, 1200.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(14, 6, 'Sesión Individual', 'Sesión de terapia psicológica individual', 50, 700.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(15, 6, 'Terapia de Pareja', 'Sesión de terapia para parejas', 60, 900.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(16, 4, 'Asesoria ejemplo', 'Descripción de ejemplo', 30, 300.00, NULL, NULL, 1, '2025-12-02 17:38:33', '2025-12-02 17:38:46');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sucursales`
+--
+
+CREATE TABLE `sucursales` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `direccion` text COLLATE utf8mb4_unicode_ci,
+  `ciudad` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `estado` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `codigo_postal` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `telefono` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `zona_horaria` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'America/Mexico_City',
+  `horario_apertura` time DEFAULT '08:00:00',
+  `horario_cierre` time DEFAULT '20:00:00',
+  `dias_laborales` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '1,2,3,4,5,6' COMMENT 'Días de la semana (1=Lunes, 7=Domingo)',
+  `latitud` decimal(10,8) DEFAULT NULL,
+  `longitud` decimal(11,8) DEFAULT NULL,
+  `imagen` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `sucursales`
+--
+
+INSERT INTO `sucursales` (`id`, `nombre`, `direccion`, `ciudad`, `estado`, `codigo_postal`, `telefono`, `email`, `zona_horaria`, `horario_apertura`, `horario_cierre`, `dias_laborales`, `latitud`, `longitud`, `imagen`, `activo`, `created_at`, `updated_at`) VALUES
+(1, 'ReserBot Centro', 'Av. Constituyentes 200, Centro Histórico', 'Santiago de Querétaro', 'Querétaro', '76000', '+52 442 212 3456', 'centro@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.59300000, -100.39290000, NULL, 1, '2025-11-29 03:20:01', '2025-12-02 17:08:40'),
+(2, 'ReserBot Juriquilla', 'Blvd. Juriquilla 1000, Juriquilla', 'Santiago de Querétaro', 'Querétaro', '76226', '+52 442 234 5678', 'juriquilla@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.71130000, -100.44970000, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 'ReserBot El Marqués', 'Av. Paseo Constituyentes 500, Zona Industrial', 'El Marqués', 'Querétaro', '76240', '+52 442 256 7890', 'marques@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.54650000, -100.26570000, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'ReserBot Ejemplo', 'Calle ejemplo #1000', 'Queretaro', 'Querétaro', '70000', '1234567890', 'ejemplo@ejemplo.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 17:10:01', '2025-12-02 17:10:01'),
+(5, 'Consultorio Elsa Molina', '', '', 'Querétaro', '', '', '', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 21:47:51', '2025-12-02 21:47:51');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `apellidos` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `telefono` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rol_id` tinyint(4) NOT NULL DEFAULT '4' COMMENT '1=Superadmin, 2=Admin Sucursal, 3=Especialista, 4=Cliente, 5=Recepcionista',
+  `sucursal_id` int(11) DEFAULT NULL,
+  `avatar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email_verificado` tinyint(1) DEFAULT '0',
+  `token_verificacion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `token_recuperacion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `token_expira` datetime DEFAULT NULL,
+  `ultimo_acceso` datetime DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id`, `nombre`, `apellidos`, `email`, `telefono`, `password`, `rol_id`, `sucursal_id`, `avatar`, `email_verificado`, `token_verificacion`, `token_recuperacion`, `token_expira`, `ultimo_acceso`, `activo`, `created_at`, `updated_at`) VALUES
+(1, 'Administrador', 'Sistema', 'admin@reserbot.com', '+52 442 100 0001', '$2y$10$XDSI5Te7YJzHwYyPgS4syua0RHEjBen7/MYsu7st5asjxR/tKjxkO', 1, NULL, NULL, 1, NULL, NULL, NULL, '2025-12-03 15:04:13', 1, '2025-11-29 03:20:01', '2025-12-03 21:04:13'),
+(2, 'Carlos', 'Hernández García', 'carlos.hernandez@reserbot.com', '+52 442 111 1111', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(3, 'María', 'López Sánchez', 'maria.lopez@reserbot.com', '+52 442 222 2222', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2, 2, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'Dr. Roberto', 'Martínez Pérez', 'roberto.martinez@reserbot.com', '+52 442 333 3333', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(5, 'Lic. Ana', 'García Ramírez', 'ana.garcia@reserbot.com', '+52 442 444 4444', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(6, 'Mtro. Juan', 'Rodríguez Torres', 'juan.rodriguez@reserbot.com', '+52 442 555 5555', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3, 2, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(7, 'Laura', 'Sánchez Mendoza', 'laura.sanchez@reserbot.com', '+52 442 666 6666', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 5, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(8, 'Pedro', 'González Vega', 'pedro.gonzalez@email.com', '+52 442 777 7777', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(9, 'Sofía', 'Ramírez Luna', 'sofia.ramirez@email.com', '+52 442 888 8888', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(10, 'Miguel', 'Torres Castillo', 'miguel.torres@email.com', '+52 442 999 9999', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(11, 'Ejemplo', 'ejemplar', 'ejemplo@reserbot.com', '1234567890', '$2y$10$.8g6WMRv7L1Xj9R28wTZEO9oyDsm3IRL.uEm2IQOIZqC0gl3/9GSe', 3, 4, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-12-02 18:14:19', '2025-12-02 21:50:00'),
+(12, 'Elsa', 'Molina', 'elsa@id.com', '1122334455', '$2y$10$NKMgaxJ7OUSS.t716Ibos.qpg1uOmkvh3D0IfPVleL45BgSLQ0oWK', 3, 5, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-12-02 21:47:22', '2025-12-02 21:48:29');
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `bloqueos_horario`
+--
+ALTER TABLE `bloqueos_horario`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_especialista` (`especialista_id`),
+  ADD KEY `idx_fechas` (`fecha_inicio`,`fecha_fin`);
+
+--
+-- Indices de la tabla `categorias_servicios`
+--
+ALTER TABLE `categorias_servicios`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `configuraciones`
+--
+ALTER TABLE `configuraciones`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `clave` (`clave`);
+
+--
+-- Indices de la tabla `dias_feriados`
+--
+ALTER TABLE `dias_feriados`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_fecha` (`fecha`),
+  ADD KEY `idx_sucursal` (`sucursal_id`);
+
+--
+-- Indices de la tabla `especialistas`
+--
+ALTER TABLE `especialistas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario` (`usuario_id`),
+  ADD KEY `idx_sucursal` (`sucursal_id`),
+  ADD KEY `idx_activo` (`activo`);
+
+--
+-- Indices de la tabla `especialistas_servicios`
+--
+ALTER TABLE `especialistas_servicios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_especialista_servicio` (`especialista_id`,`servicio_id`),
+  ADD KEY `servicio_id` (`servicio_id`);
+
+--
+-- Indices de la tabla `horarios_especialistas`
+--
+ALTER TABLE `horarios_especialistas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_especialista` (`especialista_id`),
+  ADD KEY `idx_dia` (`dia_semana`);
+
+--
+-- Indices de la tabla `logs_seguridad`
+--
+ALTER TABLE `logs_seguridad`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario` (`usuario_id`),
+  ADD KEY `idx_accion` (`accion`),
+  ADD KEY `idx_fecha` (`created_at`);
+
+--
+-- Indices de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario` (`usuario_id`),
+  ADD KEY `idx_leida` (`leida`);
+
+--
+-- Indices de la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_reservacion` (`reservacion_id`),
+  ADD KEY `idx_estado` (`estado`);
+
+--
+-- Indices de la tabla `paquetes_servicios`
+--
+ALTER TABLE `paquetes_servicios`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `paquetes_servicios_items`
+--
+ALTER TABLE `paquetes_servicios_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `paquete_id` (`paquete_id`),
+  ADD KEY `servicio_id` (`servicio_id`);
+
+--
+-- Indices de la tabla `plantillas_notificaciones`
+--
+ALTER TABLE `plantillas_notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_sucursal` (`sucursal_id`);
+
+--
+-- Indices de la tabla `reservaciones`
+--
+ALTER TABLE `reservaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`),
+  ADD KEY `idx_codigo` (`codigo`),
+  ADD KEY `idx_cliente` (`cliente_id`),
+  ADD KEY `idx_especialista` (`especialista_id`),
+  ADD KEY `idx_fecha` (`fecha_cita`),
+  ADD KEY `idx_estado` (`estado`),
+  ADD KEY `idx_sucursal` (`sucursal_id`),
+  ADD KEY `servicio_id` (`servicio_id`);
+
+--
+-- Indices de la tabla `servicios`
+--
+ALTER TABLE `servicios`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_categoria` (`categoria_id`),
+  ADD KEY `idx_activo` (`activo`);
+
+--
+-- Indices de la tabla `sucursales`
+--
+ALTER TABLE `sucursales`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ciudad` (`ciudad`),
+  ADD KEY `idx_activo` (`activo`);
+
+--
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_email` (`email`),
+  ADD KEY `idx_rol` (`rol_id`),
+  ADD KEY `idx_sucursal` (`sucursal_id`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `bloqueos_horario`
+--
+ALTER TABLE `bloqueos_horario`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `categorias_servicios`
+--
+ALTER TABLE `categorias_servicios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `configuraciones`
+--
+ALTER TABLE `configuraciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT de la tabla `dias_feriados`
+--
+ALTER TABLE `dias_feriados`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT de la tabla `especialistas`
+--
+ALTER TABLE `especialistas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `especialistas_servicios`
+--
+ALTER TABLE `especialistas_servicios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT de la tabla `horarios_especialistas`
+--
+ALTER TABLE `horarios_especialistas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+
+--
+-- AUTO_INCREMENT de la tabla `logs_seguridad`
+--
+ALTER TABLE `logs_seguridad`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+
+--
+-- AUTO_INCREMENT de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `paquetes_servicios`
+--
+ALTER TABLE `paquetes_servicios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `paquetes_servicios_items`
+--
+ALTER TABLE `paquetes_servicios_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `plantillas_notificaciones`
+--
+ALTER TABLE `plantillas_notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `reservaciones`
+--
+ALTER TABLE `reservaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `servicios`
+--
+ALTER TABLE `servicios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
+-- AUTO_INCREMENT de la tabla `sucursales`
+--
+ALTER TABLE `sucursales`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `bloqueos_horario`
+--
+ALTER TABLE `bloqueos_horario`
+  ADD CONSTRAINT `bloqueos_horario_ibfk_1` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `dias_feriados`
+--
+ALTER TABLE `dias_feriados`
+  ADD CONSTRAINT `dias_feriados_ibfk_1` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `especialistas`
+--
+ALTER TABLE `especialistas`
+  ADD CONSTRAINT `especialistas_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `especialistas_ibfk_2` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `especialistas_servicios`
+--
+ALTER TABLE `especialistas_servicios`
+  ADD CONSTRAINT `especialistas_servicios_ibfk_1` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `especialistas_servicios_ibfk_2` FOREIGN KEY (`servicio_id`) REFERENCES `servicios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `horarios_especialistas`
+--
+ALTER TABLE `horarios_especialistas`
+  ADD CONSTRAINT `horarios_especialistas_ibfk_1` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  ADD CONSTRAINT `pagos_ibfk_1` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `paquetes_servicios_items`
+--
+ALTER TABLE `paquetes_servicios_items`
+  ADD CONSTRAINT `paquetes_servicios_items_ibfk_1` FOREIGN KEY (`paquete_id`) REFERENCES `paquetes_servicios` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `paquetes_servicios_items_ibfk_2` FOREIGN KEY (`servicio_id`) REFERENCES `servicios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `plantillas_notificaciones`
+--
+ALTER TABLE `plantillas_notificaciones`
+  ADD CONSTRAINT `plantillas_notificaciones_ibfk_1` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `reservaciones`
+--
+ALTER TABLE `reservaciones`
+  ADD CONSTRAINT `reservaciones_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `reservaciones_ibfk_2` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `reservaciones_ibfk_3` FOREIGN KEY (`servicio_id`) REFERENCES `servicios` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `reservaciones_ibfk_4` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `servicios`
+--
+ALTER TABLE `servicios`
+  ADD CONSTRAINT `servicios_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias_servicios` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
