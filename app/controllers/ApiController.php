@@ -167,4 +167,81 @@ class ApiController extends BaseController {
         
         $this->json(['branches' => $branches]);
     }
+    
+    /**
+     * Crear sucursal vía API
+     */
+    public function createBranch() {
+        $this->requireAuth();
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
+        
+        // Leer datos JSON
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($data['nombre']) || empty($data['nombre'])) {
+            $this->json(['success' => false, 'message' => 'El nombre es obligatorio'], 400);
+        }
+        
+        try {
+            $id = $this->db->insert(
+                "INSERT INTO sucursales (nombre, direccion, ciudad, estado, codigo_postal, telefono, email, horario_apertura, horario_cierre, activo) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
+                [
+                    $data['nombre'],
+                    $data['direccion'] ?? null,
+                    $data['ciudad'] ?? null,
+                    $data['estado'] ?? null,
+                    $data['codigo_postal'] ?? null,
+                    $data['telefono'] ?? null,
+                    $data['email'] ?? null,
+                    $data['horario_apertura'] ?? '08:00',
+                    $data['horario_cierre'] ?? '20:00'
+                ]
+            );
+            
+            logAction('branch_create', 'Sucursal creada vía API: ' . $data['nombre']);
+            $this->json(['success' => true, 'id' => $id]);
+        } catch (Exception $e) {
+            $this->json(['success' => false, 'message' => 'Error al crear la sucursal'], 500);
+        }
+    }
+    
+    /**
+     * Crear servicio vía API
+     */
+    public function createService() {
+        $this->requireAuth();
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
+        
+        // Leer datos JSON
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($data['nombre']) || empty($data['nombre'])) {
+            $this->json(['success' => false, 'message' => 'El nombre es obligatorio'], 400);
+        }
+        
+        if (!isset($data['categoria_id']) || empty($data['categoria_id'])) {
+            $this->json(['success' => false, 'message' => 'La categoría es obligatoria'], 400);
+        }
+        
+        try {
+            $id = $this->db->insert(
+                "INSERT INTO servicios (categoria_id, nombre, descripcion, duracion_minutos, precio, precio_oferta, activo) 
+                 VALUES (?, ?, ?, ?, ?, ?, 1)",
+                [
+                    $data['categoria_id'],
+                    $data['nombre'],
+                    $data['descripcion'] ?? null,
+                    $data['duracion_minutos'] ?? 30,
+                    $data['precio'] ?? 0,
+                    $data['precio_oferta'] ?? null
+                ]
+            );
+            
+            logAction('service_create', 'Servicio creado vía API: ' . $data['nombre']);
+            $this->json(['success' => true, 'id' => $id]);
+        } catch (Exception $e) {
+            $this->json(['success' => false, 'message' => 'Error al crear el servicio'], 500);
+        }
+    }
 }

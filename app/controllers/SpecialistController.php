@@ -66,6 +66,9 @@ class SpecialistController extends BaseController {
              ORDER BY c.nombre, s.nombre"
         );
         
+        // Obtener categorías para el modal de servicios
+        $categories = $this->db->fetchAll("SELECT id, nombre FROM categorias_servicios WHERE activo = 1 ORDER BY nombre");
+        
         if ($this->isPost()) {
             $nombre = $this->post('nombre');
             $apellidos = $this->post('apellidos');
@@ -130,6 +133,7 @@ class SpecialistController extends BaseController {
             'title' => 'Nuevo Especialista',
             'branches' => $branches,
             'services' => $services,
+            'categories' => $categories,
             'error' => $error
         ]);
     }

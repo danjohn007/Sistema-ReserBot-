@@ -122,7 +122,9 @@ $routes = [
     '/api/disponibilidad' => ['controller' => 'ApiController', 'action' => 'availability'],
     '/api/especialistas' => ['controller' => 'ApiController', 'action' => 'specialists'],
     '/api/servicios' => ['controller' => 'ApiController', 'action' => 'services'],
+    '/api/servicios/crear' => ['controller' => 'ApiController', 'action' => 'createService'],
     '/api/sucursales' => ['controller' => 'ApiController', 'action' => 'branches'],
+    '/api/sucursales/crear' => ['controller' => 'ApiController', 'action' => 'createBranch'],
 ];
 
 // Buscar la ruta
