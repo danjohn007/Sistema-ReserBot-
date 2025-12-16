@@ -5,9 +5,9 @@
         </a>
     </div>
     
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6">
         <!-- Schedule Form -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl mx-auto">
             <h2 class="text-xl font-bold text-gray-800 mb-6">Horarios Semanales</h2>
             
             <form method="POST" action="<?= url('/especialistas/horarios?id=' . $specialist['id']) ?>">
@@ -74,7 +74,7 @@
                                             <input type="time" name="hora_inicio_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_inicio_bloqueo']) ? substr($daySchedule['hora_inicio_bloqueo'], 0, 5) : '13:00' ?>"
                                                    class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
-                                            <span class="text-xs text-gray-500">→</span>
+                                            <span class="text-xs text-gray-500 font-semibold">a</span>
                                             <input type="time" name="hora_fin_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_fin_bloqueo']) ? substr($daySchedule['hora_fin_bloqueo'], 0, 5) : '14:00' ?>"
                                                    class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
@@ -96,6 +96,7 @@
         </div>
         
         <!-- Blocks -->
+        <!-- FUNCIONALIDAD COMENTADA: Se mantiene código por si se requiere en el futuro
         <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-gray-800">Bloqueos de Horario</h2>
@@ -105,7 +106,6 @@
                 </button>
             </div>
             
-            <!-- Add Block Form -->
             <div id="blockForm" class="hidden mb-6 p-4 bg-gray-50 rounded-lg">
                 <form method="POST" action="<?= url('/especialistas/horarios?id=' . $specialist['id']) ?>">
                     <input type="hidden" name="action" value="add_block">
@@ -150,7 +150,6 @@
                 </form>
             </div>
             
-            <!-- Blocks List -->
             <?php if (empty($blocks)): ?>
             <div class="text-center py-8 text-gray-500">
                 <i class="fas fa-calendar-check text-4xl mb-3"></i>
@@ -182,6 +181,7 @@
             </div>
             <?php endif; ?>
         </div>
+        -->
     </div>
 </div>
 
