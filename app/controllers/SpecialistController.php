@@ -290,6 +290,14 @@ class SpecialistController extends BaseController {
             $action = $this->post('action');
             
             if ($action == 'save_schedule') {
+                // Obtener intervalo de espacios
+                $intervalo_espacios = (int)$this->post('intervalo_espacios', 60);
+                
+                // Validar que el intervalo sea 30 o 60
+                if (!in_array($intervalo_espacios, [30, 60])) {
+                    $intervalo_espacios = 60;
+                }
+                
                 // Eliminar horarios anteriores
                 $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$id]);
                 
@@ -299,11 +307,46 @@ class SpecialistController extends BaseController {
                     $fin = $this->post('hora_fin_' . $day);
                     $activo = $this->post('activo_' . $day) ? 1 : 0;
                     
+                    // Bloqueo
+                    $bloqueo_activo = $this->post('bloqueo_activo_' . $day) ? 1 : 0;
+                    $hora_inicio_bloqueo = $this->post('hora_inicio_bloqueo_' . $day);
+                    $hora_fin_bloqueo = $this->post('hora_fin_bloqueo_' . $day);
+                    
                     if ($activo && $inicio && $fin) {
+                        // Validar que la hora de inicio sea menor que la hora de fin
+                        if (strtotime($inicio) >= strtotime($fin)) {
+                            setFlashMessage('error', 'La hora de inicio debe ser menor que la hora de fin.');
+                            redirect('/especialistas/horarios?id=' . $id);
+                            return;
+                        }
+                        
+                        // Validar bloqueo si está activo
+                        if ($bloqueo_activo && $hora_inicio_bloqueo && $hora_fin_bloqueo) {
+                            // El bloqueo debe estar dentro del horario laboral
+                            if (strtotime($hora_inicio_bloqueo) < strtotime($inicio) || 
+                                strtotime($hora_fin_bloqueo) > strtotime($fin)) {
+                                setFlashMessage('error', 'El horario de bloqueo debe estar dentro del horario laboral.');
+                                redirect('/especialistas/horarios?id=' . $id);
+                                return;
+                            }
+                            
+                            // La hora de inicio del bloqueo debe ser menor que la de fin
+                            if (strtotime($hora_inicio_bloqueo) >= strtotime($hora_fin_bloqueo)) {
+                                setFlashMessage('error', 'La hora de inicio del bloqueo debe ser menor que la hora de fin.');
+                                redirect('/especialistas/horarios?id=' . $id);
+                                return;
+                            }
+                        }
+                        
                         $this->db->insert(
-                            "INSERT INTO horarios_especialistas (especialista_id, dia_semana, hora_inicio, hora_fin, activo) 
-                             VALUES (?, ?, ?, ?, 1)",
-                            [$id, $day, $inicio, $fin]
+                            "INSERT INTO horarios_especialistas 
+                             (especialista_id, dia_semana, hora_inicio, hora_fin, activo, intervalo_espacios, 
+                              hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo) 
+                             VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)",
+                            [$id, $day, $inicio, $fin, $intervalo_espacios, 
+                             $bloqueo_activo ? $hora_inicio_bloqueo : null, 
+                             $bloqueo_activo ? $hora_fin_bloqueo : null, 
+                             $bloqueo_activo]
                         );
                     }
                 }

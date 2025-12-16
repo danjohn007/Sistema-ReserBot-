@@ -13,6 +13,18 @@
             <form method="POST" action="<?= url('/especialistas/horarios?id=' . $specialist['id']) ?>">
                 <input type="hidden" name="action" value="save_schedule">
                 
+                <!-- Intervalo de Espacios -->
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-clock mr-2 text-blue-600"></i>Intervalo de espacios (minutos)
+                    </label>
+                    <select name="intervalo_espacios" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="30" <?= ($schedules && reset($schedules)['intervalo_espacios'] == 30) ? 'selected' : '' ?>>30 minutos</option>
+                        <option value="60" <?= (!$schedules || reset($schedules)['intervalo_espacios'] == 60) ? 'selected' : '' ?>>60 minutos (1 hora)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Define el tiempo entre cada cita disponible</p>
+                </div>
+                
                 <div class="space-y-4">
                     <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
                     <?php $daySchedule = $schedules[$dayNum] ?? null; ?>
@@ -27,18 +39,48 @@
                             </label>
                         </div>
                         
-                        <div id="day_<?= $dayNum ?>_times" class="grid grid-cols-2 gap-4 <?= $daySchedule ? '' : 'opacity-50' ?>">
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Hora Inicio</label>
-                                <input type="time" name="hora_inicio_<?= $dayNum ?>" 
-                                       value="<?= $daySchedule ? substr($daySchedule['hora_inicio'], 0, 5) : '09:00' ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <div id="day_<?= $dayNum ?>_times" class="space-y-3 <?= $daySchedule ? '' : 'opacity-50' ?>">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Hora Inicio</label>
+                                    <input type="time" name="hora_inicio_<?= $dayNum ?>" 
+                                           value="<?= $daySchedule ? substr($daySchedule['hora_inicio'], 0, 5) : '09:00' ?>"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Hora Fin</label>
+                                    <input type="time" name="hora_fin_<?= $dayNum ?>" 
+                                           value="<?= $daySchedule ? substr($daySchedule['hora_fin'], 0, 5) : '18:00' ?>"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Hora Fin</label>
-                                <input type="time" name="hora_fin_<?= $dayNum ?>" 
-                                       value="<?= $daySchedule ? substr($daySchedule['hora_fin'], 0, 5) : '18:00' ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            
+                            <!-- Bloqueo de Horario -->
+                            <div class="border-t border-gray-200 pt-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="flex items-center text-xs text-gray-600">
+                                        <input type="checkbox" name="bloqueo_activo_<?= $dayNum ?>" value="1" 
+                                               <?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'checked' : '' ?>
+                                               class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 mr-2"
+                                               onchange="toggleBlock(<?= $dayNum ?>)">
+                                        <span class="font-medium">Bloquear horas</span>
+                                    </label>
+                                </div>
+                                
+                                <div id="block_<?= $dayNum ?>_times" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? '' : 'hidden' ?>">
+                                    <div class="bg-orange-50 border border-orange-200 rounded p-2">
+                                        <label class="block text-xs text-gray-500 mb-1">Horario Bloqueo</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="time" name="hora_inicio_bloqueo_<?= $dayNum ?>" 
+                                                   value="<?= ($daySchedule && $daySchedule['hora_inicio_bloqueo']) ? substr($daySchedule['hora_inicio_bloqueo'], 0, 5) : '13:00' ?>"
+                                                   class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
+                                            <span class="text-xs text-gray-500">→</span>
+                                            <input type="time" name="hora_fin_bloqueo_<?= $dayNum ?>" 
+                                                   value="<?= ($daySchedule && $daySchedule['hora_fin_bloqueo']) ? substr($daySchedule['hora_fin_bloqueo'], 0, 5) : '14:00' ?>"
+                                                   class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -151,6 +193,16 @@ function toggleDay(dayNum) {
         times.classList.remove('opacity-50');
     } else {
         times.classList.add('opacity-50');
+    }
+}
+
+function toggleBlock(dayNum) {
+    const checkbox = document.querySelector(`input[name="bloqueo_activo_${dayNum}"]`);
+    const blockTimes = document.getElementById(`block_${dayNum}_times`);
+    if (checkbox.checked) {
+        blockTimes.classList.remove('hidden');
+    } else {
+        blockTimes.classList.add('hidden');
     }
 }
 </script>
