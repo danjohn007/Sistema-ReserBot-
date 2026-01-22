@@ -217,7 +217,7 @@ $rolId = $user['rol_id'];
                     </p>
                     <?php if ($rolId != ROLE_CLIENT): ?>
                     <p class="text-sm text-gray-500">
-                        Cliente: <?= e($appt['cliente_nombre'] . ' ' . $appt['cliente_apellidos']) ?>
+                        Cliente: <?= e($appt['cliente_nombre_completo']) ?>
                     </p>
                     <?php else: ?>
                     <p class="text-sm text-gray-500">

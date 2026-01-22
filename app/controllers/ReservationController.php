@@ -21,11 +21,13 @@ class ReservationController extends BaseController {
         $fecha = $this->get('fecha');
         $sucursal_id = $this->get('sucursal_id');
         
-        $sql = "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+        $sql = "SELECT r.*, 
+                       COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                       u.nombre as cliente_nombre, u.apellidos as cliente_apellidos, u.email as cliente_email, u.telefono as cliente_telefono,
                        s.nombre as servicio_nombre, suc.nombre as sucursal_nombre,
                        ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
                 FROM reservaciones r
-                JOIN usuarios u ON r.cliente_id = u.id
+                LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
                 JOIN sucursales suc ON r.sucursal_id = suc.id
                 JOIN especialistas e ON r.especialista_id = e.id
@@ -157,10 +159,8 @@ class ReservationController extends BaseController {
             $hora_inicio = $this->post('hora_inicio');
             $notas_cliente = $this->post('notas_cliente');
             
-            // Validar que el cliente_id no sea null
-            if (empty($cliente_id)) {
-                $error = 'Debe seleccionar un cliente para la reservación.';
-            } elseif (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
+            // Validar campos obligatorios (cliente_id puede ser null para reservas de chatbot)
+            if (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
                 $error = 'Todos los campos son obligatorios.';
             } else {
                 // Obtener información del servicio
@@ -239,12 +239,14 @@ class ReservationController extends BaseController {
         $id = $this->get('id');
         
         $reservation = $this->db->fetch(
-            "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos, u.email as cliente_email, u.telefono as cliente_telefono,
+            "SELECT r.*, 
+                    COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                    u.nombre as cliente_nombre, u.apellidos as cliente_apellidos, u.email as cliente_email, u.telefono as cliente_telefono,
                     s.nombre as servicio_nombre, s.descripcion as servicio_descripcion,
                     suc.nombre as sucursal_nombre, suc.direccion as sucursal_direccion, suc.telefono as sucursal_telefono,
                     ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
              FROM reservaciones r
-             JOIN usuarios u ON r.cliente_id = u.id
+             LEFT JOIN usuarios u ON r.cliente_id = u.id
              JOIN servicios s ON r.servicio_id = s.id
              JOIN sucursales suc ON r.sucursal_id = suc.id
              JOIN especialistas e ON r.especialista_id = e.id

@@ -75,7 +75,10 @@
                         <?= e($res['codigo']) ?>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="font-medium text-gray-800"><?= e($res['cliente_nombre'] . ' ' . $res['cliente_apellidos']) ?></p>
+                        <p class="font-medium text-gray-800"><?= e($res['cliente_nombre_completo']) ?></p>
+                        <?php if ($res['cliente_email']): ?>
+                        <p class="text-sm text-gray-500"><?= e($res['cliente_email']) ?></p>
+                        <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
                         <?= e($res['servicio_nombre']) ?>

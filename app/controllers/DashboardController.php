@@ -72,11 +72,13 @@ class DashboardController extends BaseController {
         
         // Próximas citas
         $upcomingAppointments = $this->db->fetchAll(
-            "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+            "SELECT r.*, 
+                    COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                    u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                     s.nombre as servicio_nombre, suc.nombre as sucursal_nombre,
                     e.id as esp_id, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
              FROM reservaciones r
-             JOIN usuarios u ON r.cliente_id = u.id
+             LEFT JOIN usuarios u ON r.cliente_id = u.id
              JOIN servicios s ON r.servicio_id = s.id
              JOIN sucursales suc ON r.sucursal_id = suc.id
              JOIN especialistas e ON r.especialista_id = e.id
@@ -141,11 +143,13 @@ class DashboardController extends BaseController {
         
         // Próximas citas
         $upcomingAppointments = $this->db->fetchAll(
-            "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+            "SELECT r.*, 
+                    COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                    u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                     s.nombre as servicio_nombre,
                     e.id as esp_id, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
              FROM reservaciones r
-             JOIN usuarios u ON r.cliente_id = u.id
+             LEFT JOIN usuarios u ON r.cliente_id = u.id
              JOIN servicios s ON r.servicio_id = s.id
              JOIN especialistas e ON r.especialista_id = e.id
              JOIN usuarios ue ON e.usuario_id = ue.id
@@ -198,10 +202,12 @@ class DashboardController extends BaseController {
         
         // Próximas citas
         $upcomingAppointments = $this->db->fetchAll(
-            "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+            "SELECT r.*, 
+                    COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                    u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                     u.telefono as cliente_telefono, s.nombre as servicio_nombre
              FROM reservaciones r
-             JOIN usuarios u ON r.cliente_id = u.id
+             LEFT JOIN usuarios u ON r.cliente_id = u.id
              JOIN servicios s ON r.servicio_id = s.id
              WHERE r.especialista_id = ? AND r.fecha_cita >= CURDATE() 
              AND r.estado IN ('pendiente', 'confirmada')

@@ -34,10 +34,17 @@
                     <h3 class="font-semibold text-gray-800 mb-3">
                         <i class="fas fa-user text-primary mr-2"></i>Cliente
                     </h3>
-                    <p class="font-medium"><?= e($reservation['cliente_nombre'] . ' ' . $reservation['cliente_apellidos']) ?></p>
+                    <p class="font-medium"><?= e($reservation['cliente_nombre_completo']) ?></p>
+                    <?php if ($reservation['cliente_email']): ?>
                     <p class="text-sm text-gray-600"><?= e($reservation['cliente_email']) ?></p>
+                    <?php endif; ?>
                     <?php if ($reservation['cliente_telefono']): ?>
                     <p class="text-sm text-gray-600"><?= e($reservation['cliente_telefono']) ?></p>
+                    <?php endif; ?>
+                    <?php if (!$reservation['cliente_id']): ?>
+                    <p class="text-xs text-orange-600 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>Reserva desde chatbot
+                    </p>
                     <?php endif; ?>
                 </div>
                 

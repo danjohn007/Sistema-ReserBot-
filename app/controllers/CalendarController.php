@@ -61,10 +61,12 @@ class CalendarController extends BaseController {
         $sucursal_id = $this->get('sucursal_id');
         
         $filters = [];
-        $sql = "SELECT r.*, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
+        $sql = "SELECT r.*, 
+                       COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
+                       u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                        s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
                 FROM reservaciones r
-                JOIN usuarios u ON r.cliente_id = u.id
+                LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
                 JOIN especialistas e ON r.especialista_id = e.id
                 JOIN usuarios ue ON e.usuario_id = ue.id
@@ -106,7 +108,7 @@ class CalendarController extends BaseController {
             
             $events[] = [
                 'id' => $r['id'],
-                'title' => $r['servicio_nombre'] . ' - ' . $r['cliente_nombre'] . ' ' . $r['cliente_apellidos'],
+                'title' => $r['servicio_nombre'] . ' - ' . $r['cliente_nombre_completo'],
                 'start' => $r['fecha_cita'] . 'T' . $r['hora_inicio'],
                 'end' => $r['fecha_cita'] . 'T' . $r['hora_fin'],
                 'backgroundColor' => $color,
@@ -114,7 +116,7 @@ class CalendarController extends BaseController {
                 'extendedProps' => [
                     'codigo' => $r['codigo'],
                     'estado' => $r['estado'],
-                    'cliente' => $r['cliente_nombre'] . ' ' . $r['cliente_apellidos'],
+                    'cliente' => $r['cliente_nombre_completo'],
                     'especialista' => $r['especialista_nombre'] . ' ' . $r['especialista_apellidos'],
                     'servicio' => $r['servicio_nombre'],
                     'precio' => formatMoney($r['precio_total'])
