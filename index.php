@@ -7,6 +7,9 @@
  * o cuando .htaccess no es procesado por el servidor.
  */
 
+// Establecer codificación UTF-8
+header('Content-Type: text/html; charset=UTF-8');
+
 // Establecer la ruta deseada para la página de inicio
 define('RESERBOT_ROUTE', '/');
 

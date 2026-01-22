@@ -16,6 +16,10 @@ class Database {
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
+            
+            // Asegurar UTF-8 en la conexión
+            $this->connection->exec("SET NAMES utf8mb4");
+            $this->connection->exec("SET CHARACTER SET utf8mb4");
         } catch (PDOException $e) {
             die("Error de conexión a la base de datos: " . $e->getMessage());
         }

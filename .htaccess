@@ -10,6 +10,12 @@
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
+# Configuración de codificación UTF-8
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .css .js .xml .json .rss .atom .php
+</IfModule>
+
 # Fallback para cuando mod_rewrite no está disponible
 <IfModule !mod_rewrite.c>
     # Si mod_rewrite no está disponible, los usuarios pueden acceder

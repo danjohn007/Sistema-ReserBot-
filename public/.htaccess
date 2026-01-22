@@ -7,6 +7,12 @@
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
+# Configuración de codificación UTF-8
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .css .js .xml .json .rss .atom .php
+</IfModule>
+
 # Configuración de seguridad
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"

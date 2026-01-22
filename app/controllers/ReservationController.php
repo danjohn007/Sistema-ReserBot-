@@ -493,6 +493,11 @@ class ReservationController extends BaseController {
      * Crea una notificación
      */
     private function createNotification($userId, $tipo, $titulo, $mensaje) {
+        // No crear notificación si el usuario_id es NULL (reservas desde chatbot)
+        if ($userId === null || empty($userId)) {
+            return;
+        }
+        
         $this->db->insert(
             "INSERT INTO notificaciones (usuario_id, tipo, titulo, mensaje) VALUES (?, ?, ?, ?)",
             [$userId, $tipo, $titulo, $mensaje]

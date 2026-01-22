@@ -6,6 +6,9 @@
  * no está habilitado o .htaccess no es procesado.
  */
 
+// Establecer codificación UTF-8
+header('Content-Type: text/html; charset=UTF-8');
+
 // Establecer la ruta deseada
 define('RESERBOT_ROUTE', '/login');
 

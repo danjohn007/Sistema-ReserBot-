@@ -6,7 +6,7 @@
     </div>
     
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-6">Nueva Reservación</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Nueva Reservaci&oacute;n</h2>
         
         <?php if (!empty($error)): ?>
         <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">

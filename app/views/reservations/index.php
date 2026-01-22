@@ -5,7 +5,7 @@
     </div>
     <a href="<?= url('/reservaciones/nueva') ?>" 
        class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition">
-        <i class="fas fa-plus mr-2"></i>Nueva Reservación
+        <i class="fas fa-plus mr-2"></i>Nueva Reservaci&oacute;n
     </a>
 </div>
 
@@ -59,7 +59,7 @@
         <table class="w-full">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">C&oacute;digo</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Especialista</th>

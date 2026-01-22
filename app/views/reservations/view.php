@@ -10,7 +10,7 @@
         <div class="p-6 border-b bg-gray-50">
             <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Reservación <?= e($reservation['codigo']) ?></h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Reservaci&oacute;n <?= e($reservation['codigo']) ?></h2>
                     <p class="text-gray-500">Creada el <?= formatDate($reservation['created_at'], 'd/m/Y H:i') ?></p>
                 </div>
                 <span class="px-4 py-2 text-sm rounded-full <?= getStatusBadgeClass($reservation['estado']) ?>">
@@ -114,7 +114,7 @@
             <?php if ($reservation['estado'] == 'cancelada'): ?>
             <div class="mt-4 p-4 bg-red-50 rounded-lg">
                 <h3 class="font-semibold text-red-800 mb-2">
-                    <i class="fas fa-times-circle text-red-600 mr-2"></i>Cancelación
+                    <i class="fas fa-times-circle text-red-600 mr-2"></i>Cancelaci&oacute;n
                 </h3>
                 <p class="text-gray-600">Cancelada el <?= formatDate($reservation['fecha_cancelacion'], 'd/m/Y H:i') ?></p>
                 <?php if ($reservation['motivo_cancelacion']): ?>
