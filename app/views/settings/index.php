@@ -6,7 +6,7 @@
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <i class="fas fa-cog text-blue-600 text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-800">Configuración General</h3>
+            <h3 class="font-semibold text-gray-800">Configuraci&oacute;n General</h3>
             <p class="text-sm text-gray-500 mt-1">Nombre del sitio, logotipo, contacto</p>
         </a>
         
@@ -22,7 +22,7 @@
             <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                 <i class="fas fa-envelope text-green-600 text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-800">Configuración de Correo</h3>
+            <h3 class="font-semibold text-gray-800">Configuraci&oacute;n de Correo</h3>
             <p class="text-sm text-gray-500 mt-1">Servidor SMTP y notificaciones</p>
         </a>
         
@@ -38,8 +38,8 @@
             <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
                 <i class="fas fa-calendar-times text-red-600 text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-800">Días Feriados</h3>
-            <p class="text-sm text-gray-500 mt-1">Gestiona los días no laborables</p>
+            <h3 class="font-semibold text-gray-800">D&iacute;as Feriados</h3>
+            <p class="text-sm text-gray-500 mt-1">Gestiona los d&iacute;as no laborables</p>
         </a>
         
         <a href="<?= url('/notificaciones/plantillas') ?>" class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">

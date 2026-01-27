@@ -1,12 +1,12 @@
 <div class="max-w-2xl mx-auto">
     <div class="mb-6">
         <a href="<?= url('/categorias') ?>" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-arrow-left mr-2"></i>Volver a Categorías
+            <i class="fas fa-arrow-left mr-2"></i>Volver a Categor&iacute;as
         </a>
     </div>
     
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-6">Nueva Categoría</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Nueva Categor&iacute;a</h2>
         
         <?php if (!empty($error)): ?>
         <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
@@ -20,14 +20,14 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                     <input type="text" name="nombre" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                           placeholder="Nombre de la categoría">
+                           placeholder="Nombre de la categor&iacute;a">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripci&oacute;n</label>
                     <textarea name="descripcion" rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                              placeholder="Descripción de la categoría"></textarea>
+                              placeholder="Descripci&oacute;n de la categor&iacute;a"></textarea>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">

@@ -55,7 +55,7 @@
 <!-- Charts -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Ingresos por Día</h3>
+        <h3 class="font-semibold text-gray-800 mb-4">Ingresos por D&iacute;a</h3>
         <canvas id="dailyChart" height="200"></canvas>
     </div>
     

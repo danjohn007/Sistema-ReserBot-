@@ -6,7 +6,7 @@
     </div>
     
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-6">Configuración General</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Configuraci&oacute;n General</h2>
         
         <?php if (!empty($success)): ?>
         <div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
@@ -49,7 +49,7 @@
                 
                 <!-- Contact -->
                 <div class="border-b pb-6">
-                    <h3 class="font-semibold text-gray-700 mb-4">Información de Contacto</h3>
+                    <h3 class="font-semibold text-gray-700 mb-4">Informaci&oacute;n de Contacto</h3>
                     
                     <div class="space-y-4">
                         <div>
@@ -77,7 +77,7 @@
                 
                 <!-- Reservations Settings -->
                 <div>
-                    <h3 class="font-semibold text-gray-700 mb-4">Configuración de Reservaciones</h3>
+                    <h3 class="font-semibold text-gray-700 mb-4">Configuraci&oacute;n de Reservaciones</h3>
                     
                     <div class="space-y-4">
                         <label class="flex items-center">

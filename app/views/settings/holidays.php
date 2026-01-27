@@ -7,7 +7,7 @@
     
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-gray-800">Días Feriados</h2>
+            <h2 class="text-xl font-bold text-gray-800">D&iacute;as Feriados</h2>
             <button onclick="document.getElementById('addHolidayForm').classList.toggle('hidden')" 
                     class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">
                 <i class="fas fa-plus mr-2"></i>Agregar Feriado
@@ -34,7 +34,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                         <input type="text" name="nombre" required
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                               placeholder="Ej: Día de la Independencia">
+                               placeholder="Ej: D&iacute;a de la Independencia">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
@@ -90,7 +90,7 @@
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="holiday_id" value="<?= $holiday['id'] ?>">
                                 <button type="submit" class="text-red-600 hover:text-red-800"
-                                        onclick="return confirm('¿Eliminar este día feriado?')">
+                                        onclick="return confirm('&iquest;Eliminar este d&iacute;a feriado?')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -104,7 +104,7 @@
         <?php if (empty($holidays)): ?>
         <div class="text-center py-8 text-gray-500">
             <i class="fas fa-calendar-times text-4xl mb-3"></i>
-            <p>No hay días feriados configurados</p>
+            <p>No hay d&iacute;as feriados configurados</p>
         </div>
         <?php endif; ?>
     </div>

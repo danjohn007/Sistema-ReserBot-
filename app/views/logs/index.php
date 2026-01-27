@@ -47,7 +47,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha/Hora</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripci&oacute;n</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
             </tr>
         </thead>

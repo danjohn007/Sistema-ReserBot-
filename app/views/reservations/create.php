@@ -121,7 +121,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Notas adicionales</label>
                 <textarea name="notas_cliente" rows="3"
                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                          placeholder="Información adicional para el especialista..."></textarea>
+                          placeholder="Informaci&oacute;n adicional para el especialista..."></textarea>
             </div>
             
             <div class="flex justify-end space-x-3">
@@ -131,7 +131,7 @@
                 </a>
                 <button type="submit" 
                         class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
-                    <i class="fas fa-calendar-check mr-2"></i>Confirmar Reservación
+                    <i class="fas fa-calendar-check mr-2"></i>Confirmar Reservaci&oacute;n
                 </button>
             </div>
         </form>

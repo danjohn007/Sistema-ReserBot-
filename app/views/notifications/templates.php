@@ -26,7 +26,7 @@
         <div class="text-center py-12 text-gray-500">
             <i class="fas fa-bell-slash text-4xl mb-4"></i>
             <p>No hay plantillas configuradas</p>
-            <p class="text-sm mt-2">Crea plantillas personalizadas para cada tipo de notificación</p>
+            <p class="text-sm mt-2">Crea plantillas personalizadas para cada tipo de notificaci&oacute;n</p>
         </div>
         <?php else: ?>
         
@@ -137,16 +137,16 @@
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Notificación *</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Notificaci&oacute;n *</label>
                             <select name="tipo" id="tipo" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                                 <option value="">-- Seleccione --</option>
                                 <option value="cita_nueva">Cita Nueva</option>
-                                <option value="confirmacion">Confirmación</option>
+                                <option value="confirmacion">Confirmaci&oacute;n</option>
                                 <option value="recordatorio_24h">Recordatorio 24h</option>
                                 <option value="recordatorio_1h">Recordatorio 1h</option>
-                                <option value="cancelacion">Cancelación</option>
-                                <option value="reprogramacion">Reprogramación</option>
+                                <option value="cancelacion">Cancelaci&oacute;n</option>
+                                <option value="reprogramacion">Reprogramaci&oacute;n</option>
                             </select>
                         </div>
                         
@@ -184,7 +184,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Contenido del Mensaje *</label>
                         <textarea name="contenido" id="contenido" rows="8" required
                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                                  placeholder="Contenido de la notificación..."></textarea>
+                                  placeholder="Contenido de la notificaci&oacute;n..."></textarea>
                         <p class="text-xs text-gray-500 mt-1">
                             Variables disponibles: {cliente_nombre}, {fecha_cita}, {hora_cita}, {especialista_nombre}, {servicio_nombre}, {sucursal_nombre}
                         </p>

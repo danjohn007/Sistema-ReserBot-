@@ -75,7 +75,7 @@
                         </a>
                         <a href="#features" 
                            class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition">
-                            <i class="fas fa-info-circle mr-2"></i>Más Información
+                            <i class="fas fa-info-circle mr-2"></i>M&aacute;s Informaci&oacute;n
                         </a>
                     </div>
                 </div>

@@ -6,7 +6,7 @@
     </div>
     
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-6">Configuración de Correo</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Configuraci&oacute;n de Correo</h2>
         
         <?php if (!empty($success)): ?>
         <div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">

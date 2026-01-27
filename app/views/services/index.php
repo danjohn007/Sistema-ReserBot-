@@ -14,8 +14,8 @@
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duración</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categor&iacute;a</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duraci&oacute;n</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>

@@ -15,7 +15,7 @@
         <?php endif; ?>
         
         <form method="POST" action="<?= url('/especialistas/editar?id=' . $specialist['id']) ?>">
-            <h3 class="text-lg font-semibold text-gray-700 mb-4">Información Personal</h3>
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Informaci&oacute;n Personal</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
@@ -45,7 +45,7 @@
                 </div>
             </div>
             
-            <h3 class="text-lg font-semibold text-gray-700 mb-4">Información Profesional</h3>
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Informaci&oacute;n Profesional</h3>
             
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
@@ -116,7 +116,7 @@
                 </div>
                 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripci&oacute;n</label>
                     <textarea name="descripcion" rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"><?= e($specialist['descripcion']) ?></textarea>
                 </div>
@@ -313,10 +313,10 @@
         <form id="serviceForm" class="p-6">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Categor&iacute;a *</label>
                     <select id="service_categoria_id" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-                        <option value="">Seleccionar categoría</option>
+                        <option value="">Seleccionar categor&iacute;a</option>
                         <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat['id'] ?>"><?= e($cat['nombre']) ?></option>
                         <?php endforeach; ?>
@@ -331,10 +331,10 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripci&oacute;n</label>
                     <textarea id="service_descripcion" rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                              placeholder="Descripción del servicio"></textarea>
+                              placeholder="Descripci&oacute;n del servicio"></textarea>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">

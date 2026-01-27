@@ -17,10 +17,10 @@
         <form method="POST" action="<?= url('/servicios/crear') ?>">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Categor&iacute;a *</label>
                     <select name="categoria_id" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-                        <option value="">Seleccionar categoría</option>
+                        <option value="">Seleccionar categor&iacute;a</option>
                         <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat['id'] ?>"><?= e($cat['nombre']) ?></option>
                         <?php endforeach; ?>
@@ -35,10 +35,10 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripci&oacute;n</label>
                     <textarea name="descripcion" rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                              placeholder="Descripción del servicio"></textarea>
+                              placeholder="Descripci&oacute;n del servicio"></textarea>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">

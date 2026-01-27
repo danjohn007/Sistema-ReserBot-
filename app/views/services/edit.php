@@ -17,7 +17,7 @@
         <form method="POST" action="<?= url('/servicios/editar?id=' . $service['id']) ?>">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Categor&iacute;a *</label>
                     <select name="categoria_id" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                         <?php foreach ($categories as $cat): ?>
@@ -35,7 +35,7 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripci&oacute;n</label>
                     <textarea name="descripcion" rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"><?= e($service['descripcion']) ?></textarea>
                 </div>
