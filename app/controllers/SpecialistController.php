@@ -17,20 +17,24 @@ class SpecialistController extends BaseController {
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
             $specialists = $this->db->fetchAll(
-                "SELECT e.*, u.nombre, u.apellidos, u.email, u.telefono, s.nombre as sucursal_nombre
+                "SELECT e.*, u.nombre, u.apellidos, u.email, u.telefono, 
+                 GROUP_CONCAT(DISTINCT s.nombre ORDER BY s.nombre SEPARATOR '|') as sucursales_nombres
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
                  JOIN sucursales s ON e.sucursal_id = s.id
                  WHERE e.activo = 1
+                 GROUP BY u.id
                  ORDER BY u.nombre, u.apellidos"
             );
         } else {
             $specialists = $this->db->fetchAll(
-                "SELECT e.*, u.nombre, u.apellidos, u.email, u.telefono, s.nombre as sucursal_nombre
+                "SELECT e.*, u.nombre, u.apellidos, u.email, u.telefono,
+                 GROUP_CONCAT(DISTINCT s.nombre ORDER BY s.nombre SEPARATOR '|') as sucursales_nombres
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
                  JOIN sucursales s ON e.sucursal_id = s.id
                  WHERE e.sucursal_id = ? AND e.activo = 1
+                 GROUP BY u.id
                  ORDER BY u.nombre, u.apellidos",
                 [$user['sucursal_id']]
             );
@@ -75,7 +79,7 @@ class SpecialistController extends BaseController {
             $email = $this->post('email');
             $telefono = $this->post('telefono');
             $password = $this->post('password');
-            $sucursal_id = $this->post('sucursal_id');
+            $sucursales = isset($_POST['sucursales']) ? $_POST['sucursales'] : [];
             $profesion = $this->post('profesion');
             $especialidad = $this->post('especialidad');
             $descripcion = $this->post('descripcion');
@@ -86,6 +90,8 @@ class SpecialistController extends BaseController {
             // Validaciones
             if (empty($nombre) || empty($apellidos) || empty($email) || empty($password)) {
                 $error = 'Los campos nombre, apellidos, email y contraseña son obligatorios.';
+            } elseif (empty($sucursales)) {
+                $error = 'Debes seleccionar al menos una sucursal.';
             } elseif (!validateEmail($email)) {
                 $error = 'Ingrese un correo electrónico válido.';
             } else {
@@ -95,32 +101,42 @@ class SpecialistController extends BaseController {
                 if ($exists) {
                     $error = 'Ya existe un usuario con este correo electrónico.';
                 } else {
+                    // Usar la primera sucursal seleccionada como sucursal principal del usuario
+                    $sucursal_principal = $sucursales[0];
+                    
                     // Crear usuario
                     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                     $userId = $this->db->insert(
                         "INSERT INTO usuarios (nombre, apellidos, email, telefono, password, rol_id, sucursal_id, email_verificado, activo) 
                          VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1)",
-                        [$nombre, $apellidos, $email, $telefono, $hashedPassword, ROLE_SPECIALIST, $sucursal_id]
+                        [$nombre, $apellidos, $email, $telefono, $hashedPassword, ROLE_SPECIALIST, $sucursal_principal]
                     );
                     
                     if ($userId) {
-                        // Crear especialista
-                        $specialistId = $this->db->insert(
-                            "INSERT INTO especialistas (usuario_id, sucursal_id, profesion, especialidad, descripcion, experiencia_anos, tarifa_base) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            [$userId, $sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base]
-                        );
-                        
-                        // Asignar servicios
-                        foreach ($servicios as $servicioId) {
-                            $this->db->insert(
-                                "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
-                                [$specialistId, $servicioId]
+                        // Crear un registro de especialista por cada sucursal seleccionada
+                        $specialistIds = [];
+                        foreach ($sucursales as $sucursal_id) {
+                            $specialistId = $this->db->insert(
+                                "INSERT INTO especialistas (usuario_id, sucursal_id, profesion, especialidad, descripcion, experiencia_anos, tarifa_base) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                [$userId, $sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base]
                             );
+                            $specialistIds[] = $specialistId;
                         }
                         
-                        logAction('specialist_create', 'Especialista creado: ' . $nombre . ' ' . $apellidos);
-                        setFlashMessage('success', 'Especialista creado correctamente.');
+                        // Asignar servicios a todos los registros de especialista creados
+                        foreach ($specialistIds as $specialistId) {
+                            foreach ($servicios as $servicioId) {
+                                $this->db->insert(
+                                    "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                                    [$specialistId, $servicioId]
+                                );
+                            }
+                        }
+                        
+                        $sucursalesCount = count($sucursales);
+                        logAction('specialist_create', "Especialista creado: $nombre $apellidos en $sucursalesCount sucursal(es)");
+                        setFlashMessage('success', 'Especialista creado correctamente en ' . $sucursalesCount . ' sucursal(es).');
                         redirect('/especialistas');
                     } else {
                         $error = 'Error al crear el especialista.';
@@ -188,6 +204,19 @@ class SpecialistController extends BaseController {
         );
         $currentServiceIds = array_column($currentServices, 'servicio_id');
         
+        // Obtener todas las sucursales donde trabaja el especialista
+        $specialistBranches = $this->db->fetchAll(
+            "SELECT DISTINCT s.id, s.nombre 
+             FROM especialistas e
+             JOIN sucursales s ON e.sucursal_id = s.id
+             WHERE e.usuario_id = ? AND s.activo = 1
+             ORDER BY s.nombre",
+            [$specialist['usuario_id']]
+        );
+        
+        // Obtener categorías para el modal de servicios
+        $categories = $this->db->fetchAll("SELECT id, nombre FROM categorias_servicios WHERE activo = 1 ORDER BY nombre");
+        
         $error = '';
         
         if ($this->isPost()) {
@@ -195,7 +224,7 @@ class SpecialistController extends BaseController {
             $apellidos = $this->post('apellidos');
             $email = $this->post('email');
             $telefono = $this->post('telefono');
-            $sucursal_id = $this->post('sucursal_id');
+            $sucursales = isset($_POST['sucursales']) ? $_POST['sucursales'] : [];
             $profesion = $this->post('profesion');
             $especialidad = $this->post('especialidad');
             $descripcion = $this->post('descripcion');
@@ -206,32 +235,46 @@ class SpecialistController extends BaseController {
             
             if (empty($nombre) || empty($apellidos) || empty($email)) {
                 $error = 'Los campos nombre, apellidos y email son obligatorios.';
+            } elseif (empty($sucursales)) {
+                $error = 'Debes seleccionar al menos una sucursal.';
             } else {
+                // Usar la primera sucursal como sucursal principal del usuario
+                $sucursal_principal = $sucursales[0];
+                
                 // Actualizar usuario
                 $this->db->update(
                     "UPDATE usuarios SET nombre = ?, apellidos = ?, email = ?, telefono = ?, sucursal_id = ? 
                      WHERE id = ?",
-                    [$nombre, $apellidos, $email, $telefono, $sucursal_id, $specialist['usuario_id']]
+                    [$nombre, $apellidos, $email, $telefono, $sucursal_principal, $specialist['usuario_id']]
                 );
                 
-                // Actualizar especialista
-                $this->db->update(
-                    "UPDATE especialistas SET sucursal_id = ?, profesion = ?, especialidad = ?, 
-                     descripcion = ?, experiencia_anos = ?, tarifa_base = ?, activo = ? WHERE id = ?",
-                    [$sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base, $activo, $id]
-                );
+                // Eliminar todos los registros de especialista actuales de este usuario
+                $this->db->delete("DELETE FROM especialistas WHERE usuario_id = ?", [$specialist['usuario_id']]);
                 
-                // Actualizar servicios
-                $this->db->delete("DELETE FROM especialistas_servicios WHERE especialista_id = ?", [$id]);
-                foreach ($servicios as $servicioId) {
-                    $this->db->insert(
-                        "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
-                        [$id, $servicioId]
+                // Crear un registro de especialista por cada sucursal seleccionada
+                $specialistIds = [];
+                foreach ($sucursales as $sucursal_id) {
+                    $specialistId = $this->db->insert(
+                        "INSERT INTO especialistas (usuario_id, sucursal_id, profesion, especialidad, descripcion, experiencia_anos, tarifa_base, activo) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        [$specialist['usuario_id'], $sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base, $activo]
                     );
+                    $specialistIds[] = $specialistId;
                 }
                 
-                logAction('specialist_update', 'Especialista actualizado: ' . $nombre . ' ' . $apellidos);
-                setFlashMessage('success', 'Especialista actualizado correctamente.');
+                // Asignar servicios a todos los registros de especialista creados
+                foreach ($specialistIds as $specialistId) {
+                    foreach ($servicios as $servicioId) {
+                        $this->db->insert(
+                            "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                            [$specialistId, $servicioId]
+                        );
+                    }
+                }
+                
+                $sucursalesCount = count($sucursales);
+                logAction('specialist_update', "Especialista actualizado: $nombre $apellidos en $sucursalesCount sucursal(es)");
+                setFlashMessage('success', 'Especialista actualizado correctamente en ' . $sucursalesCount . ' sucursal(es).');
                 redirect('/especialistas');
             }
         }
@@ -240,8 +283,10 @@ class SpecialistController extends BaseController {
             'title' => 'Editar Especialista',
             'specialist' => $specialist,
             'branches' => $branches,
+            'specialistBranches' => $specialistBranches,
             'services' => $services,
             'currentServiceIds' => $currentServiceIds,
+            'categories' => $categories,
             'error' => $error
         ]);
     }
@@ -294,14 +339,6 @@ class SpecialistController extends BaseController {
             $action = $this->post('action');
             
             if ($action == 'save_schedule') {
-                // Obtener intervalo de espacios
-                $intervalo_espacios = (int)$this->post('intervalo_espacios', 60);
-                
-                // Validar que el intervalo sea 30 o 60
-                if (!in_array($intervalo_espacios, [30, 60])) {
-                    $intervalo_espacios = 60;
-                }
-                
                 // Eliminar horarios anteriores
                 $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$id]);
                 
@@ -344,10 +381,10 @@ class SpecialistController extends BaseController {
                         
                         $this->db->insert(
                             "INSERT INTO horarios_especialistas 
-                             (especialista_id, dia_semana, hora_inicio, hora_fin, activo, intervalo_espacios, 
+                             (especialista_id, dia_semana, hora_inicio, hora_fin, activo, 
                               hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo) 
-                             VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)",
-                            [$id, $day, $inicio, $fin, $intervalo_espacios, 
+                             VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
+                            [$id, $day, $inicio, $fin, 
                              $bloqueo_activo ? $hora_inicio_bloqueo : null, 
                              $bloqueo_activo ? $hora_fin_bloqueo : null, 
                              $bloqueo_activo]

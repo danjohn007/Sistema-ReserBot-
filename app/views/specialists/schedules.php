@@ -7,84 +7,83 @@
     
     <div class="grid grid-cols-1 gap-6">
         <!-- Schedule Form -->
-        <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm p-6 max-w-7xl mx-auto">
             <h2 class="text-xl font-bold text-gray-800 mb-6">Horarios Semanales</h2>
             
             <form method="POST" action="<?= url('/especialistas/horarios?id=' . $specialist['id']) ?>">
                 <input type="hidden" name="action" value="save_schedule">
                 
-                <!-- Intervalo de Espacios -->
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-clock mr-2 text-blue-600"></i>Intervalo de espacios (minutos)
-                    </label>
-                    <select name="intervalo_espacios" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="30" <?= ($schedules && reset($schedules)['intervalo_espacios'] == 30) ? 'selected' : '' ?>>30 minutos</option>
-                        <option value="60" <?= (!$schedules || reset($schedules)['intervalo_espacios'] == 60) ? 'selected' : '' ?>>60 minutos (1 hora)</option>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">Define el tiempo entre cada cita disponible</p>
-                </div>
-                
-                <div class="space-y-4">
-                    <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
-                    <?php $daySchedule = $schedules[$dayNum] ?? null; ?>
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="activo_<?= $dayNum ?>" value="1" 
-                                       <?= $daySchedule ? 'checked' : '' ?>
-                                       class="rounded border-gray-300 text-primary focus:ring-primary"
-                                       onchange="toggleDay(<?= $dayNum ?>)">
-                                <span class="ml-2 font-medium text-gray-700"><?= $dayName ?></span>
-                            </label>
-                        </div>
-                        
-                        <div id="day_<?= $dayNum ?>_times" class="space-y-3 <?= $daySchedule ? '' : 'opacity-50' ?>">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Hora Inicio</label>
+                <div>
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">D&iacute;a</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b w-20">Activo</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b w-32">Hora Inicio</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b w-32">Hora Fin</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b w-24">Bloquear</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">Horario Bloqueo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
+                            <?php $daySchedule = $schedules[$dayNum] ?? null; ?>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-4">
+                                    <span class="font-medium text-gray-700"><?= $dayName ?></span>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <input type="checkbox" name="activo_<?= $dayNum ?>" value="1" 
+                                           <?= $daySchedule ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-primary focus:ring-primary w-5 h-5"
+                                           onchange="toggleDay(<?= $dayNum ?>)">
+                                </td>
+                                <td class="px-4 py-4">
                                     <input type="time" name="hora_inicio_<?= $dayNum ?>" 
+                                           id="hora_inicio_<?= $dayNum ?>"
                                            value="<?= $daySchedule ? substr($daySchedule['hora_inicio'], 0, 5) : '09:00' ?>"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Hora Fin</label>
+                                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+                                </td>
+                                <td class="px-4 py-4">
                                     <input type="time" name="hora_fin_<?= $dayNum ?>" 
+                                           id="hora_fin_<?= $dayNum ?>"
                                            value="<?= $daySchedule ? substr($daySchedule['hora_fin'], 0, 5) : '18:00' ?>"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                </div>
-                            </div>
-                            
-                            <!-- Bloqueo de Horario -->
-                            <div class="border-t border-gray-200 pt-3">
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="flex items-center text-xs text-gray-600">
-                                        <input type="checkbox" name="bloqueo_activo_<?= $dayNum ?>" value="1" 
-                                               <?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'checked' : '' ?>
-                                               class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 mr-2"
-                                               onchange="toggleBlock(<?= $dayNum ?>)">
-                                        <span class="font-medium">Bloquear horas</span>
-                                    </label>
-                                </div>
-                                
-                                <div id="block_<?= $dayNum ?>_times" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? '' : 'hidden' ?>">
-                                    <div class="bg-orange-50 border border-orange-200 rounded p-2">
-                                        <label class="block text-xs text-gray-500 mb-1">Horario Bloqueo</label>
-                                        <div class="flex items-center gap-2">
+                                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <input type="checkbox" name="bloqueo_activo_<?= $dayNum ?>" value="1" 
+                                           <?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 w-5 h-5"
+                                           onchange="toggleBlock(<?= $dayNum ?>)">
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div id="block_<?= $dayNum ?>_times" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? '' : 'hidden' ?>">
+                                        <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded px-2 py-1">
                                             <input type="time" name="hora_inicio_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_inicio_bloqueo']) ? substr($daySchedule['hora_inicio_bloqueo'], 0, 5) : '13:00' ?>"
-                                                   class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
-                                            <span class="text-xs text-gray-500 font-semibold">a</span>
+                                                   class="w-20 px-2 py-1 border border-gray-300 rounded text-xs">
+                                            <span class="text-xs text-gray-500">a</span>
                                             <input type="time" name="hora_fin_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_fin_bloqueo']) ? substr($daySchedule['hora_fin_bloqueo'], 0, 5) : '14:00' ?>"
-                                                   class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
+                                                   class="w-20 px-2 py-1 border border-gray-300 rounded text-xs">
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                                    <div id="block_<?= $dayNum ?>_placeholder" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'hidden' : '' ?>">
+                                        <span class="text-xs text-gray-400 italic">Sin bloqueo</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                    <p class="text-sm text-blue-700">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Activo:</strong> Marca los d&iacute;as que trabajas. 
+                        <strong>Bloquear:</strong> Define horas de descanso (ej: comida).
+                    </p>
                 </div>
                 
                 <div class="mt-6">
@@ -188,21 +187,40 @@
 <script>
 function toggleDay(dayNum) {
     const checkbox = document.querySelector(`input[name="activo_${dayNum}"]`);
-    const times = document.getElementById(`day_${dayNum}_times`);
+    const horaInicio = document.getElementById(`hora_inicio_${dayNum}`);
+    const horaFin = document.getElementById(`hora_fin_${dayNum}`);
+    
     if (checkbox.checked) {
-        times.classList.remove('opacity-50');
+        horaInicio.disabled = false;
+        horaFin.disabled = false;
+        horaInicio.classList.remove('opacity-50', 'bg-gray-100');
+        horaFin.classList.remove('opacity-50', 'bg-gray-100');
     } else {
-        times.classList.add('opacity-50');
+        horaInicio.disabled = true;
+        horaFin.disabled = true;
+        horaInicio.classList.add('opacity-50', 'bg-gray-100');
+        horaFin.classList.add('opacity-50', 'bg-gray-100');
     }
 }
 
 function toggleBlock(dayNum) {
     const checkbox = document.querySelector(`input[name="bloqueo_activo_${dayNum}"]`);
     const blockTimes = document.getElementById(`block_${dayNum}_times`);
+    const placeholder = document.getElementById(`block_${dayNum}_placeholder`);
+    
     if (checkbox.checked) {
         blockTimes.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
     } else {
         blockTimes.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
     }
 }
+
+// Inicializar estado al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
+    toggleDay(<?= $dayNum ?>);
+    <?php endforeach; ?>
+});
 </script>

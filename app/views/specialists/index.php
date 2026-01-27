@@ -31,7 +31,33 @@
             </div>
             
             <div class="mt-4 space-y-2 text-sm text-gray-600">
-                <p><i class="fas fa-building w-5"></i><?= e($spec['sucursal_nombre']) ?></p>
+                <?php 
+                $sucursales = !empty($spec['sucursales_nombres']) ? explode('|', $spec['sucursales_nombres']) : [];
+                $totalSucursales = count($sucursales);
+                ?>
+                
+                <?php if ($totalSucursales > 0): ?>
+                <div class="flex items-start">
+                    <i class="fas fa-building w-5 mt-0.5"></i>
+                    <div class="flex-1">
+                        <?php if ($totalSucursales == 1): ?>
+                            <?= e($sucursales[0]) ?>
+                        <?php else: ?>
+                            <span><?= e($sucursales[0]) ?></span>
+                            <span class="relative group ml-1">
+                                <span class="text-blue-600 hover:text-blue-800 cursor-pointer font-medium">ver más</span>
+                                <div class="hidden group-hover:block absolute left-0 top-5 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
+                                    <div class="text-xs font-semibold text-gray-500 mb-2">Sucursales (<?= $totalSucursales ?>):</div>
+                                    <?php foreach ($sucursales as $sucursal): ?>
+                                        <div class="py-1 text-gray-700">&bull; <?= e($sucursal) ?></div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
                 <p><i class="fas fa-envelope w-5"></i><?= e($spec['email']) ?></p>
                 <?php if ($spec['telefono']): ?>
                 <p><i class="fas fa-phone w-5"></i><?= e($spec['telefono']) ?></p>
