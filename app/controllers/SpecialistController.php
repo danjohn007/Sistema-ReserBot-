@@ -458,4 +458,214 @@ class SpecialistController extends BaseController {
         
         redirect('/especialistas');
     }
+    
+    public function myServices()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        // Obtener el especialista del usuario actual
+        $specialist = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE usuario_id = ?",
+            [$_SESSION['user']['id']]
+        );
+        
+        if (!$specialist) {
+            setFlashMessage('error', 'No se encontró el perfil del especialista.');
+            redirect('/dashboard');
+        }
+        
+        // Manejar actualización de precios
+        if ($this->isPost()) {
+            // Debug: verificar que entra aquí
+            error_log("POST detectado en myServices");
+            
+            $services = isset($_POST['servicios']) ? $_POST['servicios'] : [];
+            
+            // Debug: ver qué servicios se reciben
+            error_log("Servicios recibidos: " . print_r($services, true));
+            
+            if (!empty($services)) {
+                foreach ($services as $serviceId => $data) {
+                    $precio = !empty($data['precio']) ? floatval($data['precio']) : null;
+                    $duracion = !empty($data['duracion']) ? intval($data['duracion']) : null;
+                    $activo = isset($data['activo']) ? 1 : 0;
+                    
+                    // Debug: ver valores
+                    error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo");
+                    
+                    $this->db->update(
+                        "UPDATE especialistas_servicios 
+                         SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?
+                         WHERE especialista_id = ? AND servicio_id = ?",
+                        [$precio, $duracion, $activo, $specialist['id'], $serviceId]
+                    );
+                }
+                
+                logAction('specialist_services_update', 'Servicios actualizados (precios, duración y estado)');
+                setFlashMessage('success', 'Servicios actualizados correctamente.');
+            } else {
+                error_log("Array de servicios vacío");
+                setFlashMessage('info', 'No se enviaron cambios.');
+            }
+            
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        // Obtener servicios del especialista
+        $services = $this->db->fetchAll(
+            "SELECT 
+                s.id,
+                s.nombre,
+                s.descripcion,
+                s.precio as precio_default,
+                s.duracion_minutos as duracion_default,
+                es.precio_personalizado,
+                es.duracion_personalizada,
+                es.activo,
+                c.nombre as categoria_nombre
+            FROM especialistas_servicios es
+            INNER JOIN servicios s ON es.servicio_id = s.id
+            LEFT JOIN categorias_servicios c ON s.categoria_id = c.id
+            WHERE es.especialista_id = ?
+            ORDER BY c.nombre, s.nombre",
+            [$specialist['id']]
+        );
+        
+        // Obtener servicios disponibles (no asignados aún)
+        $availableServices = $this->db->fetchAll(
+            "SELECT s.id, s.nombre, s.precio, s.duracion_minutos, c.nombre as categoria_nombre
+            FROM servicios s
+            LEFT JOIN categorias_servicios c ON s.categoria_id = c.id
+            WHERE s.activo = 1 
+            AND s.id NOT IN (
+                SELECT servicio_id FROM especialistas_servicios WHERE especialista_id = ?
+            )
+            ORDER BY c.nombre, s.nombre",
+            [$specialist['id']]
+        );
+        
+        // Obtener categorías para crear nuevos servicios
+        $categories = $this->db->fetchAll(
+            "SELECT id, nombre FROM categorias_servicios WHERE activo = 1 ORDER BY nombre"
+        );
+        
+        $this->render('specialists/my-services', [
+            'title' => 'Mis Servicios',
+            'services' => $services,
+            'availableServices' => $availableServices,
+            'categories' => $categories,
+            'specialistId' => $specialist['id']
+        ]);
+    }
+    
+    /**
+     * Asignar servicio existente al especialista
+     */
+    public function assignService()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        if (!$this->isPost()) {
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        $specialist = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE usuario_id = ?",
+            [$_SESSION['user']['id']]
+        );
+        
+        if (!$specialist) {
+            setFlashMessage('error', 'No se encontró el perfil del especialista.');
+            redirect('/dashboard');
+        }
+        
+        $servicio_id = $this->post('servicio_id');
+        
+        if (!$servicio_id) {
+            setFlashMessage('error', 'Debe seleccionar un servicio.');
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        // Verificar que el servicio existe y no está ya asignado
+        $exists = $this->db->fetch(
+            "SELECT id FROM servicios WHERE id = ? AND activo = 1",
+            [$servicio_id]
+        );
+        
+        $alreadyAssigned = $this->db->fetch(
+            "SELECT id FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+            [$specialist['id'], $servicio_id]
+        );
+        
+        if (!$exists) {
+            setFlashMessage('error', 'El servicio seleccionado no existe.');
+        } elseif ($alreadyAssigned) {
+            setFlashMessage('error', 'Ya tienes este servicio asignado.');
+        } else {
+            $this->db->insert(
+                "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                [$specialist['id'], $servicio_id]
+            );
+            
+            logAction('specialist_service_assigned', 'Servicio asignado al especialista');
+            setFlashMessage('success', 'Servicio agregado correctamente.');
+        }
+        
+        redirect('/especialistas/mis-servicios');
+    }
+    
+    /**
+     * Crear nuevo servicio personal para el especialista
+     */
+    public function createPersonalService()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        if (!$this->isPost()) {
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        $specialist = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE usuario_id = ?",
+            [$_SESSION['user']['id']]
+        );
+        
+        if (!$specialist) {
+            setFlashMessage('error', 'No se encontró el perfil del especialista.');
+            redirect('/dashboard');
+        }
+        
+        $nombre = $this->post('nombre');
+        $descripcion = $this->post('descripcion');
+        $categoria_id = $this->post('categoria_id');
+        $precio = $this->post('precio');
+        $duracion = $this->post('duracion');
+        
+        if (empty($nombre) || empty($precio) || empty($duracion) || empty($categoria_id)) {
+            setFlashMessage('error', 'El nombre, categoría, precio y duración son obligatorios.');
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        // Crear el servicio en la tabla principal
+        $serviceId = $this->db->insert(
+            "INSERT INTO servicios (categoria_id, nombre, descripcion, duracion_minutos, precio, activo) 
+             VALUES (?, ?, ?, ?, ?, 1)",
+            [$categoria_id, $nombre, $descripcion, $duracion, $precio]
+        );
+        
+        if ($serviceId) {
+            // Asignar el servicio al especialista
+            $this->db->insert(
+                "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                [$specialist['id'], $serviceId]
+            );
+            
+            logAction('specialist_service_created', 'Servicio personal creado: ' . $nombre);
+            setFlashMessage('success', 'Servicio creado y agregado correctamente.');
+        } else {
+            setFlashMessage('error', 'Error al crear el servicio.');
+        }
+        
+        redirect('/especialistas/mis-servicios');
+    }
 }

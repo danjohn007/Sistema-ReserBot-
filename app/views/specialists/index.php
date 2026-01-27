@@ -44,7 +44,7 @@
                     <span class="font-medium"><?= number_format($spec['calificacion_promedio'], 1) ?></span>
                     <span class="text-gray-400 text-sm ml-1">(<?= $spec['total_resenas'] ?>)</span>
                 </div>
-                <span class="text-sm text-gray-500"><?= $spec['experiencia_anos'] ?> años exp.</span>
+                <span class="text-sm text-gray-500"><?= $spec['experiencia_anos'] ?> a&ntilde;os exp.</span>
             </div>
         </div>
         
@@ -54,8 +54,14 @@
                 <i class="fas fa-user"></i> Perfil
             </a>
             <div class="space-x-2">
+                <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
+                   target="_blank"
+                   class="text-green-600 hover:text-green-800 text-sm"
+                   title="Contactar por WhatsApp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
                 <a href="<?= url('/especialistas/horarios?id=' . $spec['id']) ?>" 
-                   class="text-green-600 hover:text-green-800 text-sm">
+                   class="text-blue-600 hover:text-blue-800 text-sm">
                     <i class="fas fa-clock"></i> Horarios
                 </a>
                 <a href="<?= url('/especialistas/editar?id=' . $spec['id']) ?>" 

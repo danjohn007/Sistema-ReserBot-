@@ -66,6 +66,9 @@ $routes = [
     '/especialistas/editar' => ['controller' => 'SpecialistController', 'action' => 'edit'],
     '/especialistas/eliminar' => ['controller' => 'SpecialistController', 'action' => 'delete'],
     '/especialistas/horarios' => ['controller' => 'SpecialistController', 'action' => 'schedules'],
+    '/especialistas/mis-servicios' => ['controller' => 'SpecialistController', 'action' => 'myServices'],
+    '/especialistas/asignar-servicio' => ['controller' => 'SpecialistController', 'action' => 'assignService'],
+    '/especialistas/crear-servicio' => ['controller' => 'SpecialistController', 'action' => 'createPersonalService'],
     '/especialistas/perfil' => ['controller' => 'SpecialistController', 'action' => 'profile'],
     
     // Servicios

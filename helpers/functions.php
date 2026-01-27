@@ -298,3 +298,23 @@ function timeAgo($datetime) {
         return formatDate($datetime);
     }
 }
+
+/**
+ * Generar URL de WhatsApp
+ * Si no se proporciona teléfono, usa el número central de atención
+ */
+function getWhatsAppUrl($mensaje, $telefono = null) {
+    // Número central de atención (si no se proporciona uno)
+    if ($telefono === null) {
+        $telefono = '5215658472959';
+    }
+    
+    // Limpiar el teléfono (quitar espacios, guiones, paréntesis, +)
+    $telefonoLimpio = preg_replace('/[^0-9]/', '', $telefono);
+    
+    // Codificar el mensaje
+    $mensajeCodificado = urlencode($mensaje);
+    
+    // Retornar URL en formato API de WhatsApp
+    return "https://api.whatsapp.com/send/?phone={$telefonoLimpio}&text={$mensajeCodificado}&type=phone_number&app_absent=0";
+}

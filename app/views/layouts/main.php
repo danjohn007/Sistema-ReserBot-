@@ -208,12 +208,18 @@
                     
                     <?php if (hasRole(ROLE_SPECIALIST)): ?>
                     <li class="pt-4">
-                        <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Mi Configuración</span>
+                        <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Mi Configuraci&oacute;n</span>
                     </li>
                     <li>
                         <a href="<?= url('/especialistas/horarios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/horarios') !== false ? 'active' : '' ?>">
                             <i class="fas fa-clock w-5"></i>
                             <span>Mis Horarios</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= url('/especialistas/mis-servicios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mis-servicios') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-concierge-bell w-5"></i>
+                            <span>Mis Servicios</span>
                         </a>
                     </li>
                     <?php endif; ?>
