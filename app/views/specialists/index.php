@@ -79,21 +79,28 @@
                class="text-gray-600 hover:text-gray-800 text-sm">
                 <i class="fas fa-user"></i> Perfil
             </a>
-            <div class="space-x-2">
+            <div class="space-x-2 flex flex-wrap items-center">
                 <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
                    target="_blank"
-                   class="text-green-600 hover:text-green-800 text-sm"
+                   class="text-green-600 hover:text-green-800 text-sm whitespace-nowrap"
                    title="Contactar por WhatsApp">
                     <i class="fab fa-whatsapp"></i> WhatsApp
                 </a>
                 <a href="<?= url('/especialistas/horarios?id=' . $spec['id']) ?>" 
-                   class="text-blue-600 hover:text-blue-800 text-sm">
+                   class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
                     <i class="fas fa-clock"></i> Horarios
                 </a>
                 <a href="<?= url('/especialistas/editar?id=' . $spec['id']) ?>" 
-                   class="text-blue-600 hover:text-blue-800 text-sm">
+                   class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
                     <i class="fas fa-edit"></i> Editar
                 </a>
+                <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN])): ?>
+                <a href="<?= url('/especialistas/eliminar?id=' . $spec['id']) ?>" 
+                   class="text-red-600 hover:text-red-800 text-sm whitespace-nowrap"
+                   onclick="return confirm('&iquest;Est&aacute;s seguro de eliminar a este especialista? Esta acci&oacute;n no se puede deshacer.')">
+                    <i class="fas fa-trash"></i> Eliminar
+                </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

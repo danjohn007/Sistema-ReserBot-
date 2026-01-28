@@ -65,6 +65,18 @@ class Database {
         return $stmt->rowCount();
     }
     
+    public function beginTransaction() {
+        return $this->connection->beginTransaction();
+    }
+    
+    public function commit() {
+        return $this->connection->commit();
+    }
+    
+    public function rollBack() {
+        return $this->connection->rollBack();
+    }
+    
     // Prevenir clonación
     private function __clone() {}
     

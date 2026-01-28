@@ -482,15 +482,74 @@ class SpecialistController extends BaseController {
         
         $id = $this->get('id');
         
+        // Obtener el especialista
         $specialist = $this->db->fetch(
-            "SELECT e.*, u.nombre, u.apellidos FROM especialistas e JOIN usuarios u ON e.usuario_id = u.id WHERE e.id = ?",
+            "SELECT e.*, u.nombre, u.apellidos, u.id as usuario_id 
+             FROM especialistas e 
+             JOIN usuarios u ON e.usuario_id = u.id 
+             WHERE e.id = ?",
             [$id]
         );
         
-        if ($specialist) {
-            $this->db->update("UPDATE especialistas SET activo = 0 WHERE id = ?", [$id]);
-            logAction('specialist_delete', 'Especialista desactivado: ' . $specialist['nombre'] . ' ' . $specialist['apellidos']);
-            setFlashMessage('success', 'Especialista desactivado correctamente.');
+        if (!$specialist) {
+            setFlashMessage('error', 'Especialista no encontrado.');
+            redirect('/especialistas');
+        }
+        
+        // Verificar si tiene reservaciones futuras o activas
+        $hasActiveReservations = $this->db->fetch(
+            "SELECT COUNT(*) as total 
+             FROM reservaciones 
+             WHERE especialista_id = ? 
+             AND estado IN ('pendiente', 'confirmada', 'en_progreso') 
+             AND (fecha_cita > CURDATE() OR (fecha_cita = CURDATE() AND hora_inicio > CURTIME()))",
+            [$id]
+        );
+        
+        if ($hasActiveReservations && $hasActiveReservations['total'] > 0) {
+            setFlashMessage('error', 
+                'No se puede eliminar al especialista porque tiene ' . 
+                $hasActiveReservations['total'] . ' reservaciones activas o futuras. ' .
+                'Por favor cancela o completa las reservaciones primero.');
+            redirect('/especialistas');
+        }
+        
+        try {
+            $this->db->beginTransaction();
+            
+            // Obtener todos los registros de especialistas del mismo usuario
+            $allSpecialistRecords = $this->db->fetchAll(
+                "SELECT id FROM especialistas WHERE usuario_id = ?",
+                [$specialist['usuario_id']]
+            );
+            
+            // Eliminar todos los registros de especialistas del usuario
+            // Las relaciones ON DELETE CASCADE se encargarán de:
+            // - especialistas_servicios
+            // - horarios_especialistas
+            // - bloqueos_horario
+            // - reservaciones (ya verificadas que no hay activas)
+            foreach ($allSpecialistRecords as $record) {
+                $this->db->delete("DELETE FROM especialistas WHERE id = ?", [$record['id']]);
+            }
+            
+            // Eliminar el usuario asociado (esto eliminará todo por CASCADE)
+            $this->db->delete("DELETE FROM usuarios WHERE id = ?", [$specialist['usuario_id']]);
+            
+            $this->db->commit();
+            
+            logAction('specialist_delete', 
+                'Especialista eliminado permanentemente: ' . 
+                $specialist['nombre'] . ' ' . $specialist['apellidos']);
+            
+            setFlashMessage('success', 
+                'Especialista eliminado correctamente junto con todos sus datos asociados.');
+            
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error al eliminar especialista: " . $e->getMessage());
+            setFlashMessage('error', 
+                'Error al eliminar el especialista. Por favor inténtalo de nuevo.');
         }
         
         redirect('/especialistas');
