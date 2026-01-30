@@ -298,49 +298,113 @@ class SpecialistController extends BaseController {
         $this->requireAuth();
         
         $user = currentUser();
+        $usuario_id = null;
         
-        // Si es especialista, usar su propio ID
+        // Si es especialista, usar su propio usuario_id
         if ($user['rol_id'] == ROLE_SPECIALIST) {
-            $specialist = $this->db->fetch(
-                "SELECT * FROM especialistas WHERE usuario_id = ?",
-                [$user['id']]
-            );
-            
-            if (!$specialist) {
-                setFlashMessage('error', 'No tiene perfil de especialista.');
-                redirect('/dashboard');
-            }
-            $id = $specialist['id'];
+            $usuario_id = $user['id'];
         } else {
             $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
+            
+            // Obtener el usuario_id del especialista seleccionado
+            // Puede venir por 'id' (desde lista), 'specialist_id' (desde pestañas GET o POST)
             $id = $this->get('id');
+            $specialist_id = $this->get('specialist_id') ?: $this->post('specialist_id');
             
-            $specialist = $this->db->fetch("SELECT * FROM especialistas WHERE id = ?", [$id]);
+            if ($specialist_id) {
+                // Viene de cambio de pestaña o POST
+                $temp = $this->db->fetch("SELECT usuario_id FROM especialistas WHERE id = ?", [$specialist_id]);
+            } elseif ($id) {
+                // Viene de la lista de especialistas
+                $temp = $this->db->fetch("SELECT usuario_id FROM especialistas WHERE id = ?", [$id]);
+            } else {
+                $temp = null;
+            }
             
-            if (!$specialist) {
+            if (!$temp) {
                 setFlashMessage('error', 'Especialista no encontrado.');
                 redirect('/especialistas');
             }
+            $usuario_id = $temp['usuario_id'];
         }
         
-        // Obtener horarios actuales
-        $schedules = $this->db->fetchAll(
-            "SELECT * FROM horarios_especialistas WHERE especialista_id = ? ORDER BY dia_semana, hora_inicio",
-            [$id]
+        // Obtener TODOS los registros de especialistas de este usuario (una por sucursal)
+        $allSpecialists = $this->db->fetchAll(
+            "SELECT e.*, s.nombre as sucursal_nombre, u.nombre, u.apellidos 
+             FROM especialistas e 
+             JOIN sucursales s ON e.sucursal_id = s.id 
+             JOIN usuarios u ON e.usuario_id = u.id
+             WHERE e.usuario_id = ? AND e.activo = 1
+             ORDER BY s.nombre",
+            [$usuario_id]
         );
         
-        // Obtener bloqueos
+        if (empty($allSpecialists)) {
+            setFlashMessage('error', 'No tiene perfil de especialista.');
+            redirect('/dashboard');
+        }
+        
+        // Determinar qué especialista_id estamos editando
+        $current_specialist_id = $this->get('specialist_id');
+        if (!$current_specialist_id) {
+            // Por defecto, el primero
+            $current_specialist_id = $allSpecialists[0]['id'];
+        }
+        
+        // Obtener el especialista actual
+        $specialist = null;
+        foreach ($allSpecialists as $spec) {
+            if ($spec['id'] == $current_specialist_id) {
+                $specialist = $spec;
+                break;
+            }
+        }
+        
+        if (!$specialist) {
+            $specialist = $allSpecialists[0];
+            $current_specialist_id = $specialist['id'];
+        }
+        
+        // Obtener horarios del especialista actual (sucursal específica)
+        $schedules = $this->db->fetchAll(
+            "SELECT * FROM horarios_especialistas WHERE especialista_id = ? ORDER BY dia_semana, hora_inicio",
+            [$current_specialist_id]
+        );
+        
+        // Obtener bloqueos del especialista actual
         $blocks = $this->db->fetchAll(
             "SELECT * FROM bloqueos_horario WHERE especialista_id = ? AND fecha_fin >= NOW() ORDER BY fecha_inicio",
-            [$id]
+            [$current_specialist_id]
         );
         
         if ($this->isPost()) {
             $action = $this->post('action');
             
             if ($action == 'save_schedule') {
-                // Eliminar horarios anteriores
-                $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$id]);
+                // Obtener el specialist_id del formulario
+                $form_specialist_id = $this->post('specialist_id');
+                
+                // Validar que el specialist_id existe
+                if (!$form_specialist_id) {
+                    setFlashMessage('error', 'ID de especialista no proporcionado.');
+                    redirect('/especialistas/horarios?specialist_id=' . $current_specialist_id);
+                    return;
+                }
+                
+                // Verificar que el especialista existe y pertenece al mismo usuario
+                $validSpecialist = $this->db->fetch(
+                    "SELECT id FROM especialistas WHERE id = ? AND usuario_id = ?",
+                    [$form_specialist_id, $usuario_id]
+                );
+                
+                if (!$validSpecialist) {
+                    setFlashMessage('error', 'Especialista no encontrado o no autorizado.');
+                    redirect('/especialistas/horarios?specialist_id=' . $current_specialist_id);
+                    return;
+                }
+                
+                // Eliminar horarios anteriores de esta sucursal específica
+                $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$form_specialist_id]);
                 
                 // Guardar nuevos horarios
                 for ($day = 1; $day <= 7; $day++) {
@@ -357,7 +421,7 @@ class SpecialistController extends BaseController {
                         // Validar que la hora de inicio sea menor que la hora de fin
                         if (strtotime($inicio) >= strtotime($fin)) {
                             setFlashMessage('error', 'La hora de inicio debe ser menor que la hora de fin.');
-                            redirect('/especialistas/horarios?id=' . $id);
+                            redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                             return;
                         }
                         
@@ -367,14 +431,14 @@ class SpecialistController extends BaseController {
                             if (strtotime($hora_inicio_bloqueo) < strtotime($inicio) || 
                                 strtotime($hora_fin_bloqueo) > strtotime($fin)) {
                                 setFlashMessage('error', 'El horario de bloqueo debe estar dentro del horario laboral.');
-                                redirect('/especialistas/horarios?id=' . $id);
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
                             
                             // La hora de inicio del bloqueo debe ser menor que la de fin
                             if (strtotime($hora_inicio_bloqueo) >= strtotime($hora_fin_bloqueo)) {
                                 setFlashMessage('error', 'La hora de inicio del bloqueo debe ser menor que la hora de fin.');
-                                redirect('/especialistas/horarios?id=' . $id);
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
                         }
@@ -384,7 +448,7 @@ class SpecialistController extends BaseController {
                              (especialista_id, dia_semana, hora_inicio, hora_fin, activo, 
                               hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo) 
                              VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
-                            [$id, $day, $inicio, $fin, 
+                            [$form_specialist_id, $day, $inicio, $fin, 
                              $bloqueo_activo ? $hora_inicio_bloqueo : null, 
                              $bloqueo_activo ? $hora_fin_bloqueo : null, 
                              $bloqueo_activo]
@@ -393,26 +457,36 @@ class SpecialistController extends BaseController {
                 }
                 
                 setFlashMessage('success', 'Horarios actualizados correctamente.');
+                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                return;
             } elseif ($action == 'add_block') {
+                $form_specialist_id = $this->post('specialist_id');
                 $fecha_inicio = $this->post('fecha_inicio');
                 $fecha_fin = $this->post('fecha_fin');
                 $motivo = $this->post('motivo');
                 $tipo = $this->post('tipo');
                 
-                $this->db->insert(
-                    "INSERT INTO bloqueos_horario (especialista_id, fecha_inicio, fecha_fin, motivo, tipo) 
-                     VALUES (?, ?, ?, ?, ?)",
-                    [$id, $fecha_inicio, $fecha_fin, $motivo, $tipo]
-                );
-                
-                setFlashMessage('success', 'Bloqueo de horario agregado.');
+                if (strtotime($fecha_inicio) >= strtotime($fecha_fin)) {
+                    setFlashMessage('error', 'La fecha de inicio debe ser menor que la fecha de fin.');
+                } else {
+                    $this->db->insert(
+                        "INSERT INTO bloqueos_horario (especialista_id, fecha_inicio, fecha_fin, motivo, tipo) VALUES (?, ?, ?, ?, ?)",
+                        [$form_specialist_id, $fecha_inicio, $fecha_fin, $motivo, $tipo]
+                    );
+                    setFlashMessage('success', 'Bloqueo agregado correctamente.');
+                }
+                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                return;
             } elseif ($action == 'delete_block') {
-                $blockId = $this->post('block_id');
-                $this->db->delete("DELETE FROM bloqueos_horario WHERE id = ? AND especialista_id = ?", [$blockId, $id]);
-                setFlashMessage('success', 'Bloqueo eliminado.');
+                $form_specialist_id = $this->post('specialist_id');
+                $block_id = $this->post('block_id');
+                $this->db->delete("DELETE FROM bloqueos_horario WHERE id = ? AND especialista_id = ?", [$block_id, $form_specialist_id]);
+                setFlashMessage('success', 'Bloqueo eliminado correctamente.');
+                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                return;
             }
             
-            redirect('/especialistas/horarios?id=' . $id);
+            redirect('/especialistas/horarios?specialist_id=' . $current_specialist_id);
         }
         
         // Organizar horarios por día
@@ -424,6 +498,8 @@ class SpecialistController extends BaseController {
         $this->render('specialists/schedules', [
             'title' => 'Horarios del Especialista',
             'specialist' => $specialist,
+            'allSpecialists' => $allSpecialists,
+            'currentSpecialistId' => $current_specialist_id,
             'schedules' => $schedulesByDay,
             'blocks' => $blocks,
             'daysOfWeek' => getDaysOfWeek()
