@@ -134,12 +134,14 @@ class ApiController extends BaseController {
         
         if ($especialista_id) {
             $services = $this->db->fetchAll(
-                "SELECT s.*, es.precio_personalizado, es.duracion_personalizada,
+                "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
+                        COALESCE(es.precio_personalizado, s.precio) as precio,
+                        COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
                         c.nombre as categoria_nombre
                  FROM servicios s
                  JOIN especialistas_servicios es ON s.id = es.servicio_id
                  JOIN categorias_servicios c ON s.categoria_id = c.id
-                 WHERE es.especialista_id = ? AND s.activo = 1
+                 WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1
                  ORDER BY c.nombre, s.nombre",
                 [$especialista_id]
             );
@@ -154,6 +156,30 @@ class ApiController extends BaseController {
         }
         
         $this->json(['services' => $services]);
+    }
+    
+    /**
+     * Obtener especialista_id según usuario_id y sucursal_id
+     * Para especialistas que trabajan en múltiples sucursales
+     */
+    public function getSpecialistBranch() {
+        $usuario_id = $this->get('usuario_id');
+        $sucursal_id = $this->get('sucursal_id');
+        
+        if (!$usuario_id || !$sucursal_id) {
+            $this->json(['error' => 'Parámetros incompletos'], 400);
+        }
+        
+        $specialist = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE usuario_id = ? AND sucursal_id = ? AND activo = 1",
+            [$usuario_id, $sucursal_id]
+        );
+        
+        if ($specialist) {
+            $this->json(['especialista_id' => $specialist['id']]);
+        } else {
+            $this->json(['error' => 'Especialista no encontrado para esta sucursal'], 404);
+        }
     }
     
     /**
