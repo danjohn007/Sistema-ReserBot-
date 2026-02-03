@@ -39,6 +39,16 @@ class CalendarController extends BaseController {
                  ORDER BY u.nombre, u.apellidos",
                 [$user['sucursal_id']]
             );
+        } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
+            // Para especialistas: obtener sus sucursales y sus registros de especialista
+            $branches = $this->db->fetchAll(
+                "SELECT DISTINCT s.id, s.nombre 
+                 FROM sucursales s
+                 JOIN especialistas e ON s.id = e.sucursal_id
+                 WHERE e.usuario_id = ? AND e.activo = 1 AND s.activo = 1
+                 ORDER BY s.nombre",
+                [$user['id']]
+            );
         }
         
         $this->render('calendar/index', [
@@ -77,10 +87,30 @@ class CalendarController extends BaseController {
         
         // Aplicar filtros según rol
         if ($user['rol_id'] == ROLE_SPECIALIST) {
-            $specialist = $this->db->fetch("SELECT id FROM especialistas WHERE usuario_id = ?", [$user['id']]);
-            if ($specialist) {
-                $sql .= " AND r.especialista_id = ?";
-                $filters[] = $specialist['id'];
+            // Para especialistas: mostrar todas sus citas de todas sus sucursales
+            // A menos que filtren por una sucursal específica
+            if ($sucursal_id) {
+                // Filtrar por sucursal específica
+                $specialist = $this->db->fetch(
+                    "SELECT id FROM especialistas WHERE usuario_id = ? AND sucursal_id = ?",
+                    [$user['id'], $sucursal_id]
+                );
+                if ($specialist) {
+                    $sql .= " AND r.especialista_id = ?";
+                    $filters[] = $specialist['id'];
+                }
+            } else {
+                // Mostrar todas las citas del especialista en todas sus sucursales
+                $specialistIds = $this->db->fetchAll(
+                    "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+                    [$user['id']]
+                );
+                if (!empty($specialistIds)) {
+                    $ids = array_column($specialistIds, 'id');
+                    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                    $sql .= " AND r.especialista_id IN ($placeholders)";
+                    $filters = array_merge($filters, $ids);
+                }
             }
         } elseif ($user['rol_id'] == ROLE_CLIENT) {
             $sql .= " AND r.cliente_id = ?";
