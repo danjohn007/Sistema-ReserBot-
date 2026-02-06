@@ -15,6 +15,7 @@ class ApiController extends BaseController {
         $servicio_id = $this->get('servicio_id');
         $fecha = $this->get('fecha');
         $sucursal_id = $this->get('sucursal_id');
+        $excluir_reservacion = $this->get('excluir_reservacion'); // Nueva línea
         
         if (!$especialista_id || !$servicio_id || !$fecha) {
             $this->json(['error' => 'Parámetros incompletos'], 400);
@@ -71,6 +72,12 @@ class ApiController extends BaseController {
         $queryAppointments = "SELECT hora_inicio, hora_fin FROM reservaciones 
              WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')";
         $paramsAppointments = [$especialista_id, $fecha];
+        
+        // Excluir la reservación que estamos reagendando
+        if ($excluir_reservacion) {
+            $queryAppointments .= " AND id != ?";
+            $paramsAppointments[] = $excluir_reservacion;
+        }
         
         // Filtrar por sucursal si se proporciona
         if ($sucursal_id) {

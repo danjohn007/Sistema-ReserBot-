@@ -75,7 +75,8 @@ class CalendarController extends BaseController {
                        COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
                        u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                        s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos,
-                       suc.nombre as sucursal_nombre, suc.id as sucursal_id
+                       suc.nombre as sucursal_nombre, suc.id as sucursal_id,
+                       r.especialista_id, r.servicio_id
                 FROM reservaciones r
                 LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
@@ -153,7 +154,9 @@ class CalendarController extends BaseController {
                     'servicio' => $r['servicio_nombre'],
                     'precio' => formatMoney($r['precio_total']),
                     'sucursal_id' => $r['sucursal_id'],
-                    'sucursal_nombre' => $r['sucursal_nombre']
+                    'sucursal_nombre' => $r['sucursal_nombre'],
+                    'especialista_id' => $r['especialista_id'],
+                    'servicio_id' => $r['servicio_id']
                 ]
             ];
         }

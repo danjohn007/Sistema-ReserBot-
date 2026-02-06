@@ -99,14 +99,34 @@
         <div class="p-6" id="modal-content">
             <!-- Content loaded dynamically -->
         </div>
-        <div class="p-6 bg-gray-50 border-t rounded-b-2xl flex justify-between items-center">
-            <div class="text-sm text-gray-500">
-                <i class="fas fa-info-circle mr-1"></i>
-                Haz clic en "Ver Detalle" para m&aacute;s informaci&oacute;n
+        <div class="p-6" id="modal-edit-content" style="display:none;">
+            <!-- Edit form loaded dynamically -->
+        </div>
+        <div class="p-6 bg-gray-50 border-t rounded-b-2xl" id="modal-footer-view">
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Haz clic en "Ver Detalle" para m&aacute;s informaci&oacute;n
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="toggleEditMode()" class="px-6 py-2.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition shadow-md hover:shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>Reagendar
+                    </button>
+                    <a href="#" id="modal-view-link" class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary transition shadow-md hover:shadow-lg">
+                        <i class="fas fa-eye mr-2"></i>Ver Detalle
+                    </a>
+                </div>
             </div>
-            <a href="#" id="modal-view-link" class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary transition shadow-md hover:shadow-lg">
-                <i class="fas fa-eye mr-2"></i>Ver Detalle
-            </a>
+        </div>
+        <div class="p-6 bg-gray-50 border-t rounded-b-2xl" id="modal-footer-edit" style="display:none;">
+            <div class="flex justify-end gap-3">
+                <button onclick="cancelEdit()" class="px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button onclick="saveReschedule()" class="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -281,7 +301,10 @@ function filterCalendar() {
     window.calendar.refetchEvents();
 }
 
+let currentEvent = null;
+
 function showEventModal(event) {
+    currentEvent = event;
     const modal = document.getElementById('eventModal');
     const props = event.extendedProps;
     
@@ -300,6 +323,12 @@ function showEventModal(event) {
         hour: '2-digit', 
         minute: '2-digit' 
     });
+    
+    // Asegurarse de estar en modo vista
+    document.getElementById('modal-content').style.display = 'block';
+    document.getElementById('modal-edit-content').style.display = 'none';
+    document.getElementById('modal-footer-view').style.display = 'block';
+    document.getElementById('modal-footer-edit').style.display = 'none';
     
     document.getElementById('modal-content').innerHTML = `
         <div class="space-y-4">
@@ -354,6 +383,182 @@ function showEventModal(event) {
 
 function closeModal() {
     document.getElementById('eventModal').classList.add('hidden');
+    currentEvent = null;
+}
+
+function toggleEditMode() {
+    if (!currentEvent) return;
+    
+    const startDate = new Date(currentEvent.start);
+    const props = currentEvent.extendedProps;
+    const fechaStr = startDate.toISOString().split('T')[0];
+    const horaInicio = startDate.toTimeString().substring(0, 5);
+    
+    document.getElementById('modal-edit-content').innerHTML = `
+        <div class="space-y-4">
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm font-semibold text-blue-800 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>Reagendamiento de Cita
+                </p>
+                <p class="text-xs text-gray-600">
+                    Selecciona nueva fecha y hora para la cita. El sistema verificará la disponibilidad automáticamente.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                <div>
+                    <p class="text-xs text-gray-500 mb-1"><i class="fas fa-barcode mr-1"></i>Código</p>
+                    <p class="text-sm font-semibold text-gray-900">${props.codigo}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 mb-1"><i class="fas fa-concierge-bell mr-1"></i>Servicio</p>
+                    <p class="text-sm font-semibold text-gray-900">${props.servicio}</p>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-calendar-day mr-1 text-primary"></i>Nueva Fecha
+                </label>
+                <input type="date" id="edit-fecha" value="${fechaStr}" 
+                       onchange="loadAvailableTimesForEdit()"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+            </div>
+            
+            <div id="edit-time-container">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
+                </label>
+                <div class="text-center py-4 text-gray-500">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Cargando horarios disponibles...
+                </div>
+            </div>
+            
+            <input type="hidden" id="edit-reservacion-id" value="${currentEvent.id}">
+            <input type="hidden" id="edit-especialista-id" value="${props.especialista_id || ''}">
+            <input type="hidden" id="edit-servicio-id" value="${props.servicio_id || ''}">
+            <input type="hidden" id="edit-sucursal-id" value="${props.sucursal_id || ''}">
+        </div>
+    `;
+    
+    // Cambiar a modo edición
+    document.getElementById('modal-content').style.display = 'none';
+    document.getElementById('modal-edit-content').style.display = 'block';
+    document.getElementById('modal-footer-view').style.display = 'none';
+    document.getElementById('modal-footer-edit').style.display = 'block';
+    
+    // Cargar horarios disponibles para la fecha actual
+    loadAvailableTimesForEdit();
+}
+
+function cancelEdit() {
+    document.getElementById('modal-content').style.display = 'block';
+    document.getElementById('modal-edit-content').style.display = 'none';
+    document.getElementById('modal-footer-view').style.display = 'block';
+    document.getElementById('modal-footer-edit').style.display = 'none';
+}
+
+async function loadAvailableTimesForEdit() {
+    const fecha = document.getElementById('edit-fecha').value;
+    const especialistaId = document.getElementById('edit-especialista-id').value;
+    const servicioId = document.getElementById('edit-servicio-id').value;
+    const sucursalId = document.getElementById('edit-sucursal-id').value;
+    const reservacionId = document.getElementById('edit-reservacion-id').value;
+    
+    if (!fecha || !especialistaId || !servicioId) return;
+    
+    const container = document.getElementById('edit-time-container');
+    container.innerHTML = `
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
+        </label>
+        <div class="text-center py-4 text-gray-500">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Cargando horarios disponibles...
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`<?= BASE_URL ?>/api/disponibilidad?especialista_id=${especialistaId}&servicio_id=${servicioId}&fecha=${fecha}&sucursal_id=${sucursalId}&excluir_reservacion=${reservacionId}`);
+        const data = await response.json();
+        
+        if (data.slots && data.slots.length > 0) {
+            let slotsHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
+                </label>
+                <div class="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+            `;
+            
+            data.slots.forEach(slot => {
+                const time = slot.hora_inicio.substring(0, 5);
+                slotsHTML += `
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="edit-hora" value="${slot.hora_inicio}" class="peer sr-only">
+                        <div class="p-2 border-2 rounded-lg text-center text-sm peer-checked:border-primary peer-checked:bg-blue-50 hover:border-gray-400 transition">
+                            ${time}
+                        </div>
+                    </label>
+                `;
+            });
+            
+            slotsHTML += '</div>';
+            container.innerHTML = slotsHTML;
+        } else {
+            container.innerHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
+                </label>
+                <div class="text-center py-4 text-orange-600 bg-orange-50 rounded-lg">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>No hay horarios disponibles para esta fecha
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al cargar horarios:', error);
+        container.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
+            </label>
+            <div class="text-center py-4 text-red-600 bg-red-50 rounded-lg">
+                <i class="fas fa-times-circle mr-2"></i>Error al cargar horarios
+            </div>
+        `;
+    }
+}
+
+async function saveReschedule() {
+    const reservacionId = document.getElementById('edit-reservacion-id').value;
+    const nuevaFecha = document.getElementById('edit-fecha').value;
+    const nuevaHora = document.querySelector('input[name="edit-hora"]:checked')?.value;
+    
+    if (!nuevaFecha || !nuevaHora) {
+        alert('Por favor selecciona una fecha y hora');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`<?= BASE_URL ?>/reservaciones/reagendar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id=${reservacionId}&fecha_cita=${nuevaFecha}&hora_inicio=${nuevaHora}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Cita reagendada exitosamente');
+            closeModal();
+            // Recargar eventos del calendario
+            window.calendar.refetchEvents();
+        } else {
+            alert('Error al reagendar: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al guardar:', error);
+        alert('Error al guardar los cambios');
+    }
 }
 
 function getStatusClass(status) {

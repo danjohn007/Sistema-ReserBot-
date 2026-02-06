@@ -86,6 +86,7 @@ $routes = [
     '/reservaciones/ver' => ['controller' => 'ReservationController', 'action' => 'view'],
     '/reservaciones/confirmar' => ['controller' => 'ReservationController', 'action' => 'confirm'],
     '/reservaciones/cancelar' => ['controller' => 'ReservationController', 'action' => 'cancel'],
+    '/reservaciones/reagendar' => ['controller' => 'ReservationController', 'action' => 'reagendar'],
     '/reservaciones/disponibilidad' => ['controller' => 'ReservationController', 'action' => 'availability'],
     '/mis-citas' => ['controller' => 'ReservationController', 'action' => 'myAppointments'],
     

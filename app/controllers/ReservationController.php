@@ -431,6 +431,107 @@ class ReservationController extends BaseController {
     }
     
     /**
+     * Reagendar una reservación (cambiar fecha y hora)
+     */
+    public function reagendar() {
+        $this->requireAuth();
+        
+        // Obtener datos del POST
+        $id = $this->post('id');
+        $fecha_cita = $this->post('fecha_cita');
+        $hora_inicio = $this->post('hora_inicio');
+        
+        if (!$id || !$fecha_cita || !$hora_inicio) {
+            $this->json(['success' => false, 'message' => 'Datos incompletos'], 400);
+        }
+        
+        $user = currentUser();
+        
+        // Obtener la reservación actual
+        $reservation = $this->db->fetch(
+            "SELECT r.*, e.usuario_id as especialista_usuario_id, s.duracion_minutos 
+             FROM reservaciones r
+             JOIN especialistas e ON r.especialista_id = e.id
+             JOIN servicios s ON r.servicio_id = s.id
+             WHERE r.id = ?",
+            [$id]
+        );
+        
+        if (!$reservation) {
+            $this->json(['success' => false, 'message' => 'Reservación no encontrada'], 404);
+        }
+        
+        // Verificar permisos
+        $tienePermiso = false;
+        if ($user['rol_id'] == ROLE_SUPERADMIN) {
+            $tienePermiso = true;
+        } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
+            $tienePermiso = ($reservation['sucursal_id'] == $user['sucursal_id']);
+        } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
+            $tienePermiso = ($reservation['especialista_usuario_id'] == $user['id']);
+        } elseif ($user['rol_id'] == ROLE_CLIENT) {
+            $tienePermiso = ($reservation['cliente_id'] == $user['id']);
+        }
+        
+        if (!$tienePermiso) {
+            $this->json(['success' => false, 'message' => 'No tiene permisos para reagendar esta reservación'], 403);
+        }
+        
+        // Verificar que la reservación puede ser reagendada
+        if ($reservation['estado'] == 'cancelada' || $reservation['estado'] == 'completada') {
+            $this->json(['success' => false, 'message' => 'No se puede reagendar una cita cancelada o completada'], 400);
+        }
+        
+        // Calcular hora_fin basada en la duración del servicio
+        $duracion = $reservation['duracion_minutos'];
+        $horaInicio = strtotime($hora_inicio);
+        $horaFin = date('H:i:s', $horaInicio + ($duracion * 60));
+        
+        // Verificar que la nueva fecha/hora no esté en el pasado
+        $nuevaFechaHora = strtotime($fecha_cita . ' ' . $hora_inicio);
+        if ($nuevaFechaHora < time()) {
+            $this->json(['success' => false, 'message' => 'No puede agendar una cita en el pasado'], 400);
+        }
+        
+        // Actualizar la reservación
+        try {
+            $this->db->update(
+                "UPDATE reservaciones 
+                 SET fecha_cita = ?, hora_inicio = ?, hora_fin = ?
+                 WHERE id = ?",
+                [$fecha_cita, $hora_inicio, $horaFin, $id]
+            );
+            
+            // Notificar al cliente
+            if ($reservation['cliente_id']) {
+                $this->createNotification(
+                    $reservation['cliente_id'], 
+                    'cita_reagendada', 
+                    'Cita reagendada', 
+                    "Su cita ha sido reagendada para el " . formatDate($fecha_cita) . " a las " . formatTime($hora_inicio)
+                );
+            }
+            
+            // Log
+            logAction('reservation_reschedule', 'Reservación reagendada: ' . $reservation['codigo'] . 
+                      ' - Nueva fecha: ' . $fecha_cita . ' ' . $hora_inicio);
+            
+            $this->json([
+                'success' => true, 
+                'message' => 'Cita reagendada exitosamente',
+                'data' => [
+                    'fecha_cita' => $fecha_cita,
+                    'hora_inicio' => $hora_inicio,
+                    'hora_fin' => $horaFin
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            $this->json(['success' => false, 'message' => 'Error al reagendar: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
      * Mis citas (para clientes)
      */
     public function myAppointments() {
