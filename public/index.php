@@ -129,6 +129,7 @@ $routes = [
     // API endpoints
     '/api/disponibilidad' => ['controller' => 'ApiController', 'action' => 'availability'],
     '/api/especialistas' => ['controller' => 'ApiController', 'action' => 'specialists'],
+    '/api/especialista-sucursal' => ['controller' => 'ApiController', 'action' => 'getSpecialistBranch'],
     '/api/servicios' => ['controller' => 'ApiController', 'action' => 'services'],
     '/api/servicios/crear' => ['controller' => 'ApiController', 'action' => 'createService'],
     '/api/sucursales' => ['controller' => 'ApiController', 'action' => 'branches'],

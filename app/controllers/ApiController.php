@@ -14,6 +14,7 @@ class ApiController extends BaseController {
         $especialista_id = $this->get('especialista_id');
         $servicio_id = $this->get('servicio_id');
         $fecha = $this->get('fecha');
+        $sucursal_id = $this->get('sucursal_id');
         
         if (!$especialista_id || !$servicio_id || !$fecha) {
             $this->json(['error' => 'Parámetros incompletos'], 400);
@@ -30,17 +31,27 @@ class ApiController extends BaseController {
         // Obtener día de la semana
         $dayOfWeek = date('N', strtotime($fecha));
         
-        // Obtener horario del especialista
-        $schedule = $this->db->fetch(
-            "SELECT * FROM horarios_especialistas WHERE especialista_id = ? AND dia_semana = ? AND activo = 1",
-            [$especialista_id, $dayOfWeek]
-        );
+        // Obtener horario del especialista para la sucursal específica
+        // Nota: El especialista_id que recibimos ya es específico de la sucursal
+        // porque cada registro en 'especialistas' combina usuario_id + sucursal_id
+        $query = "SELECT he.* FROM horarios_especialistas he
+                  JOIN especialistas e ON he.especialista_id = e.id
+                  WHERE he.especialista_id = ? AND he.dia_semana = ? AND he.activo = 1";
+        $params = [$especialista_id, $dayOfWeek];
+        
+        // Si se proporciona sucursal_id adicional, verificar que coincida
+        if ($sucursal_id) {
+            $query .= " AND e.sucursal_id = ?";
+            $params[] = $sucursal_id;
+        }
+        
+        $schedule = $this->db->fetch($query, $params);
         
         if (!$schedule) {
             $this->json(['slots' => [], 'message' => 'El especialista no trabaja este día']);
         }
         
-        // Verificar bloqueos
+        // Verificar bloqueos de fecha completa
         $block = $this->db->fetch(
             "SELECT id FROM bloqueos_horario 
              WHERE especialista_id = ? AND ? BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)",
@@ -56,49 +67,133 @@ class ApiController extends BaseController {
             $this->json(['slots' => [], 'message' => 'Este día es feriado']);
         }
         
-        // Obtener citas existentes
-        $existingAppointments = $this->db->fetchAll(
-            "SELECT hora_inicio, hora_fin FROM reservaciones 
-             WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')",
-            [$especialista_id, $fecha]
-        );
+        // Obtener citas existentes del especialista en la sucursal específica
+        $queryAppointments = "SELECT hora_inicio, hora_fin FROM reservaciones 
+             WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')";
+        $paramsAppointments = [$especialista_id, $fecha];
         
-        // Generar slots disponibles
-        $slots = [];
-        $currentTime = strtotime($schedule['hora_inicio']);
-        $endTime = strtotime($schedule['hora_fin']);
+        // Filtrar por sucursal si se proporciona
+        if ($sucursal_id) {
+            $queryAppointments .= " AND sucursal_id = ?";
+            $paramsAppointments[] = $sucursal_id;
+        }
         
-        while ($currentTime + ($duracion * 60) <= $endTime) {
-            $slotStart = date('H:i:s', $currentTime);
-            $slotEnd = date('H:i:s', $currentTime + ($duracion * 60));
+        $existingAppointments = $this->db->fetchAll($queryAppointments, $paramsAppointments);
+        
+        // Función auxiliar para verificar si un slot está disponible
+        $isSlotAvailable = function($slotStart, $slotEnd) use ($existingAppointments, $fecha) {
+            // Verificar si está en el pasado
+            if ($fecha == date('Y-m-d') && $slotStart < time()) {
+                return false;
+            }
             
-            $available = true;
-            
+            // Verificar conflictos con citas existentes
             foreach ($existingAppointments as $appt) {
                 $apptStart = strtotime($appt['hora_inicio']);
                 $apptEnd = strtotime($appt['hora_fin']);
                 
-                if (($currentTime >= $apptStart && $currentTime < $apptEnd) ||
-                    ($currentTime + ($duracion * 60) > $apptStart && $currentTime + ($duracion * 60) <= $apptEnd)) {
-                    $available = false;
-                    break;
+                if (($slotStart >= $apptStart && $slotStart < $apptEnd) ||
+                    ($slotEnd > $apptStart && $slotEnd <= $apptEnd) ||
+                    ($slotStart <= $apptStart && $slotEnd >= $apptEnd)) {
+                    return false;
                 }
             }
             
-            if ($available && $fecha == date('Y-m-d') && $currentTime < time()) {
-                $available = false;
+            return true;
+        };
+        
+        // Generar slots disponibles
+        $slots = [];
+        
+        // 1. Slots del horario normal (excluyendo horario de bloqueo)
+        $currentTime = strtotime($schedule['hora_inicio']);
+        $endTime = strtotime($schedule['hora_fin']);
+        
+        // Si hay bloqueo activo, necesitamos dividir en dos rangos
+        if ($schedule['bloqueo_activo'] && $schedule['hora_inicio_bloqueo'] && $schedule['hora_fin_bloqueo']) {
+            $blockStart = strtotime($schedule['hora_inicio_bloqueo']);
+            $blockEnd = strtotime($schedule['hora_fin_bloqueo']);
+            
+            // Rango 1: Desde inicio hasta inicio de bloqueo
+            while ($currentTime + ($duracion * 60) <= $blockStart) {
+                $slotStart = $currentTime;
+                $slotEnd = $currentTime + ($duracion * 60);
+                
+                if ($isSlotAvailable($slotStart, $slotEnd)) {
+                    $slots[] = [
+                        'hora_inicio' => date('H:i:s', $slotStart),
+                        'hora_fin' => date('H:i:s', $slotEnd),
+                        'display' => formatTime(date('H:i:s', $slotStart)) . ' - ' . formatTime(date('H:i:s', $slotEnd)),
+                        'tipo' => 'normal'
+                    ];
+                }
+                
+                $currentTime += 30 * 60; // Intervalo de 30 minutos
             }
             
-            if ($available) {
-                $slots[] = [
-                    'hora_inicio' => $slotStart,
-                    'hora_fin' => $slotEnd,
-                    'display' => formatTime($slotStart) . ' - ' . formatTime($slotEnd)
-                ];
+            // Rango 2: Desde fin de bloqueo hasta fin del horario
+            $currentTime = $blockEnd;
+            while ($currentTime + ($duracion * 60) <= $endTime) {
+                $slotStart = $currentTime;
+                $slotEnd = $currentTime + ($duracion * 60);
+                
+                if ($isSlotAvailable($slotStart, $slotEnd)) {
+                    $slots[] = [
+                        'hora_inicio' => date('H:i:s', $slotStart),
+                        'hora_fin' => date('H:i:s', $slotEnd),
+                        'display' => formatTime(date('H:i:s', $slotStart)) . ' - ' . formatTime(date('H:i:s', $slotEnd)),
+                        'tipo' => 'normal'
+                    ];
+                }
+                
+                $currentTime += 30 * 60;
             }
-            
-            $currentTime += 30 * 60;
+        } else {
+            // Sin bloqueo: rango continuo
+            while ($currentTime + ($duracion * 60) <= $endTime) {
+                $slotStart = $currentTime;
+                $slotEnd = $currentTime + ($duracion * 60);
+                
+                if ($isSlotAvailable($slotStart, $slotEnd)) {
+                    $slots[] = [
+                        'hora_inicio' => date('H:i:s', $slotStart),
+                        'hora_fin' => date('H:i:s', $slotEnd),
+                        'display' => formatTime(date('H:i:s', $slotStart)) . ' - ' . formatTime(date('H:i:s', $slotEnd)),
+                        'tipo' => 'normal'
+                    ];
+                }
+                
+                $currentTime += 30 * 60;
+            }
         }
+        
+        // 2. Slots del horario de emergencia (si está activo)
+        if ($schedule['emergencia_activa'] && $schedule['hora_inicio_emergencia'] && $schedule['hora_fin_emergencia']) {
+            $emergencyStart = strtotime($schedule['hora_inicio_emergencia']);
+            $emergencyEnd = strtotime($schedule['hora_fin_emergencia']);
+            
+            $currentTime = $emergencyStart;
+            while ($currentTime + ($duracion * 60) <= $emergencyEnd) {
+                $slotStart = $currentTime;
+                $slotEnd = $currentTime + ($duracion * 60);
+                
+                if ($isSlotAvailable($slotStart, $slotEnd)) {
+                    $slots[] = [
+                        'hora_inicio' => date('H:i:s', $slotStart),
+                        'hora_fin' => date('H:i:s', $slotEnd),
+                        'display' => '🚨 ' . formatTime(date('H:i:s', $slotStart)) . ' - ' . formatTime(date('H:i:s', $slotEnd)) . ' (Emergencia)',
+                        'tipo' => 'emergencia'
+                    ];
+                }
+                
+                $currentTime += 30 * 60;
+            }
+        }
+        
+        // Ordenar slots por hora
+        usort($slots, function($a, $b) {
+            return strcmp($a['hora_inicio'], $b['hora_inicio']);
+        });
         
         $this->json(['slots' => $slots]);
     }

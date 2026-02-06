@@ -1,4 +1,4 @@
-<div class="max-w-4xl mx-auto">
+<div class="max-w-7xl mx-auto px-2">
     <div class="mb-6">
         <a href="<?= url('/especialistas') ?>" class="text-gray-500 hover:text-gray-700">
             <i class="fas fa-arrow-left mr-2"></i>Volver a Especialistas
@@ -7,8 +7,8 @@
     
     <div class="grid grid-cols-1 gap-6">
         <!-- Schedule Form -->
-        <div class="bg-white rounded-xl shadow-sm p-6 w-full mx-auto">
-            <h2 class="text-xl font-bold text-gray-800 mb-6">Horarios Semanales - <?= e($specialist['nombre'] . ' ' . $specialist['apellidos']) ?></h2>
+        <div class="bg-white rounded-xl shadow-sm p-4 w-full mx-auto">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Horarios Semanales - <?= e($specialist['nombre'] . ' ' . $specialist['apellidos']) ?></h2>
             
             <?php if (count($allSpecialists) > 1): ?>
             <!-- Tabs para múltiples sucursales -->
@@ -44,63 +44,87 @@
                 <input type="hidden" name="action" value="save_schedule">
                 <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
                 
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse">
+                <div>
+                    <table class="w-full border-collapse table-fixed">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th class="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b">D&iacute;a</th>
-                                <th class="px-2 py-3 text-center text-sm font-semibold text-gray-700 border-b w-16">Activo</th>
-                                <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700 border-b w-28">Hora Inicio</th>
-                                <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700 border-b w-28">Hora Fin</th>
-                                <th class="px-2 py-3 text-center text-sm font-semibold text-gray-700 border-b w-20">Bloquear</th>
-                                <th class="px-2 py-3 text-left text-sm font-semibold text-gray-700 border-b">Horario Bloqueo</th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b" style="width: 8%;">D&iacute;a</th>
+                                <th class="px-1 py-2 text-center text-xs font-semibold text-gray-700 border-b" style="width: 6%;">Activo</th>
+                                <th class="px-1 py-2 text-left text-xs font-semibold text-gray-700 border-b" style="width: 11%;">Hora Inicio</th>
+                                <th class="px-1 py-2 text-left text-xs font-semibold text-gray-700 border-b" style="width: 11%;">Hora Fin</th>
+                                <th class="px-1 py-2 text-center text-xs font-semibold text-gray-700 border-b" style="width: 7%;">Bloquear</th>
+                                <th class="px-1 py-2 text-left text-xs font-semibold text-gray-700 border-b" style="width: 20%;">Horario Bloqueo</th>
+                                <th class="px-1 py-2 text-center text-xs font-semibold text-gray-700 border-b bg-green-50" style="width: 9%;">Emergencia</th>
+                                <th class="px-1 py-2 text-left text-xs font-semibold text-gray-700 border-b bg-green-50" style="width: 28%;">Horario Emergencia</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
                             <?php $daySchedule = $schedules[$dayNum] ?? null; ?>
                             <tr class="border-b hover:bg-gray-50">
-                                <td class="px-3 py-3">
-                                    <span class="font-medium text-gray-700"><?= $dayName ?></span>
+                                <td class="px-2 py-2">
+                                    <span class="text-sm font-medium text-gray-700"><?= $dayName ?></span>
                                 </td>
-                                <td class="px-2 py-3 text-center">
+                                <td class="px-1 py-2 text-center">
                                     <input type="checkbox" name="activo_<?= $dayNum ?>" value="1" 
                                            <?= $daySchedule ? 'checked' : '' ?>
-                                           class="rounded border-gray-300 text-primary focus:ring-primary w-5 h-5"
+                                           class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
                                            onchange="toggleDay(<?= $dayNum ?>)">
                                 </td>
-                                <td class="px-2 py-3">
+                                <td class="px-1 py-2">
                                     <input type="time" name="hora_inicio_<?= $dayNum ?>" 
                                            id="hora_inicio_<?= $dayNum ?>"
                                            value="<?= $daySchedule ? substr($daySchedule['hora_inicio'], 0, 5) : '09:00' ?>"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary focus:border-primary">
                                 </td>
-                                <td class="px-2 py-3">
+                                <td class="px-1 py-2">
                                     <input type="time" name="hora_fin_<?= $dayNum ?>" 
                                            id="hora_fin_<?= $dayNum ?>"
                                            value="<?= $daySchedule ? substr($daySchedule['hora_fin'], 0, 5) : '18:00' ?>"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary focus:border-primary">
                                 </td>
-                                <td class="px-2 py-3 text-center">
+                                <td class="px-1 py-2 text-center">
                                     <input type="checkbox" name="bloqueo_activo_<?= $dayNum ?>" value="1" 
                                            <?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'checked' : '' ?>
-                                           class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 w-5 h-5"
+                                           class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 w-4 h-4"
                                            onchange="toggleBlock(<?= $dayNum ?>)">
                                 </td>
-                                <td class="px-2 py-3">
+                                <td class="px-1 py-2">
                                     <div id="block_<?= $dayNum ?>_times" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? '' : 'hidden' ?>">
-                                        <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded px-2 py-1">
+                                        <div class="flex items-center gap-1 bg-orange-50 border border-orange-200 rounded px-1 py-1">
                                             <input type="time" name="hora_inicio_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_inicio_bloqueo']) ? substr($daySchedule['hora_inicio_bloqueo'], 0, 5) : '13:00' ?>"
-                                                   class="w-20 px-2 py-1 border border-gray-300 rounded text-xs">
-                                            <span class="text-xs text-gray-500">a</span>
+                                                   class="w-full px-1 py-1 border border-gray-300 rounded text-xs">
+                                            <span class="text-xs text-gray-500">&rarr;</span>
                                             <input type="time" name="hora_fin_bloqueo_<?= $dayNum ?>" 
                                                    value="<?= ($daySchedule && $daySchedule['hora_fin_bloqueo']) ? substr($daySchedule['hora_fin_bloqueo'], 0, 5) : '14:00' ?>"
-                                                   class="w-20 px-2 py-1 border border-gray-300 rounded text-xs">
+                                                   class="w-full px-1 py-1 border border-gray-300 rounded text-xs">
                                         </div>
                                     </div>
                                     <div id="block_<?= $dayNum ?>_placeholder" class="<?= ($daySchedule && $daySchedule['bloqueo_activo']) ? 'hidden' : '' ?>">
                                         <span class="text-xs text-gray-400 italic">Sin bloqueo</span>
+                                    </div>
+                                </td>
+                                <td class="px-1 py-2 text-center bg-green-50">
+                                    <input type="checkbox" name="emergencia_activa_<?= $dayNum ?>" value="1" 
+                                           <?= ($daySchedule && $daySchedule['emergencia_activa']) ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4"
+                                           onchange="toggleEmergency(<?= $dayNum ?>)">
+                                </td>
+                                <td class="px-1 py-2 bg-green-50">
+                                    <div id="emergency_<?= $dayNum ?>_times" class="<?= ($daySchedule && $daySchedule['emergencia_activa']) ? '' : 'hidden' ?>">
+                                        <div class="flex items-center gap-1 bg-green-100 border border-green-300 rounded px-1 py-1">
+                                            <input type="time" name="hora_inicio_emergencia_<?= $dayNum ?>" 
+                                                   value="<?= ($daySchedule && $daySchedule['hora_inicio_emergencia']) ? substr($daySchedule['hora_inicio_emergencia'], 0, 5) : '18:00' ?>"
+                                                   class="w-full px-1 py-1 border border-gray-300 rounded text-xs">
+                                            <span class="text-xs text-gray-500">&rarr;</span>
+                                            <input type="time" name="hora_fin_emergencia_<?= $dayNum ?>" 
+                                                   value="<?= ($daySchedule && $daySchedule['hora_fin_emergencia']) ? substr($daySchedule['hora_fin_emergencia'], 0, 5) : '20:00' ?>"
+                                                   class="w-full px-1 py-1 border border-gray-300 rounded text-xs">
+                                        </div>
+                                    </div>
+                                    <div id="emergency_<?= $dayNum ?>_placeholder" class="<?= ($daySchedule && $daySchedule['emergencia_activa']) ? 'hidden' : '' ?>">
+                                        <span class="text-xs text-gray-400 italic">Sin emergencia</span>
                                     </div>
                                 </td>
                             </tr>
@@ -109,15 +133,16 @@
                     </table>
                 </div>
                 
-                <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                    <p class="text-sm text-blue-700">
-                        <i class="fas fa-info-circle mr-2"></i>
+                <div class="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+                    <p class="text-xs text-blue-700">
+                        <i class="fas fa-info-circle mr-1"></i>
                         <strong>Activo:</strong> Marca los d&iacute;as que trabajas. 
-                        <strong>Bloquear:</strong> Define horas de descanso (ej: comida).
+                        <strong>Bloquear:</strong> Define horas de descanso (ej: comida). 
+                        <strong class="text-green-700">Emergencia:</strong> <span class="text-green-700">Agrega horas FUERA del horario normal para casos urgentes.</span>
                     </p>
                 </div>
                 
-                <div class="mt-6">
+                <div class="mt-4">
                     <button type="submit" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
                         <i class="fas fa-save mr-2"></i>Guardar Horarios
                     </button>
@@ -246,6 +271,20 @@ function toggleBlock(dayNum) {
         if (placeholder) placeholder.classList.add('hidden');
     } else {
         blockTimes.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
+    }
+}
+
+function toggleEmergency(dayNum) {
+    const checkbox = document.querySelector(`input[name="emergencia_activa_${dayNum}"]`);
+    const emergencyTimes = document.getElementById(`emergency_${dayNum}_times`);
+    const placeholder = document.getElementById(`emergency_${dayNum}_placeholder`);
+    
+    if (checkbox.checked) {
+        emergencyTimes.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+    } else {
+        emergencyTimes.classList.add('hidden');
         if (placeholder) placeholder.classList.remove('hidden');
     }
 }

@@ -74,12 +74,14 @@ class CalendarController extends BaseController {
         $sql = "SELECT r.*, 
                        COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
                        u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
-                       s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+                       s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos,
+                       suc.nombre as sucursal_nombre, suc.id as sucursal_id
                 FROM reservaciones r
                 LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
                 JOIN especialistas e ON r.especialista_id = e.id
                 JOIN usuarios ue ON e.usuario_id = ue.id
+                JOIN sucursales suc ON r.sucursal_id = suc.id
                 WHERE r.fecha_cita BETWEEN ? AND ? AND r.estado NOT IN ('cancelada')";
         
         $filters[] = $start;
@@ -149,7 +151,9 @@ class CalendarController extends BaseController {
                     'cliente' => $r['cliente_nombre_completo'],
                     'especialista' => $r['especialista_nombre'] . ' ' . $r['especialista_apellidos'],
                     'servicio' => $r['servicio_nombre'],
-                    'precio' => formatMoney($r['precio_total'])
+                    'precio' => formatMoney($r['precio_total']),
+                    'sucursal_id' => $r['sucursal_id'],
+                    'sucursal_nombre' => $r['sucursal_nombre']
                 ]
             ];
         }

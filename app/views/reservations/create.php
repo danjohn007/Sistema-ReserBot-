@@ -190,21 +190,33 @@
 const baseUrl = '<?= BASE_URL ?>';
 const isSpecialist = <?= ($user['rol_id'] == ROLE_SPECIALIST) ? 'true' : 'false' ?>;
 const currentSpecialistId = '<?= $currentSpecialistId ?? '' ?>';
+const currentUserId = '<?= $user['id'] ?? '' ?>';
+
+// Mapeo de sucursal_id a especialista_id para especialistas
+const branchToSpecialistMap = {};
+<?php if ($user['rol_id'] == ROLE_SPECIALIST && !empty($branchSpecialistMap)): ?>
+<?php foreach ($branchSpecialistMap as $sucId => $espId): ?>
+branchToSpecialistMap[<?= $sucId ?>] = <?= $espId ?>;
+<?php endforeach; ?>
+<?php endif; ?>
 
 // Función para especialistas: cargar servicios al cambiar sucursal
 async function loadServicesForSpecialist(branchId) {
-    if (!isSpecialist || !currentSpecialistId) return;
+    if (!isSpecialist) return;
     
-    // Obtener el especialista_id correspondiente a esta sucursal
-    const response = await fetch(`${baseUrl}/api/especialista-sucursal?usuario_id=${currentSpecialistId}&sucursal_id=${branchId}`);
-    const data = await response.json();
+    // Obtener el especialista_id del mapeo
+    const especialistaId =branchToSpecialistMap[branchId];
     
-    if (data.especialista_id) {
-        // Actualizar el campo oculto
-        document.querySelector('input[name="especialista_id"]').value = data.especialista_id;
-        // Cargar servicios
-        loadServices(data.especialista_id);
+    if (!especialistaId) {
+        console.error('No se encontró especialista_id para sucursal:', branchId);
+        return;
     }
+    
+    // Actualizar el campo oculto
+    document.querySelector('input[name="especialista_id"]').value = especialistaId;
+    
+    // Cargar servicios
+    loadServices(especialistaId);
 }
 
 async function loadSpecialists(branchId) {
@@ -272,10 +284,11 @@ async function loadAvailability() {
     const specialistId = document.querySelector('input[name="especialista_id"]')?.value;
     const serviceId = document.querySelector('input[name="servicio_id"]:checked')?.value;
     const date = document.getElementById('fecha_cita').value;
+    const branchId = document.querySelector('input[name="sucursal_id"]:checked')?.value;
     
-    if (!specialistId || !serviceId || !date) return;
+    if (!specialistId || !serviceId || !date || !branchId) return;
     
-    const response = await fetch(`${baseUrl}/api/disponibilidad?especialista_id=${specialistId}&servicio_id=${serviceId}&fecha=${date}`);
+    const response = await fetch(`${baseUrl}/api/disponibilidad?especialista_id=${specialistId}&servicio_id=${serviceId}&fecha=${date}&sucursal_id=${branchId}`);
     const data = await response.json();
     
     const container = document.getElementById('timeList');

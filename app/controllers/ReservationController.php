@@ -124,6 +124,12 @@ class ReservationController extends BaseController {
                 $currentSpecialistBranchId = $specialistRecords[0]['sucursal_id'];
                 $currentSpecialistId = $specialistRecords[0]['id'];
             }
+            
+            // Crear mapeo de sucursal_id a especialista_id
+            $branchSpecialistMap = [];
+            foreach ($specialistRecords as $record) {
+                $branchSpecialistMap[$record['sucursal_id']] = $record['id'];
+            }
         } else {
             // Para otros roles: obtener todas las sucursales
             $branches = $this->db->fetchAll("SELECT id, nombre, direccion FROM sucursales WHERE activo = 1 ORDER BY nombre");
@@ -298,6 +304,7 @@ class ReservationController extends BaseController {
             'selectedService' => $servicio_id,
             'selectedDate' => $fecha,
             'currentSpecialistId' => $currentSpecialistId,
+            'branchSpecialistMap' => $branchSpecialistMap ?? [],
             'user' => $user,
             'error' => $error
         ]);

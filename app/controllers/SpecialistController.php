@@ -417,6 +417,11 @@ class SpecialistController extends BaseController {
                     $hora_inicio_bloqueo = $this->post('hora_inicio_bloqueo_' . $day);
                     $hora_fin_bloqueo = $this->post('hora_fin_bloqueo_' . $day);
                     
+                    // Emergencia
+                    $emergencia_activa = $this->post('emergencia_activa_' . $day) ? 1 : 0;
+                    $hora_inicio_emergencia = $this->post('hora_inicio_emergencia_' . $day);
+                    $hora_fin_emergencia = $this->post('hora_fin_emergencia_' . $day);
+                    
                     if ($activo && $inicio && $fin) {
                         // Validar que la hora de inicio sea menor que la hora de fin
                         if (strtotime($inicio) >= strtotime($fin)) {
@@ -443,15 +448,55 @@ class SpecialistController extends BaseController {
                             }
                         }
                         
+                        // Validar horario de emergencia si está activo
+                        if ($emergencia_activa && $hora_inicio_emergencia && $hora_fin_emergencia) {
+                            // La hora de inicio de emergencia debe ser menor que la de fin
+                            if (strtotime($hora_inicio_emergencia) >= strtotime($hora_fin_emergencia)) {
+                                setFlashMessage('error', 'La hora de inicio de emergencia debe ser menor que la hora de fin.');
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                                return;
+                            }
+                            
+                            // El horario de emergencia NO puede estar dentro del horario normal
+                            if ((strtotime($hora_inicio_emergencia) >= strtotime($inicio) && 
+                                 strtotime($hora_inicio_emergencia) < strtotime($fin)) ||
+                                (strtotime($hora_fin_emergencia) > strtotime($inicio) && 
+                                 strtotime($hora_fin_emergencia) <= strtotime($fin)) ||
+                                (strtotime($hora_inicio_emergencia) <= strtotime($inicio) && 
+                                 strtotime($hora_fin_emergencia) >= strtotime($fin))) {
+                                setFlashMessage('error', 'El horario de emergencia no puede estar dentro del horario laboral normal. Debe estar FUERA del horario regular.');
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                                return;
+                            }
+                            
+                            // El horario de emergencia NO puede estar dentro del horario de bloqueo
+                            if ($bloqueo_activo && $hora_inicio_bloqueo && $hora_fin_bloqueo) {
+                                if ((strtotime($hora_inicio_emergencia) >= strtotime($hora_inicio_bloqueo) && 
+                                     strtotime($hora_inicio_emergencia) < strtotime($hora_fin_bloqueo)) ||
+                                    (strtotime($hora_fin_emergencia) > strtotime($hora_inicio_bloqueo) && 
+                                     strtotime($hora_fin_emergencia) <= strtotime($hora_fin_bloqueo)) ||
+                                    (strtotime($hora_inicio_emergencia) <= strtotime($hora_inicio_bloqueo) && 
+                                     strtotime($hora_fin_emergencia) >= strtotime($hora_fin_bloqueo))) {
+                                    setFlashMessage('error', 'El horario de emergencia no puede estar dentro del horario de bloqueo.');
+                                    redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                                    return;
+                                }
+                            }
+                        }
+                        
                         $this->db->insert(
                             "INSERT INTO horarios_especialistas 
                              (especialista_id, dia_semana, hora_inicio, hora_fin, activo, 
-                              hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo) 
-                             VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
+                              hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo,
+                              hora_inicio_emergencia, hora_fin_emergencia, emergencia_activa) 
+                             VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)",
                             [$form_specialist_id, $day, $inicio, $fin, 
                              $bloqueo_activo ? $hora_inicio_bloqueo : null, 
                              $bloqueo_activo ? $hora_fin_bloqueo : null, 
-                             $bloqueo_activo]
+                             $bloqueo_activo,
+                             $emergencia_activa ? $hora_inicio_emergencia : null,
+                             $emergencia_activa ? $hora_fin_emergencia : null,
+                             $emergencia_activa]
                         );
                     }
                 }

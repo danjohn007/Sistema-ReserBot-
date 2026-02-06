@@ -115,10 +115,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
     
+    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+    // Crear mapeo de sucursales a colores basado en el orden del filtro
+    const sucursalColorMap = {};
+    <?php foreach ($branches as $index => $branch): ?>
+    sucursalColorMap[<?= $branch['id'] ?>] = <?= $index ?>;
+    <?php endforeach; ?>
+    <?php endif; ?>
+    
     window.calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'es',
-        height: 'auto',
+        height: 650,
+        contentHeight: 600,
+        aspectRatio: 1.8,
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -145,7 +155,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             fetch(url)
                 .then(response => response.json())
-                .then(data => successCallback(data))
+                .then(data => {
+                    successCallback(data);
+                })
                 .catch(error => {
                     console.error('Error loading events:', error);
                     failureCallback(error);
@@ -169,6 +181,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.style.transform = 'scale(1)';
                 this.style.boxShadow = 'none';
             });
+            
+            <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+            // Colorear la celda del día cuando se monta un evento
+            const fecha = info.event.start;
+            if (fecha && info.event.extendedProps.sucursal_id) {
+                // Verificar si hay filtro de sucursal activo
+                const filtroSucursal = document.getElementById('filter_sucursal')?.value || '';
+                
+                // Si hay filtro y el evento no es de esa sucursal, no colorear
+                if (filtroSucursal && info.event.extendedProps.sucursal_id != filtroSucursal) {
+                    return;
+                }
+                
+                const year = fecha.getFullYear();
+                const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                const day = String(fecha.getDate()).padStart(2, '0');
+                const fechaStr = `${year}-${month}-${day}`;
+                
+                const sucursalId = info.event.extendedProps.sucursal_id;
+                const colorIndex = sucursalColorMap[sucursalId] !== undefined 
+                    ? sucursalColorMap[sucursalId] % 6
+                    : 0;
+                
+                // Detectar si es hoy
+                const hoy = new Date();
+                const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                const esHoy = fechaStr === hoyStr;
+                
+                const coloresSuaves = [
+                    'rgba(59, 130, 246, 0.25)',   // Azul
+                    'rgba(236, 72, 153, 0.25)',   // Rosa
+                    'rgba(16, 185, 129, 0.25)',   // Verde
+                    'rgba(245, 158, 11, 0.25)',   // Naranja
+                    'rgba(139, 92, 246, 0.25)',   // Púrpura
+                    'rgba(239, 68, 68, 0.25)'     // Rojo
+                ];
+                
+                const coloresFuertes = [
+                    'rgba(59, 130, 246, 0.45)',   // Azul
+                    'rgba(236, 72, 153, 0.45)',   // Rosa
+                    'rgba(16, 185, 129, 0.45)',   // Verde
+                    'rgba(245, 158, 11, 0.45)',   // Naranja
+                    'rgba(139, 92, 246, 0.45)',   // Púrpura
+                    'rgba(239, 68, 68, 0.45)'     // Rojo
+                ];
+                
+                const color = esHoy ? coloresFuertes[colorIndex] : coloresSuaves[colorIndex];
+                
+                // Buscar la celda correspondiente
+                setTimeout(() => {
+                    const celda = document.querySelector(`.fc-day[data-date="${fechaStr}"]`);
+                    if (celda) {
+                        celda.style.backgroundColor = color;
+                        celda.style.transition = 'background-color 0.3s ease';
+                    }
+                }, 10);
+            }
+            <?php endif; ?>
         },
         slotMinTime: '07:00:00',
         slotMaxTime: '21:00:00',
@@ -195,9 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
             timeGridDay: {
                 slotDuration: '00:15:00'
             }
-        },
-        eventClassNames: function(arg) {
-            return ['rounded-lg', 'border-l-4'];
         }
     });
     
@@ -205,6 +272,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function filterCalendar() {
+    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+    // Limpiar colores de fondo antes de recargar eventos
+    document.querySelectorAll('.fc-day').forEach(celda => {
+        celda.style.backgroundColor = '';
+    });
+    <?php endif; ?>
     window.calendar.refetchEvents();
 }
 
