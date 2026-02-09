@@ -21,6 +21,19 @@ class ApiController extends BaseController {
             $this->json(['error' => 'Parámetros incompletos'], 400);
         }
         
+        // Verificar si el servicio es de emergencia
+        $servicioEspecialista = $this->db->fetch(
+            "SELECT es.es_emergencia FROM especialistas_servicios es 
+             WHERE es.especialista_id = ? AND es.servicio_id = ?",
+            [$especialista_id, $servicio_id]
+        );
+        
+        if (!$servicioEspecialista) {
+            $this->json(['error' => 'El especialista no ofrece este servicio'], 404);
+        }
+        
+        $esServicioEmergencia = $servicioEspecialista['es_emergencia'];
+        
         // Obtener duración del servicio
         $service = $this->db->fetch("SELECT duracion_minutos FROM servicios WHERE id = ?", [$servicio_id]);
         if (!$service) {
@@ -112,9 +125,14 @@ class ApiController extends BaseController {
         // Generar slots disponibles
         $slots = [];
         
+        // Determinar qué tipo de slots generar según el tipo de servicio
+        $generarSlotsNormales = !$esServicioEmergencia; // Servicios normales usan horario normal
+        $generarSlotsEmergencia = $esServicioEmergencia; // Servicios de emergencia usan horario de emergencia
+        
         // 1. Slots del horario normal (excluyendo horario de bloqueo)
-        $currentTime = strtotime($schedule['hora_inicio']);
-        $endTime = strtotime($schedule['hora_fin']);
+        if ($generarSlotsNormales) {
+            $currentTime = strtotime($schedule['hora_inicio']);
+            $endTime = strtotime($schedule['hora_fin']);
         
         // Si hay bloqueo activo, necesitamos dividir en dos rangos
         if ($schedule['bloqueo_activo'] && $schedule['hora_inicio_bloqueo'] && $schedule['hora_fin_bloqueo']) {
@@ -173,9 +191,10 @@ class ApiController extends BaseController {
                 $currentTime += 30 * 60;
             }
         }
+        } // Fin de generarSlotsNormales
         
-        // 2. Slots del horario de emergencia (si está activo)
-        if ($schedule['emergencia_activa'] && $schedule['hora_inicio_emergencia'] && $schedule['hora_fin_emergencia']) {
+        // 2. Slots del horario de emergencia (si está activo y el servicio es de emergencia)
+        if ($generarSlotsEmergencia && $schedule['emergencia_activa'] && $schedule['hora_inicio_emergencia'] && $schedule['hora_fin_emergencia']) {
             $emergencyStart = strtotime($schedule['hora_inicio_emergencia']);
             $emergencyEnd = strtotime($schedule['hora_fin_emergencia']);
             
@@ -233,19 +252,55 @@ class ApiController extends BaseController {
      */
     public function services() {
         $especialista_id = $this->get('especialista_id');
+        $fecha = $this->get('fecha'); // Opcional: para filtrar por horario de emergencia
+        $hora = $this->get('hora'); // Opcional: para filtrar por horario de emergencia
         
         if ($especialista_id) {
+            // Determinar si estamos en horario de emergencia
+            $es_horario_emergencia = false;
+            
+            if ($fecha && $hora) {
+                $dia_semana = date('N', strtotime($fecha)); // 1=Lunes, 7=Domingo
+                $hora_consulta = strtotime($hora);
+                
+                // Verificar si el especialista tiene horario de emergencia activo para ese día
+                $horario = $this->db->fetch(
+                    "SELECT hora_inicio, hora_fin, 
+                            hora_inicio_emergencia, hora_fin_emergencia, emergencia_activa
+                     FROM horarios_especialistas
+                     WHERE especialista_id = ? AND dia_semana = ? AND activo = 1",
+                    [$especialista_id, $dia_semana]
+                );
+                
+                if ($horario && $horario['emergencia_activa']) {
+                    $hora_inicio_normal = strtotime($horario['hora_inicio']);
+                    $hora_fin_normal = strtotime($horario['hora_fin']);
+                    $hora_inicio_emergencia = $horario['hora_inicio_emergencia'] ? strtotime($horario['hora_inicio_emergencia']) : null;
+                    $hora_fin_emergencia = $horario['hora_fin_emergencia'] ? strtotime($horario['hora_fin_emergencia']) : null;
+                    
+                    // Si la hora está fuera del horario normal pero dentro del horario de emergencia
+                    if ($hora_inicio_emergencia && $hora_fin_emergencia) {
+                        if (($hora_consulta < $hora_inicio_normal || $hora_consulta >= $hora_fin_normal) &&
+                            ($hora_consulta >= $hora_inicio_emergencia && $hora_consulta < $hora_fin_emergencia)) {
+                            $es_horario_emergencia = true;
+                        }
+                    }
+                }
+            }
+            
+            // Filtrar servicios según si es horario de emergencia o normal
             $services = $this->db->fetchAll(
                 "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
                         COALESCE(es.precio_personalizado, s.precio) as precio,
                         COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
-                        c.nombre as categoria_nombre
+                        c.nombre as categoria_nombre,
+                        es.es_emergencia
                  FROM servicios s
                  JOIN especialistas_servicios es ON s.id = es.servicio_id
                  JOIN categorias_servicios c ON s.categoria_id = c.id
-                 WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1
+                 WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND es.es_emergencia = ?
                  ORDER BY c.nombre, s.nombre",
-                [$especialista_id]
+                [$especialista_id, $es_horario_emergencia ? 1 : 0]
             );
         } else {
             $services = $this->db->fetchAll(

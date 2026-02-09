@@ -252,14 +252,20 @@ async function loadServices(specialistId) {
     const container = document.getElementById('serviceList');
     container.innerHTML = '';
     
+    // Separar servicios normales y de emergencia
+    const serviciosNormales = data.services.filter(s => !s.es_emergencia);
+    const serviciosEmergencia = data.services.filter(s => s.es_emergencia);
+    
     if (data.services.length === 0) {
         container.innerHTML = '<p class="col-span-2 text-center text-gray-500 py-4">No hay servicios disponibles</p>';
     } else {
-        data.services.forEach(serv => {
+        // Renderizar servicios normales
+        serviciosNormales.forEach(serv => {
             const price = parseFloat(serv.precio).toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
             container.innerHTML += `
                 <label class="relative">
                     <input type="radio" name="servicio_id" value="${serv.id}" 
+                           data-es-emergencia="0"
                            class="peer sr-only" onchange="document.getElementById('dateSection').style.display='block'">
                     <div class="p-4 border-2 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-blue-50 hover:border-gray-400">
                         <div class="flex justify-between items-start">
@@ -273,6 +279,32 @@ async function loadServices(specialistId) {
                 </label>
             `;
         });
+        
+        // Renderizar servicios de emergencia (si existen)
+        if (serviciosEmergencia.length > 0) {
+            serviciosEmergencia.forEach(serv => {
+                const price = parseFloat(serv.precio).toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
+                container.innerHTML += `
+                    <label class="relative">
+                        <input type="radio" name="servicio_id" value="${serv.id}" 
+                               data-es-emergencia="1"
+                               class="peer sr-only" onchange="document.getElementById('dateSection').style.display='block'">
+                        <div class="p-4 border-2 border-orange-300 rounded-lg cursor-pointer peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:border-orange-400 bg-orange-50">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h4 class="font-semibold text-gray-800">${serv.nombre}</h4>
+                                        <span class="px-2 py-0.5 text-xs font-semibold bg-orange-500 text-white rounded">EMERGENCIA</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">${serv.duracion_minutos} minutos • Solo disponible fuera del horario normal</p>
+                                </div>
+                                <span class="text-orange-600 font-bold ml-2">${price}</span>
+                            </div>
+                        </div>
+                    </label>
+                `;
+            });
+        }
     }
     
     document.getElementById('serviceSection').style.display = 'block';

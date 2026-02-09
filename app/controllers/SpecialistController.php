@@ -706,15 +706,16 @@ class SpecialistController extends BaseController {
                     $precio = !empty($data['precio']) ? floatval($data['precio']) : null;
                     $duracion = !empty($data['duracion']) ? intval($data['duracion']) : null;
                     $activo = isset($data['activo']) ? 1 : 0;
+                    $es_emergencia = isset($data['es_emergencia']) ? 1 : 0;
                     
                     // Debug: ver valores
-                    error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo");
+                    error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo, Emergencia: $es_emergencia");
                     
                     $this->db->update(
                         "UPDATE especialistas_servicios 
-                         SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?
+                         SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?, es_emergencia = ?
                          WHERE especialista_id = ? AND servicio_id = ?",
-                        [$precio, $duracion, $activo, $specialist['id'], $serviceId]
+                        [$precio, $duracion, $activo, $es_emergencia, $specialist['id'], $serviceId]
                     );
                 }
                 
@@ -739,6 +740,7 @@ class SpecialistController extends BaseController {
                 es.precio_personalizado,
                 es.duracion_personalizada,
                 es.activo,
+                es.es_emergencia,
                 c.nombre as categoria_nombre
             FROM especialistas_servicios es
             INNER JOIN servicios s ON es.servicio_id = s.id

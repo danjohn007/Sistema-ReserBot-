@@ -64,6 +64,9 @@
                                     Tu Duraci&oacute;n
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Emergencia
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Estado
                                 </th>
                             </tr>
@@ -80,7 +83,7 @@
                                     $categorySlug = 'cat-' . $categoryIndex;
                             ?>
                                 <tr class="bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors" onclick="toggleCategory('<?= $categorySlug ?>')">
-                                    <td colspan="7" class="px-6 py-2 text-sm font-semibold text-gray-700">
+                                    <td colspan="8" class="px-6 py-2 text-sm font-semibold text-gray-700">
                                         <div class="flex items-center">
                                             <i id="icon-<?= $categorySlug ?>" class="fas fa-chevron-down mr-2 transition-transform"></i>
                                             <?php echo htmlspecialchars($currentCategory ?: 'Sin categor&iacute;a'); ?>
@@ -154,6 +157,23 @@
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input 
                                                 type="checkbox" 
+                                                name="servicios[<?php echo $service['id']; ?>][es_emergencia]" 
+                                                value="1"
+                                                <?php echo ($service['es_emergencia'] ?? 0) ? 'checked' : ''; ?>
+                                                class="sr-only peer"
+                                            >
+                                            <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                    <div class="text-xs text-center mt-1 <?php echo ($service['es_emergencia'] ?? 0) ? 'text-green-600' : 'text-gray-500'; ?>">
+                                        <?php echo ($service['es_emergencia'] ?? 0) ? 'Activo' : 'Inactivo'; ?>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
                                                 name="servicios[<?php echo $service['id']; ?>][activo]" 
                                                 value="1"
                                                 <?php echo ($service['activo'] ?? 1) ? 'checked' : ''; ?>
@@ -181,7 +201,7 @@
                     <div class="ml-3">
                         <p class="text-sm text-blue-700">
                             <strong>Nota:</strong> Deja el campo vac&iacute;o para usar el precio o duraci&oacute;n base del servicio. 
-                            Los valores personalizados solo aplican para tus reservas.
+                            Los valores personalizados solo aplican para tus reservas. <strong>Emergencia:</strong> Agrega horas FUERA del horario normal para casos urgentes.
                         </p>
                     </div>
                 </div>
