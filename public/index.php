@@ -87,6 +87,8 @@ $routes = [
     '/reservaciones/confirmar' => ['controller' => 'ReservationController', 'action' => 'confirm'],
     '/reservaciones/cancelar' => ['controller' => 'ReservationController', 'action' => 'cancel'],
     '/reservaciones/reagendar' => ['controller' => 'ReservationController', 'action' => 'reagendar'],
+    '/reservaciones/completar' => ['controller' => 'ReservationController', 'action' => 'complete'],
+    '/reservaciones/no-asistio' => ['controller' => 'ReservationController', 'action' => 'noShow'],
     '/reservaciones/disponibilidad' => ['controller' => 'ReservationController', 'action' => 'availability'],
     '/mis-citas' => ['controller' => 'ReservationController', 'action' => 'myAppointments'],
     
@@ -131,6 +133,7 @@ $routes = [
     '/api/disponibilidad' => ['controller' => 'ApiController', 'action' => 'availability'],
     '/api/especialistas' => ['controller' => 'ApiController', 'action' => 'specialists'],
     '/api/especialista-sucursal' => ['controller' => 'ApiController', 'action' => 'getSpecialistBranch'],
+    '/api/especialista-sucursal-dia' => ['controller' => 'ApiController', 'action' => 'getSpecialistBranchByDay'],
     '/api/servicios' => ['controller' => 'ApiController', 'action' => 'services'],
     '/api/servicios/crear' => ['controller' => 'ApiController', 'action' => 'createService'],
     '/api/sucursales' => ['controller' => 'ApiController', 'action' => 'branches'],

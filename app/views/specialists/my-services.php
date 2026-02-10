@@ -16,6 +16,36 @@
         </div>
     </div>
 
+    <?php if (count($allSpecialists) > 1): ?>
+    <!-- Tabs para múltiples sucursales -->
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <div class="mb-6 border-b border-gray-200 overflow-x-auto hide-scrollbar" style="max-width: 100%;">
+        <nav class="-mb-px flex space-x-2" aria-label="Tabs" style="min-width: min-content;">
+            <?php foreach ($allSpecialists as $spec): ?>
+            <a href="<?= url('/especialistas/mis-servicios?specialist_id=' . $spec['id']) ?>" 
+               class="<?= $spec['id'] == $currentSpecialistId ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex-shrink-0">
+                <i class="fas fa-building mr-1 text-xs"></i><?= e($spec['sucursal_nombre']) ?>
+            </a>
+            <?php endforeach; ?>
+        </nav>
+    </div>
+    
+    <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+        <p class="text-sm text-blue-700">
+            <i class="fas fa-info-circle mr-2"></i>
+            Est&aacute;s editando los servicios para: <strong><?= e($specialist['sucursal_nombre']) ?></strong>
+        </p>
+    </div>
+    <?php endif; ?>
+
     <?php if (isset($_SESSION['flash'])): ?>
         <div class="mb-6 p-4 rounded-lg <?php echo $_SESSION['flash']['type'] === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
             <?php 
@@ -40,6 +70,7 @@
         </div>
     <?php else: ?>
         <form method="POST" action="<?= url('/especialistas/mis-servicios') ?>" class="space-y-6">
+            <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -235,6 +266,7 @@
             </div>
         </div>
         <form method="POST" action="<?= url('/especialistas/asignar-servicio') ?>">
+            <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
             <div class="p-6">
                 <?php if (empty($availableServices)): ?>
                     <p class="text-gray-600">Ya tienes todos los servicios disponibles asignados.</p>

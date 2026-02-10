@@ -34,6 +34,9 @@ class ApiController extends BaseController {
         
         $esServicioEmergencia = $servicioEspecialista['es_emergencia'];
         
+        // DEBUG: Log para verificar el tipo de servicio
+        error_log("[AVAILABILITY DEBUG] Especialista: $especialista_id, Servicio: $servicio_id, es_emergencia DB: " . ($esServicioEmergencia ? '1' : '0'));
+        
         // Obtener duración del servicio
         $service = $this->db->fetch("SELECT duracion_minutos FROM servicios WHERE id = ?", [$servicio_id]);
         if (!$service) {
@@ -129,6 +132,13 @@ class ApiController extends BaseController {
         $generarSlotsNormales = !$esServicioEmergencia; // Servicios normales usan horario normal
         $generarSlotsEmergencia = $esServicioEmergencia; // Servicios de emergencia usan horario de emergencia
         
+        // DEBUG: Log para verificar qué tipo de slots se generarán
+        error_log("[AVAILABILITY DEBUG] Horario - Normal: " . ($schedule['hora_inicio'] ?? 'N/A') . "-" . ($schedule['hora_fin'] ?? 'N/A') . 
+                  ", Emergencia: " . ($schedule['hora_inicio_emergencia'] ?? 'N/A') . "-" . ($schedule['hora_fin_emergencia'] ?? 'N/A') . 
+                  ", Emergencia Activa: " . ($schedule['emergencia_activa'] ? 'SI' : 'NO'));
+        error_log("[AVAILABILITY DEBUG] Generar Normales: " . ($generarSlotsNormales ? 'SI' : 'NO') . 
+                  ", Generar Emergencia: " . ($generarSlotsEmergencia ? 'SI' : 'NO'));
+        
         // 1. Slots del horario normal (excluyendo horario de bloqueo)
         if ($generarSlotsNormales) {
             $currentTime = strtotime($schedule['hora_inicio']);
@@ -221,6 +231,9 @@ class ApiController extends BaseController {
             return strcmp($a['hora_inicio'], $b['hora_inicio']);
         });
         
+        // DEBUG: Log de resultados
+        error_log("[AVAILABILITY DEBUG] Total slots generados: " . count($slots));
+        
         $this->json(['slots' => $slots]);
     }
     
@@ -289,19 +302,38 @@ class ApiController extends BaseController {
             }
             
             // Filtrar servicios según si es horario de emergencia o normal
-            $services = $this->db->fetchAll(
-                "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
-                        COALESCE(es.precio_personalizado, s.precio) as precio,
-                        COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
-                        c.nombre as categoria_nombre,
-                        es.es_emergencia
-                 FROM servicios s
-                 JOIN especialistas_servicios es ON s.id = es.servicio_id
-                 JOIN categorias_servicios c ON s.categoria_id = c.id
-                 WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND es.es_emergencia = ?
-                 ORDER BY c.nombre, s.nombre",
-                [$especialista_id, $es_horario_emergencia ? 1 : 0]
-            );
+            // Si no se proporciona fecha/hora, mostrar TODOS los servicios disponibles
+            if ($fecha && $hora) {
+                // Filtrar por tipo de horario
+                $services = $this->db->fetchAll(
+                    "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
+                            COALESCE(es.precio_personalizado, s.precio) as precio,
+                            COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
+                            c.nombre as categoria_nombre,
+                            es.es_emergencia
+                     FROM servicios s
+                     JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN categorias_servicios c ON s.categoria_id = c.id
+                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND es.es_emergencia = ?
+                     ORDER BY c.nombre, s.nombre",
+                    [$especialista_id, $es_horario_emergencia ? 1 : 0]
+                );
+            } else {
+                // Mostrar todos los servicios (normal y emergencia)
+                $services = $this->db->fetchAll(
+                    "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
+                            COALESCE(es.precio_personalizado, s.precio) as precio,
+                            COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
+                            c.nombre as categoria_nombre,
+                            es.es_emergencia
+                     FROM servicios s
+                     JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN categorias_servicios c ON s.categoria_id = c.id
+                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1
+                     ORDER BY es.es_emergencia DESC, c.nombre, s.nombre",
+                    [$especialista_id]
+                );
+            }
         } else {
             $services = $this->db->fetchAll(
                 "SELECT s.*, c.nombre as categoria_nombre
@@ -336,6 +368,39 @@ class ApiController extends BaseController {
             $this->json(['especialista_id' => $specialist['id']]);
         } else {
             $this->json(['error' => 'Especialista no encontrado para esta sucursal'], 404);
+        }
+    }
+    
+    /**
+     * Obtener sucursal del especialista según el día de la semana
+     */
+    public function getSpecialistBranchByDay() {
+        $usuario_id = $this->get('usuario_id');
+        $dia_semana = $this->get('dia_semana'); // 1-7 (lunes-domingo)
+        
+        if (!$usuario_id || !$dia_semana) {
+            $this->json(['error' => 'Parámetros incompletos'], 400);
+        }
+        
+        // Buscar en qué sucursal trabaja el especialista ese día
+        $result = $this->db->fetch(
+            "SELECT e.id as especialista_id, e.sucursal_id, s.nombre as sucursal_nombre
+             FROM especialistas e
+             INNER JOIN horarios_especialistas he ON he.especialista_id = e.id
+             INNER JOIN sucursales s ON s.id = e.sucursal_id
+             WHERE e.usuario_id = ? AND he.dia_semana = ? AND e.activo = 1
+             LIMIT 1",
+            [$usuario_id, $dia_semana]
+        );
+        
+        if ($result) {
+            $this->json([
+                'especialista_id' => $result['especialista_id'],
+                'sucursal_id' => $result['sucursal_id'],
+                'sucursal_nombre' => $result['sucursal_nombre']
+            ]);
+        } else {
+            $this->json(['error' => 'No se encontró horario para este día'], 404);
         }
     }
     

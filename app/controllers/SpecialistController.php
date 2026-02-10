@@ -680,15 +680,43 @@ class SpecialistController extends BaseController {
     {
         $this->requireRole([ROLE_SPECIALIST]);
         
-        // Obtener el especialista del usuario actual
-        $specialist = $this->db->fetch(
-            "SELECT id FROM especialistas WHERE usuario_id = ?",
-            [$_SESSION['user']['id']]
+        $usuario_id = $_SESSION['user']['id'];
+        
+        // Obtener TODOS los registros de especialistas de este usuario (uno por sucursal)
+        $allSpecialists = $this->db->fetchAll(
+            "SELECT e.*, s.nombre as sucursal_nombre, u.nombre, u.apellidos 
+             FROM especialistas e 
+             JOIN sucursales s ON e.sucursal_id = s.id 
+             JOIN usuarios u ON e.usuario_id = u.id
+             WHERE e.usuario_id = ? AND e.activo = 1
+             ORDER BY s.nombre",
+            [$usuario_id]
         );
         
-        if (!$specialist) {
+        if (empty($allSpecialists)) {
             setFlashMessage('error', 'No se encontró el perfil del especialista.');
             redirect('/dashboard');
+        }
+        
+        // Determinar qué especialista_id estamos editando
+        $current_specialist_id = $this->get('specialist_id');
+        if (!$current_specialist_id) {
+            // Por defecto, el primero
+            $current_specialist_id = $allSpecialists[0]['id'];
+        }
+        
+        // Obtener el especialista actual
+        $specialist = null;
+        foreach ($allSpecialists as $spec) {
+            if ($spec['id'] == $current_specialist_id) {
+                $specialist = $spec;
+                break;
+            }
+        }
+        
+        if (!$specialist) {
+            $specialist = $allSpecialists[0];
+            $current_specialist_id = $specialist['id'];
         }
         
         // Manejar actualización de precios
@@ -711,11 +739,17 @@ class SpecialistController extends BaseController {
                     // Debug: ver valores
                     error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo, Emergencia: $es_emergencia");
                     
+                    // Obtener el especialista_id del POST para asegurar que se actualiza el correcto
+                    $especialista_id = $this->post('specialist_id');
+                    if (!$especialista_id) {
+                        $especialista_id = $current_specialist_id;
+                    }
+                    
                     $this->db->update(
                         "UPDATE especialistas_servicios 
                          SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?, es_emergencia = ?
                          WHERE especialista_id = ? AND servicio_id = ?",
-                        [$precio, $duracion, $activo, $es_emergencia, $specialist['id'], $serviceId]
+                        [$precio, $duracion, $activo, $es_emergencia, $especialista_id, $serviceId]
                     );
                 }
                 
@@ -726,10 +760,16 @@ class SpecialistController extends BaseController {
                 setFlashMessage('info', 'No se enviaron cambios.');
             }
             
-            redirect('/especialistas/mis-servicios');
+            // Redirigir manteniendo el specialist_id seleccionado
+            $redirect_specialist_id = $this->post('specialist_id');
+            if ($redirect_specialist_id) {
+                redirect('/especialistas/mis-servicios?specialist_id=' . $redirect_specialist_id);
+            } else {
+                redirect('/especialistas/mis-servicios');
+            }
         }
         
-        // Obtener servicios del especialista
+        // Obtener servicios del especialista actual (sucursal específica)
         $services = $this->db->fetchAll(
             "SELECT 
                 s.id,
@@ -747,10 +787,10 @@ class SpecialistController extends BaseController {
             LEFT JOIN categorias_servicios c ON s.categoria_id = c.id
             WHERE es.especialista_id = ?
             ORDER BY c.nombre, s.nombre",
-            [$specialist['id']]
+            [$current_specialist_id]
         );
         
-        // Obtener servicios disponibles (no asignados aún)
+        // Obtener servicios disponibles (no asignados aún a esta sucursal)
         $availableServices = $this->db->fetchAll(
             "SELECT s.id, s.nombre, s.precio, s.duracion_minutos, c.nombre as categoria_nombre
             FROM servicios s
@@ -760,7 +800,7 @@ class SpecialistController extends BaseController {
                 SELECT servicio_id FROM especialistas_servicios WHERE especialista_id = ?
             )
             ORDER BY c.nombre, s.nombre",
-            [$specialist['id']]
+            [$current_specialist_id]
         );
         
         // Obtener categorías para crear nuevos servicios
@@ -773,7 +813,10 @@ class SpecialistController extends BaseController {
             'services' => $services,
             'availableServices' => $availableServices,
             'categories' => $categories,
-            'specialistId' => $specialist['id']
+            'specialistId' => $current_specialist_id,
+            'specialist' => $specialist,
+            'allSpecialists' => $allSpecialists,
+            'currentSpecialistId' => $current_specialist_id
         ]);
     }
     
@@ -788,12 +831,20 @@ class SpecialistController extends BaseController {
             redirect('/especialistas/mis-servicios');
         }
         
-        $specialist = $this->db->fetch(
-            "SELECT id FROM especialistas WHERE usuario_id = ?",
-            [$_SESSION['user']['id']]
-        );
+        // Obtener el specialist_id del POST (sucursal específica)
+        $specialist_id = $this->post('specialist_id');
+        if (!$specialist_id) {
+            // Si no viene, usar el primer especialista del usuario
+            $specialist = $this->db->fetch(
+                "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1 ORDER BY id LIMIT 1",
+                [$_SESSION['user']['id']]
+            );
+            if ($specialist) {
+                $specialist_id = $specialist['id'];
+            }
+        }
         
-        if (!$specialist) {
+        if (!$specialist_id) {
             setFlashMessage('error', 'No se encontró el perfil del especialista.');
             redirect('/dashboard');
         }
@@ -802,7 +853,11 @@ class SpecialistController extends BaseController {
         
         if (!$servicio_id) {
             setFlashMessage('error', 'Debe seleccionar un servicio.');
-            redirect('/especialistas/mis-servicios');
+            $redirect_url = '/especialistas/mis-servicios';
+            if ($specialist_id) {
+                $redirect_url .= '?specialist_id=' . $specialist_id;
+            }
+            redirect($redirect_url);
         }
         
         // Verificar que el servicio existe y no está ya asignado
@@ -813,7 +868,7 @@ class SpecialistController extends BaseController {
         
         $alreadyAssigned = $this->db->fetch(
             "SELECT id FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
-            [$specialist['id'], $servicio_id]
+            [$specialist_id, $servicio_id]
         );
         
         if (!$exists) {
@@ -823,14 +878,18 @@ class SpecialistController extends BaseController {
         } else {
             $this->db->insert(
                 "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
-                [$specialist['id'], $servicio_id]
+                [$specialist_id, $servicio_id]
             );
             
             logAction('specialist_service_assigned', 'Servicio asignado al especialista');
             setFlashMessage('success', 'Servicio agregado correctamente.');
         }
         
-        redirect('/especialistas/mis-servicios');
+        $redirect_url = '/especialistas/mis-servicios';
+        if ($specialist_id) {
+            $redirect_url .= '?specialist_id=' . $specialist_id;
+        }
+        redirect($redirect_url);
     }
     
     /**

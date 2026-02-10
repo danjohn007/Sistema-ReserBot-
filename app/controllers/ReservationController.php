@@ -359,11 +359,19 @@ class ReservationController extends BaseController {
     public function confirm() {
         $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST, ROLE_RECEPTIONIST]);
         
-        $id = $this->get('id');
+        $id = $this->isPost() ? $this->post('id') : $this->get('id');
         
         $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
         
-        if ($reservation && $reservation['estado'] == 'pendiente') {
+        if (!$reservation) {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Reservación no encontrada'], 404);
+            }
+            setFlashMessage('error', 'Reservación no encontrada.');
+            redirect('/reservaciones');
+        }
+        
+        if ($reservation['estado'] == 'pendiente') {
             $this->db->update("UPDATE reservaciones SET estado = 'confirmada' WHERE id = ?", [$id]);
             
             // Notificar al cliente
@@ -372,7 +380,16 @@ class ReservationController extends BaseController {
                 "Su cita del " . formatDate($reservation['fecha_cita']) . " ha sido confirmada.");
             
             logAction('reservation_confirm', 'Reservación confirmada: ' . $reservation['codigo']);
+            
+            if ($this->isPost()) {
+                $this->json(['success' => true, 'message' => 'Reservación confirmada exitosamente']);
+            }
             setFlashMessage('success', 'Reservación confirmada.');
+        } else {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'La reservación no está en estado pendiente']);
+            }
+            setFlashMessage('warning', 'La reservación no está en estado pendiente.');
         }
         
         redirect('/reservaciones/ver?id=' . $id);
@@ -384,12 +401,15 @@ class ReservationController extends BaseController {
     public function cancel() {
         $this->requireAuth();
         
-        $id = $this->get('id');
+        $id = $this->isPost() ? $this->post('id') : $this->get('id');
         $user = currentUser();
         
         $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
         
         if (!$reservation) {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Reservación no encontrada'], 404);
+            }
             setFlashMessage('error', 'Reservación no encontrada.');
             redirect('/reservaciones');
         }
@@ -397,6 +417,9 @@ class ReservationController extends BaseController {
         // Verificar permisos
         if ($user['rol_id'] == ROLE_CLIENT) {
             if ($reservation['cliente_id'] != $user['id']) {
+                if ($this->isPost()) {
+                    $this->json(['success' => false, 'message' => 'No tiene permisos para cancelar esta reservación'], 403);
+                }
                 setFlashMessage('error', 'No tiene permisos para cancelar esta reservación.');
                 redirect('/reservaciones');
             }
@@ -405,12 +428,16 @@ class ReservationController extends BaseController {
             $horasAnticipacion = getConfig('horas_anticipacion_cancelacion', 24);
             $fechaCita = strtotime($reservation['fecha_cita'] . ' ' . $reservation['hora_inicio']);
             if ($fechaCita - time() < ($horasAnticipacion * 3600)) {
+                if ($this->isPost()) {
+                    $this->json(['success' => false, 'message' => 'No puede cancelar con menos de ' . $horasAnticipacion . ' horas de anticipación']);
+                }
                 setFlashMessage('error', 'No puede cancelar con menos de ' . $horasAnticipacion . ' horas de anticipación.');
                 redirect('/reservaciones/ver?id=' . $id);
             }
         }
         
-        $motivo = $this->get('motivo') ?: 'Cancelada por el usuario';
+        $motivo = $this->isPost() ? $this->post('motivo') : $this->get('motivo');
+        if (!$motivo) $motivo = 'Cancelada por el usuario';
         
         if ($reservation['estado'] != 'cancelada' && $reservation['estado'] != 'completada') {
             $this->db->update(
@@ -424,10 +451,104 @@ class ReservationController extends BaseController {
                 "Su cita del " . formatDate($reservation['fecha_cita']) . " ha sido cancelada.");
             
             logAction('reservation_cancel', 'Reservación cancelada: ' . $reservation['codigo']);
+            
+            if ($this->isPost()) {
+                $this->json(['success' => true, 'message' => 'Reservación cancelada exitosamente']);
+            }
             setFlashMessage('success', 'Reservación cancelada.');
+        } else {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'La reservación ya está cancelada o completada']);
+            }
+            setFlashMessage('warning', 'La reservación ya está cancelada o completada.');
         }
         
         redirect('/reservaciones');
+    }
+    
+    /**
+     * Marcar reservación como completada
+     */
+    public function complete() {
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST, ROLE_RECEPTIONIST]);
+        
+        $id = $this->isPost() ? $this->post('id') : $this->get('id');
+        
+        $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
+        
+        if (!$reservation) {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Reservación no encontrada'], 404);
+            }
+            setFlashMessage('error', 'Reservación no encontrada.');
+            redirect('/reservaciones');
+        }
+        
+        if ($reservation['estado'] == 'confirmada') {
+            $this->db->update("UPDATE reservaciones SET estado = 'completada' WHERE id = ?", [$id]);
+            
+            logAction('reservation_complete', 'Reservación completada: ' . $reservation['codigo']);
+            
+            if ($this->isPost()) {
+                $this->json(['success' => true, 'message' => 'Reservación marcada como completada']);
+            }
+            setFlashMessage('success', 'Reservación marcada como completada.');
+        } else {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Solo se pueden completar citas confirmadas']);
+            }
+            setFlashMessage('warning', 'Solo se pueden completar citas confirmadas.');
+        }
+        
+        if ($this->isPost()) {
+            return;
+        }
+        redirect('/reservaciones/ver?id=' . $id);
+    }
+    
+    /**
+     * Marcar que el cliente no asistió
+     */
+    public function noShow() {
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST, ROLE_RECEPTIONIST]);
+        
+        $id = $this->isPost() ? $this->post('id') : $this->get('id');
+        
+        $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
+        
+        if (!$reservation) {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Reservación no encontrada'], 404);
+            }
+            setFlashMessage('error', 'Reservación no encontrada.');
+            redirect('/reservaciones');
+        }
+        
+        if ($reservation['estado'] == 'confirmada') {
+            $this->db->update("UPDATE reservaciones SET estado = 'no_asistio' WHERE id = ?", [$id]);
+            
+            // Notificar al cliente
+            $this->createNotification($reservation['cliente_id'], 'cita_no_asistio', 
+                'Ausencia registrada', 
+                "Se ha registrado su ausencia a la cita del " . formatDate($reservation['fecha_cita']) . ".");
+            
+            logAction('reservation_no_show', 'Cliente no asistió: ' . $reservation['codigo']);
+            
+            if ($this->isPost()) {
+                $this->json(['success' => true, 'message' => 'Marcado como no asistió']);
+            }
+            setFlashMessage('success', 'Marcado como no asistió.');
+        } else {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Solo se pueden marcar citas confirmadas como no asistió']);
+            }
+            setFlashMessage('warning', 'Solo se pueden marcar citas confirmadas como no asistió.');
+        }
+        
+        if ($this->isPost()) {
+            return;
+        }
+        redirect('/reservaciones/ver?id=' . $id);
     }
     
     /**

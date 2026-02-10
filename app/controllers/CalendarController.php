@@ -51,10 +51,18 @@ class CalendarController extends BaseController {
             );
         }
         
+        // Para especialistas: obtener su usuario_id para crear reservas
+        $currentSpecialistId = null;
+        if ($user['rol_id'] == ROLE_SPECIALIST) {
+            $currentSpecialistId = $user['id'];
+        }
+        
         $this->render('calendar/index', [
             'title' => 'Calendario',
             'branches' => $branches,
-            'specialists' => $specialists
+            'specialists' => $specialists,
+            'currentSpecialistId' => $currentSpecialistId,
+            'user' => $user
         ]);
     }
     
