@@ -684,7 +684,8 @@ class SpecialistController extends BaseController {
         
         // Obtener TODOS los registros de especialistas de este usuario (uno por sucursal)
         $allSpecialists = $this->db->fetchAll(
-            "SELECT e.*, s.nombre as sucursal_nombre, u.nombre, u.apellidos 
+            "SELECT e.*, s.nombre as sucursal_nombre, u.nombre, u.apellidos, 
+                    u.requiere_adelanto, u.porcentaje_adelanto
              FROM especialistas e 
              JOIN sucursales s ON e.sucursal_id = s.id 
              JOIN usuarios u ON e.usuario_id = u.id
@@ -903,14 +904,21 @@ class SpecialistController extends BaseController {
             redirect('/especialistas/mis-servicios');
         }
         
+        $usuario_id = $_SESSION['user']['id'];
+        $specialist_id = $this->post('specialist_id');
+        
+        // Validar que el specialist_id pertenece al usuario actual
         $specialist = $this->db->fetch(
-            "SELECT id FROM especialistas WHERE usuario_id = ?",
-            [$_SESSION['user']['id']]
+            "SELECT e.*, s.nombre as sucursal_nombre 
+             FROM especialistas e 
+             JOIN sucursales s ON e.sucursal_id = s.id
+             WHERE e.id = ? AND e.usuario_id = ? AND e.activo = 1",
+            [$specialist_id, $usuario_id]
         );
         
         if (!$specialist) {
-            setFlashMessage('error', 'No se encontró el perfil del especialista.');
-            redirect('/dashboard');
+            setFlashMessage('error', 'Sucursal no válida o no encontrada.');
+            redirect('/especialistas/mis-servicios');
         }
         
         $nombre = $this->post('nombre');
@@ -919,9 +927,26 @@ class SpecialistController extends BaseController {
         $precio = $this->post('precio');
         $duracion = $this->post('duracion');
         
-        if (empty($nombre) || empty($precio) || empty($duracion) || empty($categoria_id)) {
-            setFlashMessage('error', 'El nombre, categoría, precio y duración son obligatorios.');
-            redirect('/especialistas/mis-servicios');
+        // Validar campos obligatorios
+        if (empty($nombre) || empty($precio) || empty($duracion)) {
+            setFlashMessage('error', 'El nombre, precio y duración son obligatorios.');
+            redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
+        }
+        
+        // Si no se proporciona categoría, buscar "Otros" o crear una por defecto
+        if (empty($categoria_id)) {
+            $otrosCategoria = $this->db->fetch(
+                "SELECT id FROM categorias_servicios WHERE LOWER(nombre) IN ('otro', 'otros') AND activo = 1 LIMIT 1"
+            );
+            
+            if ($otrosCategoria) {
+                $categoria_id = $otrosCategoria['id'];
+            } else {
+                // Crear categoría "Otros" si no existe
+                $categoria_id = $this->db->insert(
+                    "INSERT INTO categorias_servicios (nombre, descripcion, activo) VALUES ('Otros', 'Servicios varios', 1)"
+                );
+            }
         }
         
         // Crear el servicio en la tabla principal
@@ -938,12 +963,216 @@ class SpecialistController extends BaseController {
                 [$specialist['id'], $serviceId]
             );
             
-            logAction('specialist_service_created', 'Servicio personal creado: ' . $nombre);
-            setFlashMessage('success', 'Servicio creado y agregado correctamente.');
+            logAction('specialist_service_created', 'Servicio personal creado: ' . $nombre . ' para sucursal: ' . $specialist['sucursal_nombre']);
+            setFlashMessage('success', 'Servicio creado y agregado correctamente a ' . $specialist['sucursal_nombre'] . '.');
         } else {
             setFlashMessage('error', 'Error al crear el servicio.');
         }
         
-        redirect('/especialistas/mis-servicios');
+        redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
+    }
+    
+    public function editService()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        if (!$this->isPost()) {
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        $usuario_id = $_SESSION['user']['id'];
+        $servicio_id = $this->post('servicio_id');
+        $current_specialist_id = $this->post('current_specialist_id');
+        $new_specialist_id = $this->post('specialist_id');
+        $nombre = trim($this->post('nombre') ?? '');
+        $descripcion = trim($this->post('descripcion') ?? '');
+        
+        if (!$servicio_id || !$current_specialist_id || !$new_specialist_id || !$nombre) {
+            setFlashMessage('error', 'Datos incompletos para editar el servicio.');
+            redirect('/especialistas/mis-servicios');
+            return;
+        }
+        
+        // Validar que el especialista actual pertenece al usuario logueado
+        $currentSpecialist = $this->db->fetch(
+            "SELECT e.id FROM especialistas e 
+             WHERE e.id = ? AND e.usuario_id = ?",
+            [$current_specialist_id, $usuario_id]
+        );
+        
+        if (!$currentSpecialist) {
+            setFlashMessage('error', 'No tienes permiso para editar este servicio.');
+            redirect('/especialistas/mis-servicios');
+            return;
+        }
+        
+        // Validar que el servicio está asociado al especialista actual
+        $serviceAssociation = $this->db->fetch(
+            "SELECT * FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+            [$current_specialist_id, $servicio_id]
+        );
+        
+        if (!$serviceAssociation) {
+            setFlashMessage('error', 'Este servicio no está asociado a tu perfil.');
+            redirect('/especialistas/mis-servicios?specialist_id=' . $current_specialist_id);
+            return;
+        }
+        
+        // Validar que el nuevo especialista también pertenece al usuario logueado
+        $newSpecialist = $this->db->fetch(
+            "SELECT e.id, s.nombre as sucursal_nombre FROM especialistas e
+             JOIN sucursales s ON e.sucursal_id = s.id
+             WHERE e.id = ? AND e.usuario_id = ?",
+            [$new_specialist_id, $usuario_id]
+        );
+        
+        if (!$newSpecialist) {
+            setFlashMessage('error', 'No tienes permiso para asignar a esa sucursal.');
+            redirect('/especialistas/mis-servicios?specialist_id=' . $current_specialist_id);
+            return;
+        }
+        
+        // Actualizar el servicio (nombre y descripción)
+        $this->db->update(
+            "UPDATE servicios SET nombre = ?, descripcion = ? WHERE id = ?",
+            [$nombre, $descripcion, $servicio_id]
+        );
+        
+        // Si cambió la sucursal, mover el servicio
+        if ($current_specialist_id != $new_specialist_id) {
+            // Eliminar de la sucursal actual
+            $this->db->delete(
+                "DELETE FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+                [$current_specialist_id, $servicio_id]
+            );
+            
+            // Agregar a la nueva sucursal (solo si no existe ya)
+            $existingAssociation = $this->db->fetch(
+                "SELECT * FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+                [$new_specialist_id, $servicio_id]
+            );
+            
+            if (!$existingAssociation) {
+                $this->db->insert(
+                    "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                    [$new_specialist_id, $servicio_id]
+                );
+            }
+            
+            logAction('specialist_service_moved', 'Servicio movido: ' . $nombre . ' a sucursal: ' . $newSpecialist['sucursal_nombre']);
+            setFlashMessage('success', 'Servicio actualizado y movido a ' . $newSpecialist['sucursal_nombre'] . '.');
+        } else {
+            logAction('specialist_service_edited', 'Servicio editado: ' . $nombre);
+            setFlashMessage('success', 'Servicio actualizado correctamente.');
+        }
+        
+        redirect('/especialistas/mis-servicios?specialist_id=' . $new_specialist_id);
+    }
+    
+    public function removeService()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        if (!$this->isPost()) {
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        $usuario_id = $_SESSION['user']['id'];
+        $servicio_id = $this->post('servicio_id');
+        $specialist_id = $this->post('specialist_id');
+        
+        if (!$servicio_id || !$specialist_id) {
+            setFlashMessage('error', 'Datos incompletos para eliminar el servicio.');
+            redirect('/especialistas/mis-servicios');
+            return;
+        }
+        
+        // Validar que el especialista pertenece al usuario logueado
+        $specialist = $this->db->fetch(
+            "SELECT e.id, s.nombre as sucursal_nombre FROM especialistas e
+             JOIN sucursales s ON e.sucursal_id = s.id
+             WHERE e.id = ? AND e.usuario_id = ?",
+            [$specialist_id, $usuario_id]
+        );
+        
+        if (!$specialist) {
+            setFlashMessage('error', 'No tienes permiso para realizar esta acción.');
+            redirect('/especialistas/mis-servicios');
+            return;
+        }
+        
+        // Obtener nombre del servicio para el log
+        $servicio = $this->db->fetch(
+            "SELECT nombre FROM servicios WHERE id = ?",
+            [$servicio_id]
+        );
+        
+        // Validar que el servicio está asociado al especialista
+        $serviceAssociation = $this->db->fetch(
+            "SELECT * FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+            [$specialist_id, $servicio_id]
+        );
+        
+        if (!$serviceAssociation) {
+            setFlashMessage('error', 'Este servicio no está asociado a esta sucursal.');
+            redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
+            return;
+        }
+        
+        // Eliminar SOLO de especialistas_servicios (no de la tabla servicios)
+        $this->db->delete(
+            "DELETE FROM especialistas_servicios WHERE especialista_id = ? AND servicio_id = ?",
+            [$specialist_id, $servicio_id]
+        );
+        
+        logAction('specialist_service_removed', 'Servicio eliminado de sucursal: ' . ($servicio['nombre'] ?? $servicio_id) . ' - ' . $specialist['sucursal_nombre']);
+        setFlashMessage('success', 'Servicio eliminado de ' . $specialist['sucursal_nombre'] . '.');
+        
+        redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
+    }
+    
+    public function updateAdelanto()
+    {
+        $this->requireRole([ROLE_SPECIALIST]);
+        
+        if (!$this->isPost()) {
+            redirect('/especialistas/mis-servicios');
+        }
+        
+        $usuario_id = $_SESSION['user']['id'];
+        $requiere_adelanto = $this->post('requiere_adelanto') ? 1 : 0;
+        $porcentaje_adelanto = intval($this->post('porcentaje_adelanto') ?? 0);
+        
+        // Validar que el porcentaje esté entre 0 y 100
+        if ($porcentaje_adelanto < 0) $porcentaje_adelanto = 0;
+        if ($porcentaje_adelanto > 100) $porcentaje_adelanto = 100;
+        
+        // Si está desactivado, forzar porcentaje a 0
+        if (!$requiere_adelanto) {
+            $porcentaje_adelanto = 0;
+        }
+        
+        // Actualizar en la tabla usuarios (aplica a todos los especialistas de este usuario)
+        $this->db->update(
+            "UPDATE usuarios SET requiere_adelanto = ?, porcentaje_adelanto = ? WHERE id = ?",
+            [$requiere_adelanto, $porcentaje_adelanto, $usuario_id]
+        );
+        
+        $status = $requiere_adelanto ? "activado con {$porcentaje_adelanto}%" : "desactivado";
+        logAction('specialist_adelanto_updated', "Porcentaje de adelanto {$status}");
+        
+        $message = $requiere_adelanto 
+            ? "Porcentaje de adelanto activado: {$porcentaje_adelanto}% para todos tus servicios."
+            : "Porcentaje de adelanto desactivado.";
+            
+        setFlashMessage('success', $message);
+        
+        // Mantener el specialist_id si existe
+        $specialist_id = $this->post('specialist_id') ?? $this->get('specialist_id');
+        if ($specialist_id) {
+            redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
+        } else {
+            redirect('/especialistas/mis-servicios');
+        }
     }
 }

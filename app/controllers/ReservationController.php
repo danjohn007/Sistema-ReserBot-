@@ -34,15 +34,49 @@ class ReservationController extends BaseController {
                 JOIN usuarios ue ON e.usuario_id = ue.id
                 WHERE 1=1";
         
+        // Variables para especialistas multi-sucursal
+        $allSpecialists = [];
+        $currentSpecialistId = null;
+        
         // Aplicar filtros según rol
         if ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
             $sql .= " AND r.sucursal_id = ?";
             $filters[] = $user['sucursal_id'];
         } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
-            $specialist = $this->db->fetch("SELECT id FROM especialistas WHERE usuario_id = ?", [$user['id']]);
-            if ($specialist) {
+            // Obtener TODOS los registros de especialistas de este usuario (uno por sucursal)
+            $allSpecialists = $this->db->fetchAll(
+                "SELECT e.*, s.nombre as sucursal_nombre 
+                 FROM especialistas e 
+                 JOIN sucursales s ON e.sucursal_id = s.id 
+                 WHERE e.usuario_id = ? AND e.activo = 1
+                 ORDER BY s.nombre",
+                [$user['id']]
+            );
+            
+            if (!empty($allSpecialists)) {
+                // Determinar qué especialista_id estamos viendo
+                $specialist_id = $this->get('specialist_id');
+                if (!$specialist_id) {
+                    // Por defecto, el primero
+                    $specialist_id = $allSpecialists[0]['id'];
+                }
+                
+                // Verificar que el specialist_id pertenece al usuario
+                $validSpecialist = false;
+                foreach ($allSpecialists as $spec) {
+                    if ($spec['id'] == $specialist_id) {
+                        $validSpecialist = true;
+                        $currentSpecialistId = $specialist_id;
+                        break;
+                    }
+                }
+                
+                if (!$validSpecialist) {
+                    $currentSpecialistId = $allSpecialists[0]['id'];
+                }
+                
                 $sql .= " AND r.especialista_id = ?";
-                $filters[] = $specialist['id'];
+                $filters[] = $currentSpecialistId;
             }
         } elseif ($user['rol_id'] == ROLE_CLIENT) {
             $sql .= " AND r.cliente_id = ?";
@@ -78,6 +112,8 @@ class ReservationController extends BaseController {
             'title' => 'Reservaciones',
             'reservations' => $reservations,
             'branches' => $branches,
+            'allSpecialists' => $allSpecialists,
+            'currentSpecialistId' => $currentSpecialistId,
             'currentFilters' => [
                 'estado' => $estado,
                 'fecha' => $fecha,

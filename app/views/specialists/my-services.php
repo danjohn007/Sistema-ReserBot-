@@ -55,6 +55,59 @@
         </div>
     <?php endif; ?>
 
+    <!-- Card: Porcentaje de Adelanto Global (Compacto) -->
+    <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <form method="POST" action="<?= url('/especialistas/actualizar-adelanto') ?>" class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900">Pago por Adelantado</h3>
+                    <p class="text-xs text-gray-500">Aplica a todos tus servicios</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Toggle -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" 
+                           id="requiere_adelanto" 
+                           name="requiere_adelanto" 
+                           value="1"
+                           <?= ($specialist['requiere_adelanto'] ?? 0) ? 'checked' : '' ?>
+                           onchange="toggleAdelantoInput(this.checked)"
+                           class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    <span class="ml-2 text-sm font-medium text-gray-700" id="toggle_label">
+                        <?= ($specialist['requiere_adelanto'] ?? 0) ? 'Activo' : 'Inactivo' ?>
+                    </span>
+                </label>
+                
+                <!-- Input Porcentaje -->
+                <div class="relative w-24">
+                    <input type="number" 
+                           id="porcentaje_adelanto" 
+                           name="porcentaje_adelanto" 
+                           value="<?= $specialist['porcentaje_adelanto'] ?? 0 ?>"
+                           min="0" 
+                           max="100" 
+                           step="1"
+                           <?= ($specialist['requiere_adelanto'] ?? 0) ? '' : 'disabled' ?>
+                           class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                           placeholder="0">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-400 text-xs">%</span>
+                    </div>
+                </div>
+                
+                <!-- Botón Guardar -->
+                <button type="submit" 
+                        class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-save mr-1"></i>Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+
     <?php if (empty($services)): ?>
         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
             <div class="flex">
@@ -100,6 +153,9 @@
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Estado
                                 </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -114,7 +170,7 @@
                                     $categorySlug = 'cat-' . $categoryIndex;
                             ?>
                                 <tr class="bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors" onclick="toggleCategory('<?= $categorySlug ?>')">
-                                    <td colspan="8" class="px-6 py-2 text-sm font-semibold text-gray-700">
+                                    <td colspan="9" class="px-6 py-2 text-sm font-semibold text-gray-700">
                                         <div class="flex items-center">
                                             <i id="icon-<?= $categorySlug ?>" class="fas fa-chevron-down mr-2 transition-transform"></i>
                                             <?php echo htmlspecialchars($currentCategory ?: 'Sin categor&iacute;a'); ?>
@@ -215,6 +271,26 @@
                                     </div>
                                     <div class="text-xs text-center mt-1 <?php echo ($service['activo'] ?? 1) ? 'text-green-600' : 'text-gray-500'; ?>">
                                         <?php echo ($service['activo'] ?? 1) ? 'Activo' : 'Inactivo'; ?>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button 
+                                            type="button"
+                                            onclick="openEditServiceModal(<?= $service['id'] ?>, '<?= htmlspecialchars(addslashes($service['nombre'])) ?>', '<?= htmlspecialchars(addslashes($service['descripcion'] ?? '')) ?>', <?= $currentSpecialistId ?>)"
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                            title="Editar servicio"
+                                        >
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onclick="confirmDeleteService(<?= $service['id'] ?>, '<?= htmlspecialchars(addslashes($service['nombre'])) ?>', <?= $currentSpecialistId ?>)"
+                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                            title="Eliminar de esta sucursal"
+                                        >
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -327,23 +403,27 @@
         </div>
         <form method="POST" action="<?= url('/especialistas/crear-servicio') ?>">
             <div class="p-6 space-y-4">
+                <?php if (count($allSpecialists) > 1): ?>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sucursal *</label>
+                    <select name="specialist_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Selecciona una sucursal</option>
+                        <?php foreach ($allSpecialists as $spec): ?>
+                            <option value="<?= $spec['id'] ?>" <?= $spec['id'] == $currentSpecialistId ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($spec['sucursal_nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php else: ?>
+                <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
+                <?php endif; ?>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio *</label>
                     <input type="text" name="nombre" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                            placeholder="Ej: Consulta Especializada">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Categor&iacute;a *</label>
-                    <select name="categoria_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Selecciona una categor&iacute;a</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>" <?= (strtolower($cat['nombre']) == 'otro' || strtolower($cat['nombre']) == 'otros') ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($cat['nombre']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
                 
                 <div>
@@ -375,7 +455,11 @@
                 <div class="bg-blue-50 border-l-4 border-blue-400 p-3">
                     <p class="text-sm text-blue-700">
                         <i class="fas fa-info-circle mr-2"></i>
+                        <?php if (count($allSpecialists) > 1): ?>
+                        Este servicio se crear&aacute; y se asignar&aacute; a la sucursal seleccionada.
+                        <?php else: ?>
                         Este servicio se crear&aacute; y se asignar&aacute; autom&aacute;ticamente a tu perfil.
+                        <?php endif; ?>
                     </p>
                 </div>
             </div>
@@ -385,6 +469,68 @@
                 </button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     <i class="fas fa-plus-circle mr-2"></i>Crear Servicio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Editar Servicio -->
+<div id="editServiceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div class="p-6 border-b">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Editar Servicio</h3>
+                <button onclick="closeEditServiceModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <form method="POST" action="<?= url('/especialistas/editar-servicio') ?>">
+            <input type="hidden" id="edit_servicio_id" name="servicio_id">
+            <input type="hidden" id="edit_current_specialist_id" name="current_specialist_id">
+            <div class="p-6 space-y-4">
+                <?php if (count($allSpecialists) > 1): ?>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sucursal *</label>
+                    <select id="edit_specialist_id" name="specialist_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <?php foreach ($allSpecialists as $spec): ?>
+                            <option value="<?= $spec['id'] ?>">
+                                <?= htmlspecialchars($spec['sucursal_nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Puedes mover este servicio a otra sucursal</p>
+                </div>
+                <?php else: ?>
+                <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
+                <?php endif; ?>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio *</label>
+                    <input type="text" id="edit_nombre" name="nombre" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descripci&oacute;n</label>
+                    <textarea id="edit_descripcion" name="descripcion" rows="3" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                    <p class="text-sm text-yellow-700">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Los cambios afectar&aacute;n el servicio en la sucursal seleccionada.
+                    </p>
+                </div>
+            </div>
+            <div class="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                <button type="button" onclick="closeEditServiceModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
                 </button>
             </div>
         </form>
@@ -408,6 +554,29 @@ function closeCreateServiceModal() {
     document.getElementById('createServiceModal').classList.add('hidden');
 }
 
+// Función para activar/desactivar el input de porcentaje de adelanto
+function toggleAdelantoInput(isActive) {
+    const input = document.getElementById('porcentaje_adelanto');
+    const label = document.getElementById('toggle_label');
+    
+    if (isActive) {
+        input.disabled = false;
+        input.focus();
+        label.textContent = 'Activo';
+    } else {
+        input.disabled = true;
+        input.value = '0';
+        label.textContent = 'Inactivo';
+    }
+}
+
+// Validar que el porcentaje esté entre 0 y 100
+document.getElementById('porcentaje_adelanto')?.addEventListener('input', function(e) {
+    let value = parseInt(e.target.value);
+    if (value < 0) e.target.value = 0;
+    if (value > 100) e.target.value = 100;
+});
+
 // Función para colapsar/expandir categorías
 function toggleCategory(categorySlug) {
     const rows = document.querySelectorAll(`.category-${categorySlug}`);
@@ -426,6 +595,49 @@ function toggleCategory(categorySlug) {
     });
 }
 
+function openEditServiceModal(servicio_id, nombre, descripcion, current_specialist_id) {
+    document.getElementById('edit_servicio_id').value = servicio_id;
+    document.getElementById('edit_current_specialist_id').value = current_specialist_id;
+    document.getElementById('edit_nombre').value = nombre;
+    document.getElementById('edit_descripcion').value = descripcion;
+    
+    // Si hay selector de sucursal, establecer la sucursal actual
+    const editSpecialistSelect = document.getElementById('edit_specialist_id');
+    if (editSpecialistSelect) {
+        editSpecialistSelect.value = current_specialist_id;
+    }
+    
+    document.getElementById('editServiceModal').classList.remove('hidden');
+}
+
+function closeEditServiceModal() {
+    document.getElementById('editServiceModal').classList.add('hidden');
+}
+
+function confirmDeleteService(servicio_id, nombre, specialist_id) {
+    if (confirm(`¿Est&aacute;s seguro de eliminar el servicio "${nombre}" de esta sucursal?\n\nEsta acción no se puede deshacer.`)) {
+        // Crear un formulario temporal para enviar la solicitud
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= url('/especialistas/eliminar-servicio') ?>';
+        
+        const servicioInput = document.createElement('input');
+        servicioInput.type = 'hidden';
+        servicioInput.name = 'servicio_id';
+        servicioInput.value = servicio_id;
+        
+        const specialistInput = document.createElement('input');
+        specialistInput.type = 'hidden';
+        specialistInput.name = 'specialist_id';
+        specialistInput.value = specialist_id;
+        
+        form.appendChild(servicioInput);
+        form.appendChild(specialistInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 // Cerrar modales al hacer clic fuera
 document.getElementById('addServiceModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeAddServiceModal();
@@ -433,5 +645,9 @@ document.getElementById('addServiceModal')?.addEventListener('click', function(e
 
 document.getElementById('createServiceModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeCreateServiceModal();
+});
+
+document.getElementById('editServiceModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditServiceModal();
 });
 </script>

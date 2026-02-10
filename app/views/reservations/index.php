@@ -9,9 +9,53 @@
     </a>
 </div>
 
+<?php if (!empty($allSpecialists) && count($allSpecialists) > 1): ?>
+<!-- Tabs para múltiples sucursales (especialistas) -->
+<style>
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+<div class="mb-6 border-b border-gray-200 overflow-x-auto hide-scrollbar bg-white rounded-xl shadow-sm" style="max-width: 100%;">
+    <nav class="-mb-px flex space-x-2 p-4" aria-label="Tabs" style="min-width: min-content;">
+        <?php foreach ($allSpecialists as $spec): ?>
+        <a href="<?= url('/reservaciones?specialist_id=' . $spec['id']) ?>" 
+           class="<?= $spec['id'] == $currentSpecialistId ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex-shrink-0">
+            <i class="fas fa-building mr-1 text-xs"></i><?= e($spec['sucursal_nombre']) ?>
+        </a>
+        <?php endforeach; ?>
+    </nav>
+</div>
+
+<div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+    <p class="text-sm text-blue-700">
+        <i class="fas fa-info-circle mr-2"></i>
+        Viendo reservaciones de: <strong>
+            <?php 
+                foreach ($allSpecialists as $spec) {
+                    if ($spec['id'] == $currentSpecialistId) {
+                        echo e($spec['sucursal_nombre']);
+                        break;
+                    }
+                }
+            ?>
+        </strong>
+    </p>
+</div>
+<?php endif; ?>
+
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
     <form method="GET" class="flex flex-wrap gap-4 items-end">
+        <?php if (!empty($allSpecialists) && count($allSpecialists) > 1): ?>
+        <!-- Hidden input para mantener el specialist_id en los filtros -->
+        <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
+        <?php endif; ?>
+        
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <select name="estado" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
@@ -20,6 +64,7 @@
                 <option value="confirmada" <?= ($currentFilters['estado'] ?? '') == 'confirmada' ? 'selected' : '' ?>>Confirmada</option>
                 <option value="completada" <?= ($currentFilters['estado'] ?? '') == 'completada' ? 'selected' : '' ?>>Completada</option>
                 <option value="cancelada" <?= ($currentFilters['estado'] ?? '') == 'cancelada' ? 'selected' : '' ?>>Cancelada</option>
+                <option value="no_asistio" <?= ($currentFilters['estado'] ?? '') == 'no_asistio' ? 'selected' : '' ?>>No Asisti&oacute;</option>
             </select>
         </div>
         
@@ -47,7 +92,7 @@
             <i class="fas fa-filter mr-2"></i>Filtrar
         </button>
         
-        <a href="<?= url('/reservaciones') ?>" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+        <a href="<?= url('/reservaciones' . (!empty($currentSpecialistId) ? '?specialist_id=' . $currentSpecialistId : '')) ?>" class="px-4 py-2 text-gray-600 hover:text-gray-800">
             Limpiar filtros
         </a>
     </form>
