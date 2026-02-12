@@ -98,6 +98,8 @@ $routes = [
     // Calendario
     '/calendario' => ['controller' => 'CalendarController', 'action' => 'index'],
     '/calendario/eventos' => ['controller' => 'CalendarController', 'action' => 'events'],
+    '/calendario/bloquear' => ['controller' => 'CalendarController', 'action' => 'bloquear'],
+    '/calendario/eliminar-bloqueo' => ['controller' => 'CalendarController', 'action' => 'eliminarBloqueo'],
     
     // Clientes
     '/clientes' => ['controller' => 'ClientController', 'action' => 'index'],

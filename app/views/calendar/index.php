@@ -139,6 +139,151 @@
 }
 </style>
 
+<!-- Action Selection Modal -->
+<div id="actionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+        <div class="p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-calendar-plus mr-3"></i>
+                    <span>¿Qué deseas hacer?</span>
+                </h3>
+                <button onclick="closeActionModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <p class="text-blue-100 text-sm mt-2" id="action-date-display">Fecha seleccionada</p>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <button onclick="selectAgendarAction()" 
+                    class="w-full p-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                            <i class="fas fa-calendar-check text-2xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="text-lg font-bold">Agendar Cita</h4>
+                            <p class="text-sm text-green-100">Programar nueva reservación</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </div>
+            </button>
+            
+            <button onclick="selectBloquearAction()" 
+                    class="w-full p-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                            <i class="fas fa-ban text-2xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="text-lg font-bold">Bloquear Horario</h4>
+                            <p class="text-sm text-red-100">Marcar tiempo no disponible</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Block Schedule Modal -->
+<div id="blockModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all">
+        <div class="p-6 bg-gradient-to-r from-red-500 to-red-600 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-ban mr-3"></i>
+                    <span>Bloquear Horario</span>
+                </h3>
+                <button onclick="closeBlockModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <p class="text-red-100 text-sm mt-2" id="block-date-display">Fecha seleccionada</p>
+        </div>
+        
+        <form id="blockScheduleForm" class="p-6 space-y-6">
+            <!-- Sucursal (si tiene múltiples) -->
+            <?php if (!empty($branches) && count($branches) > 1): ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building mr-1"></i>Sucursal *
+                </label>
+                <select id="block_sucursal" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    <option value="">-- Seleccione una sucursal --</option>
+                    <?php foreach ($branches as $branch): ?>
+                    <option value="<?= $branch['id'] ?>"><?= e($branch['nombre']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Dejar vacío para bloquear en todas las sucursales</p>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Hora Inicio -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1"></i>Hora de Inicio *
+                </label>
+                <input type="time" id="block_hora_inicio" required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+            </div>
+            
+            <!-- Hora Fin -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1"></i>Hora de Fin *
+                </label>
+                <input type="time" id="block_hora_fin" required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+            </div>
+            
+            <!-- Tipo -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-1"></i>Tipo de Bloqueo *
+                </label>
+                <select id="block_tipo" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    <option value="puntual">Bloqueo Puntual</option>
+                    <option value="personal">Asunto Personal</option>
+                    <option value="pausa">Pausa/Descanso</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+            
+            <!-- Motivo -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-comment mr-1"></i>Motivo (opcional)
+                </label>
+                <textarea id="block_motivo" rows="2"
+                          placeholder="Ej: Reunión importante, cita médica, etc."
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
+            </div>
+            
+            <input type="hidden" id="block_fecha" value="">
+            <input type="hidden" id="block_especialista_id" value="<?= $currentSpecialistId ?? '' ?>">
+        </form>
+        
+        <div class="p-6 bg-gray-50 border-t rounded-b-2xl">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeBlockModal()" class="px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button onclick="submitBlockSchedule()" class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-ban mr-2"></i>Bloquear Horario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Create Reservation Modal -->
 <div id="createModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform transition-all">
@@ -386,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         horaSeleccionada = partes[1].substring(0, 5); // "09:00"
                     }
                 }
-                openCreateModal(info.dateStr, horaSeleccionada);
+                openActionModal(info.dateStr, horaSeleccionada);
             }
         },
         eventDidMount: function(info) {
@@ -512,6 +657,12 @@ function showEventModal(event) {
     const modal = document.getElementById('eventModal');
     const props = event.extendedProps;
     
+    // Verificar si es un bloqueo o una reservación
+    if (props.tipo === 'bloqueo') {
+        showBlockDetails(event);
+        return;
+    }
+    
     const startDate = new Date(event.start);
     const endDate = new Date(event.end);
     const dateStr = startDate.toLocaleDateString('es-MX', { 
@@ -618,6 +769,103 @@ function showEventModal(event) {
         </div>
     `;
     document.getElementById('modal-view-link').href = '<?= url('/reservaciones/ver') ?>?id=' + event.id;
+    
+    modal.classList.remove('hidden');
+}
+
+function showBlockDetails(event) {
+    const modal = document.getElementById('eventModal');
+    const props = event.extendedProps;
+    
+    const startDate = new Date(event.start);
+    const endDate = new Date(event.end);
+    const dateStr = startDate.toLocaleDateString('es-MX', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    const timeStr = startDate.toLocaleTimeString('es-MX', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    }) + ' - ' + endDate.toLocaleTimeString('es-MX', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    // Asegurarse de estar en modo vista
+    document.getElementById('modal-content').style.display = 'block';
+    document.getElementById('modal-edit-content').style.display = 'none';
+    document.getElementById('modal-footer-view').style.display = 'none'; // Ocultar footer de reservaciones
+    document.getElementById('modal-footer-edit').style.display = 'none';
+    
+    const tipoLabels = {
+        'vacaciones': { icon: '🌴', label: 'Vacaciones', color: 'blue' },
+        'pausa': { icon: '☕', label: 'Pausa/Descanso', color: 'yellow' },
+        'personal': { icon: '👤', label: 'Asunto Personal', color: 'purple' },
+        'puntual': { icon: '🔒', label: 'Bloqueo Puntual', color: 'red' },
+        'otro': { icon: '⛔', label: 'No Disponible', color: 'gray' }
+    };
+    
+    const tipoInfo = tipoLabels[props.tipo_bloqueo] || tipoLabels['otro'];
+    
+    document.getElementById('modal-content').innerHTML = `
+        <div class="space-y-4">
+            <div class="flex items-start p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <div class="text-4xl mr-4">${tipoInfo.icon}</div>
+                <div class="flex-1">
+                    <p class="text-lg font-bold text-red-800">${tipoInfo.label}</p>
+                    <p class="text-sm text-red-600">Horario bloqueado y no disponible para reservaciones</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start p-3 bg-blue-50 rounded-lg">
+                <i class="fas fa-calendar text-blue-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Fecha y Hora</p>
+                    <p class="text-sm text-gray-900">${dateStr}</p>
+                    <p class="text-sm text-blue-600 font-semibold">${timeStr}</p>
+                </div>
+            </div>
+            
+            <div class="p-3 bg-purple-50 rounded-lg">
+                <p class="text-xs text-gray-500 mb-1"><i class="fas fa-user-md mr-1"></i>Especialista</p>
+                <p class="text-sm font-semibold text-gray-900">${props.especialista}</p>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500 mb-1"><i class="fas fa-building mr-1"></i>Sucursal</p>
+                <p class="text-sm font-semibold text-gray-900">${props.sucursal}</p>
+            </div>
+            
+            ${props.motivo ? `
+            <div class="p-3 bg-yellow-50 rounded-lg">
+                <p class="text-xs text-gray-500 mb-1"><i class="fas fa-comment mr-1"></i>Motivo</p>
+                <p class="text-sm text-gray-900">${props.motivo}</p>
+            </div>
+            ` : ''}
+            
+            <div class="p-4 bg-gray-100 rounded-lg border-t-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-gray-700"><i class="fas fa-info-circle mr-2"></i>ID del Bloqueo</p>
+                    <p class="text-sm font-mono font-semibold text-gray-900">#${props.bloqueo_id}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-gray-50 border-t rounded-b-lg">
+            <div class="flex justify-center gap-3">
+                <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+                <button onclick="deleteBlock(${props.bloqueo_id})" class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-trash mr-2"></i>Eliminar Bloqueo
+                </button>
+                <?php endif; ?>
+                <button onclick="closeModal()" class="px-6 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-times mr-2"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    `;
     
     modal.classList.remove('hidden');
 }
@@ -955,6 +1203,38 @@ async function noShowReservation() {
     }
 }
 
+// Eliminar bloqueo de horario
+async function deleteBlock(blockId) {
+    if (!blockId) return;
+    
+    if (!confirm('¿Está seguro de eliminar este bloqueo de horario?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>/calendario/eliminar-bloqueo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `bloqueo_id=${blockId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Bloqueo eliminado exitosamente');
+            closeModal();
+            window.calendar.refetchEvents();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo eliminar el bloqueo'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el bloqueo');
+    }
+}
+
 // Close modal on overlay click
 document.getElementById('eventModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeModal();
@@ -964,13 +1244,230 @@ document.getElementById('createModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeCreateModal();
 });
 
+document.getElementById('actionModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeActionModal();
+});
+
+document.getElementById('blockModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeBlockModal();
+});
+
 // Close modal on ESC key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
         closeCreateModal();
+        closeActionModal();
+        closeBlockModal();
     }
 });
+
+// ============= FUNCIONES PARA MODAL DE ACCIONES =============
+
+// Variables globales para almacenar fecha y hora seleccionadas
+let selectedDateStr = null;
+let selectedHoraStr = null;
+
+function openActionModal(dateStr, horaSeleccionada = null) {
+    const modal = document.getElementById('actionModal');
+    const dateDisplay = document.getElementById('action-date-display');
+    
+    // Guardar fecha y hora seleccionadas
+    selectedDateStr = dateStr;
+    selectedHoraStr = horaSeleccionada;
+    
+    // Extraer solo la fecha (YYYY-MM-DD) del dateStr
+    const fechaSoloDate = dateStr.split('T')[0];
+    
+    // Formatear fecha para display
+    const fecha = new Date(fechaSoloDate + 'T00:00:00');
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const fechaFormateada = fecha.toLocaleDateString('es-MX', opciones);
+    
+    // Agregar hora al display si fue seleccionada
+    let displayText = `Fecha seleccionada: ${fechaFormateada}`;
+    if (horaSeleccionada) {
+        displayText += ` a las ${horaSeleccionada}`;
+    }
+    
+    dateDisplay.textContent = displayText;
+    modal.classList.remove('hidden');
+}
+
+function closeActionModal() {
+    const modal = document.getElementById('actionModal');
+    modal.classList.add('hidden');
+    selectedDateStr = null;
+    selectedHoraStr = null;
+}
+
+function selectAgendarAction() {
+    // Guardar valores ANTES de cerrar el modal (que los limpia)
+    const fecha = selectedDateStr;
+    const hora = selectedHoraStr;
+    
+    closeActionModal();
+    
+    // Abrir el modal de crear reservación con la fecha y hora guardadas
+    if (fecha) {
+        openCreateModal(fecha, hora);
+    }
+}
+
+function selectBloquearAction() {
+    // Guardar valores ANTES de cerrar el modal (que los limpia)
+    const fecha = selectedDateStr;
+    const hora = selectedHoraStr;
+    
+    closeActionModal();
+    
+    // Abrir el modal de bloqueo con la fecha y hora guardadas
+    if (fecha) {
+        openBlockModal(fecha, hora);
+    }
+}
+
+// ============= FUNCIONES PARA MODAL DE BLOQUEO =============
+
+function openBlockModal(dateStr, horaSeleccionada = null) {
+    const modal = document.getElementById('blockModal');
+    const dateDisplay = document.getElementById('block-date-display');
+    const dateInput = document.getElementById('block_fecha');
+    const horaInicioInput = document.getElementById('block_hora_inicio');
+    const horaFinInput = document.getElementById('block_hora_fin');
+    
+    // Extraer solo la fecha (YYYY-MM-DD) del dateStr
+    const fechaSoloDate = dateStr.split('T')[0];
+    
+    // Formatear fecha para display
+    const fecha = new Date(fechaSoloDate + 'T00:00:00');
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const fechaFormateada = fecha.toLocaleDateString('es-MX', opciones);
+    
+    dateDisplay.textContent = `Bloquear: ${fechaFormateada}`;
+    dateInput.value = fechaSoloDate;
+    
+    // Si viene hora pre-seleccionada, establecerla como inicio y calcular fin (+1 hora)
+    if (horaSeleccionada) {
+        horaInicioInput.value = horaSeleccionada;
+        
+        // Calcular hora fin (1 hora después)
+        const [horas, minutos] = horaSeleccionada.split(':');
+        const horaFin = new Date();
+        horaFin.setHours(parseInt(horas) + 1, parseInt(minutos), 0, 0);
+        const horaFinStr = horaFin.toTimeString().substring(0, 5);
+        horaFinInput.value = horaFinStr;
+    } else {
+        // Valores por defecto
+        horaInicioInput.value = '09:00';
+        horaFinInput.value = '10:00';
+    }
+    
+    // Resetear otros campos
+    document.getElementById('block_tipo').value = 'puntual';
+    document.getElementById('block_motivo').value = '';
+    
+    <?php if (!empty($branches) && count($branches) > 1): ?>
+    document.getElementById('block_sucursal').value = '';
+    <?php endif; ?>
+    
+    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+    // Si es especialista, determinar automáticamente la sucursal según el día
+    const usuarioId = <?= $user['id'] ?>;
+    document.getElementById('block_especialista_id').value = usuarioId;
+    
+    // Calcular el día de la semana (1=Lunes, 7=Domingo)
+    const dayOfWeek = fecha.getDay();
+    const diaSemana = dayOfWeek === 0 ? 7 : dayOfWeek;
+    
+    // Obtener la sucursal donde trabaja ese día
+    fetch(`<?= BASE_URL ?>/api/especialista-sucursal-dia?usuario_id=${usuarioId}&dia_semana=${diaSemana}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucursal_id) {
+                document.getElementById('block_especialista_id').value = data.especialista_id;
+                <?php if (!empty($branches) && count($branches) > 1): ?>
+                document.getElementById('block_sucursal').value = data.sucursal_id;
+                <?php endif; ?>
+            } else {
+                // No trabaja ese día, preguntar si quiere continuar
+                if (!confirm('No tienes horarios configurados para este día. ¿Deseas bloquear de todas formas?')) {
+                    closeBlockModal();
+                    return;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener sucursal:', error);
+        });
+    <?php endif; ?>
+    
+    modal.classList.remove('hidden');
+}
+
+function closeBlockModal() {
+    document.getElementById('blockModal').classList.add('hidden');
+}
+
+async function submitBlockSchedule() {
+    const especialistaId = document.getElementById('block_especialista_id').value;
+    const sucursalId = document.getElementById('block_sucursal')?.value || null;
+    const fecha = document.getElementById('block_fecha').value;
+    const horaInicio = document.getElementById('block_hora_inicio').value;
+    const horaFin = document.getElementById('block_hora_fin').value;
+    const tipo = document.getElementById('block_tipo').value;
+    const motivo = document.getElementById('block_motivo').value;
+    
+    // Validaciones
+    if (!fecha || !horaInicio || !horaFin || !tipo) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    if (horaInicio >= horaFin) {
+        alert('La hora de inicio debe ser menor que la hora de fin');
+        return;
+    }
+    
+    if (!especialistaId) {
+        alert('No se pudo determinar el especialista. Por favor intente nuevamente.');
+        return;
+    }
+    
+    // Crear FormData
+    const formData = new URLSearchParams();
+    formData.append('especialista_id', especialistaId);
+    if (sucursalId) {
+        formData.append('sucursal_id', sucursalId);
+    }
+    formData.append('fecha_inicio', `${fecha} ${horaInicio}:00`);
+    formData.append('fecha_fin', `${fecha} ${horaFin}:00`);
+    formData.append('tipo', tipo);
+    formData.append('motivo', motivo);
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>/calendario/bloquear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Horario bloqueado exitosamente');
+            closeBlockModal();
+            window.calendar.refetchEvents();
+        } else {
+            alert('Error al bloquear horario: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al bloquear horario:', error);
+        alert('Error al bloquear horario. Por favor intente nuevamente.');
+    }
+}
 
 // ============= FUNCIONES PARA CREAR RESERVA =============
 
@@ -1010,6 +1507,9 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
     document.getElementById('create_time_section').style.display = 'none';
     document.getElementById('service_details').classList.add('hidden');
     
+    // Mostrar el modal inmediatamente
+    modal.classList.remove('hidden');
+    
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     // Si es especialista, determinar automáticamente la sucursal según el día
     const usuarioId = <?= $user['id'] ?>;
@@ -1033,19 +1533,15 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
                 loadServicesForCreate();
             } else {
                 alert('No tiene horarios configurados para este día de la semana');
-                modal.classList.add('hidden');
-                return;
+                closeCreateModal();
             }
         })
         .catch(error => {
             console.error('Error al obtener sucursal:', error);
             alert('Error al cargar la información. Por favor intente nuevamente.');
-            modal.classList.add('hidden');
-            return;
+            closeCreateModal();
         });
     <?php endif; ?>
-    
-    modal.classList.remove('hidden');
 }
 
 function closeCreateModal() {

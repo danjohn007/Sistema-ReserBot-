@@ -155,6 +155,7 @@ class CalendarController extends BaseController {
                 'backgroundColor' => $color,
                 'borderColor' => $color,
                 'extendedProps' => [
+                    'tipo' => 'reservacion',
                     'codigo' => $r['codigo'],
                     'estado' => $r['estado'],
                     'cliente' => $r['cliente_nombre_completo'],
@@ -169,7 +170,212 @@ class CalendarController extends BaseController {
             ];
         }
         
+        // Agregar bloqueos de horario
+        $blockSql = "SELECT b.*, 
+                            ue.nombre as especialista_nombre, 
+                            ue.apellidos as especialista_apellidos,
+                            suc.nombre as sucursal_nombre
+                     FROM bloqueos_horario b
+                     JOIN especialistas e ON b.especialista_id = e.id
+                     JOIN usuarios ue ON e.usuario_id = ue.id
+                     LEFT JOIN sucursales suc ON b.sucursal_id = suc.id
+                     WHERE b.fecha_inicio BETWEEN ? AND ?";
+        
+        $blockFilters = [$start, $end];
+        
+        // Aplicar filtros según rol
+        if ($user['rol_id'] == ROLE_SPECIALIST) {
+            $blockSql .= " AND e.usuario_id = ?";
+            $blockFilters[] = $user['id'];
+        } elseif (($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) && $user['sucursal_id']) {
+            $blockSql .= " AND (b.sucursal_id = ? OR b.sucursal_id IS NULL)";
+            $blockFilters[] = $user['sucursal_id'];
+        }
+        
+        // Aplicar filtros de usuario
+        if ($especialista_id) {
+            $blockSql .= " AND b.especialista_id = ?";
+            $blockFilters[] = $especialista_id;
+        }
+        
+        if ($sucursal_id) {
+            $blockSql .= " AND (b.sucursal_id = ? OR b.sucursal_id IS NULL)";
+            $blockFilters[] = $sucursal_id;
+        }
+        
+        $blocks = $this->db->fetchAll($blockSql, $blockFilters);
+        
+        foreach ($blocks as $b) {
+            $tipoLabel = [
+                'vacaciones' => '🌴 Vacaciones',
+                'pausa' => '☕ Pausa',
+                'personal' => '👤 Personal',
+                'puntual' => '🔒 Bloqueado',
+                'otro' => '⛔ No disponible'
+            ];
+            
+            $events[] = [
+                'id' => 'block-' . $b['id'],
+                'title' => ($tipoLabel[$b['tipo']] ?? '⛔ Bloqueado') . ($b['motivo'] ? ': ' . $b['motivo'] : ''),
+                'start' => $b['fecha_inicio'],
+                'end' => $b['fecha_fin'],
+                'backgroundColor' => '#DC2626',
+                'borderColor' => '#991B1B',
+                'display' => 'block',
+                'extendedProps' => [
+                    'tipo' => 'bloqueo',
+                    'bloqueo_id' => $b['id'],
+                    'especialista' => $b['especialista_nombre'] . ' ' . $b['especialista_apellidos'],
+                    'sucursal' => $b['sucursal_nombre'] ?? 'Todas las sucursales',
+                    'motivo' => $b['motivo'],
+                    'tipo_bloqueo' => $b['tipo']
+                ]
+            ];
+        }
+        
         $this->json($events);
+    }
+    
+    /**
+     * Crear bloqueo de horario
+     */
+    public function bloquear() {
+        $this->requireAuth();
+        
+        if (!$this->isPost()) {
+            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
+            return;
+        }
+        
+        $user = currentUser();
+        
+        // Solo especialistas pueden bloquear sus propios horarios
+        if ($user['rol_id'] != ROLE_SPECIALIST) {
+            $this->json(['success' => false, 'message' => 'No tienes permisos para bloquear horarios'], 403);
+            return;
+        }
+        
+        $especialista_id = $this->post('especialista_id');
+        $sucursal_id = $this->post('sucursal_id') ?: null;
+        $fecha_inicio = $this->post('fecha_inicio');
+        $fecha_fin = $this->post('fecha_fin');
+        $tipo = $this->post('tipo');
+        $motivo = $this->post('motivo') ?: null;
+        
+        // Validaciones
+        if (!$especialista_id || !$fecha_inicio || !$fecha_fin || !$tipo) {
+            $this->json(['success' => false, 'message' => 'Faltan datos obligatorios']);
+            return;
+        }
+        
+        // Verificar que el especialista pertenece al usuario actual
+        $especialista = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE id = ? AND usuario_id = ?",
+            [$especialista_id, $user['id']]
+        );
+        
+        if (!$especialista) {
+            $this->json(['success' => false, 'message' => 'Especialista no válido']);
+            return;
+        }
+        
+        // Validar que fecha_inicio < fecha_fin
+        if (strtotime($fecha_inicio) >= strtotime($fecha_fin)) {
+            $this->json(['success' => false, 'message' => 'La hora de inicio debe ser menor que la hora de fin']);
+            return;
+        }
+        
+        // Verificar que no hay reservaciones confirmadas en ese horario
+        $existingReservations = $this->db->fetchAll(
+            "SELECT id, codigo FROM reservaciones 
+             WHERE especialista_id = ? 
+             AND fecha_cita = DATE(?)
+             AND estado IN ('confirmada', 'pendiente')
+             AND (
+                 (hora_inicio >= TIME(?) AND hora_inicio < TIME(?))
+                 OR (hora_fin > TIME(?) AND hora_fin <= TIME(?))
+                 OR (hora_inicio <= TIME(?) AND hora_fin >= TIME(?))
+             )",
+            [
+                $especialista_id,
+                $fecha_inicio,
+                $fecha_inicio, $fecha_fin,
+                $fecha_inicio, $fecha_fin,
+                $fecha_inicio, $fecha_fin
+            ]
+        );
+        
+        if (!empty($existingReservations)) {
+            $codigos = array_column($existingReservations, 'codigo');
+            $this->json([
+                'success' => false, 
+                'message' => 'Ya tienes reservaciones en ese horario: ' . implode(', ', $codigos)
+            ]);
+            return;
+        }
+        
+        // Insertar el bloqueo
+        try {
+            $this->db->insert(
+                "INSERT INTO bloqueos_horario (especialista_id, sucursal_id, fecha_inicio, fecha_fin, tipo, motivo) 
+                 VALUES (?, ?, ?, ?, ?, ?)",
+                [$especialista_id, $sucursal_id, $fecha_inicio, $fecha_fin, $tipo, $motivo]
+            );
+            
+            $this->json(['success' => true, 'message' => 'Horario bloqueado exitosamente']);
+        } catch (Exception $e) {
+            error_log("Error al crear bloqueo: " . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Error al bloquear horario']);
+        }
+    }
+    
+    /**
+     * Eliminar bloqueo de horario
+     */
+    public function eliminarBloqueo() {
+        $this->requireAuth();
+        
+        if (!$this->isPost()) {
+            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
+            return;
+        }
+        
+        $user = currentUser();
+        
+        // Solo especialistas pueden eliminar sus propios bloqueos
+        if ($user['rol_id'] != ROLE_SPECIALIST) {
+            $this->json(['success' => false, 'message' => 'No tienes permisos para eliminar bloqueos'], 403);
+            return;
+        }
+        
+        $bloqueo_id = $this->post('bloqueo_id');
+        
+        if (!$bloqueo_id) {
+            $this->json(['success' => false, 'message' => 'ID de bloqueo no proporcionado']);
+            return;
+        }
+        
+        // Verificar que el bloqueo pertenece al especialista actual
+        $bloqueo = $this->db->fetch(
+            "SELECT b.id FROM bloqueos_horario b
+             JOIN especialistas e ON b.especialista_id = e.id
+             WHERE b.id = ? AND e.usuario_id = ?",
+            [$bloqueo_id, $user['id']]
+        );
+        
+        if (!$bloqueo) {
+            $this->json(['success' => false, 'message' => 'Bloqueo no encontrado o no tienes permisos']);
+            return;
+        }
+        
+        // Eliminar el bloqueo
+        try {
+            $this->db->delete("DELETE FROM bloqueos_horario WHERE id = ?", [$bloqueo_id]);
+            $this->json(['success' => true, 'message' => 'Bloqueo eliminado exitosamente']);
+        } catch (Exception $e) {
+            error_log("Error al eliminar bloqueo: " . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Error al eliminar el bloqueo']);
+        }
     }
     
     /**
