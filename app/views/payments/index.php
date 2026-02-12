@@ -1,3 +1,21 @@
+<style>
+    .metodo-pago-label {
+        transition: transform 0.15s ease-in-out;
+    }
+    
+    .metodo-pago-icon {
+        transition: opacity 0.15s ease-in-out;
+    }
+    
+    #totalAmount {
+        transition: transform 0.15s ease-in-out;
+    }
+    
+    #paymentMethodMetrics {
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+</style>
+
 <div class="space-y-6">
     <!-- Header -->
     <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
@@ -10,8 +28,15 @@
                 <p class="text-green-100 mt-2">Gestiona los pagos de tus reservaciones completadas</p>
             </div>
             <div class="text-right">
-                <div class="text-4xl font-bold">
-                    <?= formatMoney($totalGeneral) ?>
+                <div class="flex items-center gap-3 justify-end">
+                    <div class="text-4xl font-bold" id="totalAmount" data-hidden="true" data-original-value="<?= formatMoney($totalGeneral) ?>">
+                        ••••••
+                    </div>
+                    <button onclick="toggleAmountVisibility()" 
+                            class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition duration-200"
+                            title="Mostrar/Ocultar monto">
+                        <i id="eyeIcon" class="fas fa-eye-slash text-xl"></i>
+                    </button>
                 </div>
                 <p class="text-sm text-green-100">Total de ingresos</p>
             </div>
@@ -58,7 +83,7 @@
                 </div>
                 
                 <!-- Método de pago -->
-                <div>
+                <div id="metodoPagoFilter" style="display: none;">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-credit-card text-gray-400 mr-1"></i>Método de Pago
                     </label>
@@ -72,23 +97,29 @@
                 </div>
             </div>
             
-            <div class="flex gap-3">
+            <div class="flex gap-3 flex-wrap">
                 <button type="submit" class="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg">
                     <i class="fas fa-filter mr-2"></i>Filtrar
                 </button>
                 <a href="<?= url('/pagos') ?>" class="px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
                     <i class="fas fa-times mr-2"></i>Limpiar Filtros
                 </a>
+                <button type="button" onclick="filterLastMonth()" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-calendar-alt mr-2"></i>Mes pasado
+                </button>
+                <button type="button" onclick="filterCurrentMonth()" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-calendar-check mr-2"></i>Mes actual
+                </button>
             </div>
         </form>
     </div>
 
     <!-- Resumen por método de pago -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div id="paymentMethodMetrics" class="grid grid-cols-2 md:grid-cols-5 gap-4" style="display: none;">
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 font-medium">💵 Efectivo</p>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">💵 </span><span class="metodo-pago-label" data-full="Efectivo" data-abbr="ECV">ECV</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['efectivo']) ?></p>
                 </div>
             </div>
@@ -96,7 +127,7 @@
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 font-medium">💳 Tarjeta</p>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">💳 </span><span class="metodo-pago-label" data-full="Tarjeta" data-abbr="TTA">TTA</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['tarjeta']) ?></p>
                 </div>
             </div>
@@ -104,7 +135,7 @@
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-purple-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 font-medium">🏦 Transferencia</p>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">🏦 </span><span class="metodo-pago-label" data-full="Transferencia" data-abbr="TFA">TFA</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['transferencia']) ?></p>
                 </div>
             </div>
@@ -112,7 +143,7 @@
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-indigo-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 font-medium">🅿️ PayPal</p>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">🅿️ </span><span class="metodo-pago-label" data-full="PayPal" data-abbr="PYL">PYL</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['paypal']) ?></p>
                 </div>
             </div>
@@ -120,7 +151,7 @@
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-gray-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 font-medium">❓ Sin Definir</p>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">❓ </span><span class="metodo-pago-label" data-full="Sin Definir" data-abbr="S/D">S/D</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['sin_definir']) ?></p>
                 </div>
             </div>
@@ -148,8 +179,8 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Monto
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Método de Pago
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 transition-colors select-none" onclick="toggleMethodNames()" title="Click para revelar información completa">
+                            Código
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Referencia
@@ -215,14 +246,19 @@
                                         'transferencia' => 'Transferencia',
                                         'paypal' => 'PayPal'
                                     ];
+                                    $metodoAbbr = [
+                                        'efectivo' => 'ECV',
+                                        'tarjeta' => 'TTA',
+                                        'transferencia' => 'TFA',
+                                        'paypal' => 'PYL'
+                                    ];
                                     ?>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <?= $metodoIcons[$payment['metodo_pago']] ?? '💰' ?> 
-                                        <?= $metodoLabels[$payment['metodo_pago']] ?? ucfirst($payment['metodo_pago']) ?>
+                                        <span class="metodo-pago-icon" style="display: none;"><?= $metodoIcons[$payment['metodo_pago']] ?? '💰' ?></span><span class="metodo-pago-space" style="display: none;"> </span><span class="metodo-pago-label" data-full="<?= $metodoLabels[$payment['metodo_pago']] ?? ucfirst($payment['metodo_pago']) ?>" data-abbr="<?= $metodoAbbr[$payment['metodo_pago']] ?? '???' ?>"><?= $metodoAbbr[$payment['metodo_pago']] ?? '???' ?></span>
                                     </span>
                                 <?php else: ?>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                        ❓ Sin definir
+                                        <span class="metodo-pago-icon" style="display: none;">❓</span><span class="metodo-pago-space" style="display: none;"> </span><span class="metodo-pago-label" data-full="Sin definir" data-abbr="S/D">S/D</span>
                                     </span>
                                 <?php endif; ?>
                             </td>
@@ -315,6 +351,28 @@
 </div>
 
 <script>
+let amountVisible = true;
+const originalAmount = '<?= formatMoney($totalGeneral) ?>';
+
+function toggleAmountVisibility() {
+    const amountElement = document.getElementById('totalAmount');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (amountVisible) {
+        // Ocultar monto
+        amountElement.textContent = '••••••';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+        amountVisible = false;
+    } else {
+        // Mostrar monto
+        amountElement.textContent = originalAmount;
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+        amountVisible = true;
+    }
+}
+
 function editPayment(pagoId, metodoPago, referencia, notas) {
     document.getElementById('edit_pago_id').value = pagoId;
     document.getElementById('edit_metodo_pago').value = metodoPago || '';
@@ -374,8 +432,145 @@ document.getElementById('editPaymentModal')?.addEventListener('click', function(
     if (e.target === this) closeEditModal();
 });
 
+// Toggle amount visibility
+function toggleAmountVisibility() {
+    const totalAmount = document.getElementById('totalAmount');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (totalAmount.dataset.hidden === 'true') {
+        // Show amount
+        totalAmount.textContent = totalAmount.dataset.originalValue;
+        totalAmount.dataset.hidden = 'false';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    } else {
+        // Hide amount
+        if (!totalAmount.dataset.originalValue) {
+            totalAmount.dataset.originalValue = totalAmount.textContent;
+        }
+        totalAmount.textContent = '••••••';
+        totalAmount.dataset.hidden = 'true';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    }
+    
+    // Add scale animation
+    totalAmount.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+        totalAmount.style.transform = 'scale(1)';
+    }, 100);
+}
+
+// Toggle payment method names between abbreviated and full
+let methodNamesExpanded = false;
+
+function toggleMethodNames() {
+    methodNamesExpanded = !methodNamesExpanded;
+    
+    const labels = document.querySelectorAll('.metodo-pago-label');
+    const icons = document.querySelectorAll('.metodo-pago-icon');
+    const spaces = document.querySelectorAll('.metodo-pago-space');
+    const metricsContainer = document.getElementById('paymentMethodMetrics');
+    const metodoPagoFilter = document.getElementById('metodoPagoFilter');
+    
+    labels.forEach(label => {
+        const fullName = label.dataset.full;
+        const abbrName = label.dataset.abbr;
+        
+        if (methodNamesExpanded) {
+            // Mostrar nombres completos
+            label.textContent = fullName;
+        } else {
+            // Mostrar abreviaciones
+            label.textContent = abbrName;
+        }
+        
+        // Add smooth transition effect
+        label.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            label.style.transform = 'scale(1)';
+        }, 100);
+    });
+    
+    // Show/hide icons and spaces
+    icons.forEach(icon => {
+        if (methodNamesExpanded) {
+            // Mostrar emoticonos cuando se revelan los nombres
+            icon.style.display = 'inline';
+            setTimeout(() => {
+                icon.style.opacity = '1';
+            }, 10);
+        } else {
+            // Ocultar emoticonos en modo abreviado
+            icon.style.opacity = '0';
+            setTimeout(() => {
+                icon.style.display = 'none';
+            }, 150);
+        }
+    });
+    
+    spaces.forEach(space => {
+        space.style.display = methodNamesExpanded ? 'inline' : 'none';
+    });
+    
+    // Hide/show metrics when toggling
+    if (methodNamesExpanded) {
+        // Mostrar métricas cuando se revelan los nombres
+        metricsContainer.style.display = 'grid';
+        setTimeout(() => {
+            metricsContainer.style.opacity = '1';
+            metricsContainer.style.transform = 'scale(1)';
+        }, 10);
+        
+        // Mostrar filtro de método de pago
+        metodoPagoFilter.style.display = 'block';
+    } else {
+        // Ocultar métricas en modo abreviado
+        metricsContainer.style.opacity = '0';
+        metricsContainer.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            metricsContainer.style.display = 'none';
+        }, 200);
+        
+        // Ocultar filtro de método de pago
+        metodoPagoFilter.style.display = 'none';
+    }
+}
+
 // Close modal on ESC key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeEditModal();
 });
+
+// Filtros rápidos de fecha
+function filterLastMonth() {
+    const now = new Date();
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    const fechaDesde = firstDayLastMonth.toISOString().split('T')[0];
+    const fechaHasta = lastDayLastMonth.toISOString().split('T')[0];
+    
+    document.querySelector('input[name="fecha_desde"]').value = fechaDesde;
+    document.querySelector('input[name="fecha_hasta"]').value = fechaHasta;
+    
+    // Submit form
+    document.querySelector('form').submit();
+}
+
+function filterCurrentMonth() {
+    const now = new Date();
+    const firstDayCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const today = new Date();
+    
+    const fechaDesde = firstDayCurrentMonth.toISOString().split('T')[0];
+    const fechaHasta = today.toISOString().split('T')[0];
+    
+    document.querySelector('input[name="fecha_desde"]').value = fechaDesde;
+    document.querySelector('input[name="fecha_hasta"]').value = fechaHasta;
+    
+    // Submit form
+    document.querySelector('form').submit();
+}
+
 </script>

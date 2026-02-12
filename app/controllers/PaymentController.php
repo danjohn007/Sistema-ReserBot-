@@ -37,6 +37,33 @@ class PaymentController extends BaseController {
         $specialistIds = array_column($allSpecialists, 'id');
         $placeholders = implode(',', array_fill(0, count($specialistIds), '?'));
         
+        // Crear registros de pago faltantes para reservaciones completadas
+        try {
+            $missingPayments = $this->db->fetchAll(
+                "SELECT r.id, r.precio_total, r.updated_at, r.created_at
+                 FROM reservaciones r
+                 LEFT JOIN pagos p ON r.id = p.reservacion_id
+                 WHERE r.estado = 'completada' 
+                 AND r.especialista_id IN ($placeholders)
+                 AND p.id IS NULL",
+                $specialistIds
+            );
+            
+            foreach ($missingPayments as $reservation) {
+                $this->db->insert(
+                    "INSERT INTO pagos (reservacion_id, monto, metodo_pago, estado, fecha_pago, created_at) 
+                     VALUES (?, ?, NULL, 'completado', ?, NOW())",
+                    [
+                        $reservation['id'], 
+                        $reservation['precio_total'],
+                        $reservation['updated_at'] ?? $reservation['created_at']
+                    ]
+                );
+            }
+        } catch (Exception $e) {
+            error_log("Error al crear pagos faltantes: " . $e->getMessage());
+        }
+        
         // Filtros
         $sucursal_id = $this->get('sucursal_id');
         $fecha_desde = $this->get('fecha_desde');
