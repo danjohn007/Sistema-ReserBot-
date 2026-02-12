@@ -101,6 +101,10 @@ $routes = [
     '/calendario/bloquear' => ['controller' => 'CalendarController', 'action' => 'bloquear'],
     '/calendario/eliminar-bloqueo' => ['controller' => 'CalendarController', 'action' => 'eliminarBloqueo'],
     
+    // Pagos
+    '/pagos' => ['controller' => 'PaymentController', 'action' => 'index'],
+    '/pagos/actualizar' => ['controller' => 'PaymentController', 'action' => 'update'],
+    
     // Clientes
     '/clientes' => ['controller' => 'ClientController', 'action' => 'index'],
     '/clientes/ver' => ['controller' => 'ClientController', 'action' => 'view'],

@@ -523,6 +523,26 @@ class ReservationController extends BaseController {
         if ($reservation['estado'] == 'confirmada') {
             $this->db->update("UPDATE reservaciones SET estado = 'completada' WHERE id = ?", [$id]);
             
+            // Crear registro de pago automáticamente
+            try {
+                // Verificar si ya existe un pago para esta reservación
+                $existingPayment = $this->db->fetch(
+                    "SELECT id FROM pagos WHERE reservacion_id = ?",
+                    [$id]
+                );
+                
+                if (!$existingPayment) {
+                    // Crear nuevo registro de pago
+                    $this->db->insert(
+                        "INSERT INTO pagos (reservacion_id, monto, metodo_pago, estado, fecha_pago) 
+                         VALUES (?, ?, NULL, 'completado', NOW())",
+                        [$id, $reservation['precio_total']]
+                    );
+                }
+            } catch (Exception $e) {
+                error_log("Error al crear registro de pago: " . $e->getMessage());
+            }
+            
             logAction('reservation_complete', 'Reservación completada: ' . $reservation['codigo']);
             
             if ($this->isPost()) {
