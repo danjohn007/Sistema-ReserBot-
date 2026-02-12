@@ -46,26 +46,31 @@
         }
         
         /* Scrollbar personalizada para el sidebar */
-        aside nav::-webkit-scrollbar {
+        aside nav::-webkit-scrollbar,
+        #mobile-sidebar nav::-webkit-scrollbar {
             width: 8px;
         }
         
-        aside nav::-webkit-scrollbar-track {
+        aside nav::-webkit-scrollbar-track,
+        #mobile-sidebar nav::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
         
-        aside nav::-webkit-scrollbar-thumb {
+        aside nav::-webkit-scrollbar-thumb,
+        #mobile-sidebar nav::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
         }
         
-        aside nav::-webkit-scrollbar-thumb:hover {
+        aside nav::-webkit-scrollbar-thumb:hover,
+        #mobile-sidebar nav::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
         
         /* Para Firefox */
-        aside nav {
+        aside nav,
+        #mobile-sidebar nav {
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 #f1f1f1;
         }
@@ -141,7 +146,7 @@
                     
                     <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN])): ?>
                     <li class="pt-4">
-                        <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Administración</span>
+                        <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Administraci&oacute;n</span>
                     </li>
                     
                     <li>
@@ -165,7 +170,7 @@
                     <li>
                         <a href="<?= url('/categorias') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/categorias') !== false ? 'active' : '' ?>">
                             <i class="fas fa-tags w-5"></i>
-                            <span>Categorías</span>
+                            <span>Categor&iacute;as</span>
                         </a>
                     </li>
                     <li>
@@ -287,11 +292,11 @@
                                     <i class="fas fa-user mr-2"></i> Mi Perfil
                                 </a>
                                 <a href="<?= url('/perfil/cambiar-password') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-key mr-2"></i> Cambiar Contraseña
+                                    <i class="fas fa-key mr-2"></i> Cambiar Contrase&ntilde;a
                                 </a>
                                 <hr class="my-2">
                                 <a href="<?= url('/logout') ?>" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesi&oacute;n
                                 </a>
                             </div>
                         </div>
@@ -334,9 +339,137 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        <div class="p-4 overflow-y-auto flex-1">
-            <!-- Mobile nav content same as desktop -->
-        </div>
+        <nav class="p-4 overflow-y-auto flex-1" style="max-height: calc(100vh - 80px);">
+            <ul class="space-y-2">
+                <li>
+                    <a href="<?= url('/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-tachometer-alt w-5"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_RECEPTIONIST, ROLE_SPECIALIST])): ?>
+                <li>
+                    <a href="<?= url('/reservaciones') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/reservaciones') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-calendar-alt w-5"></i>
+                        <span>Reservaciones</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/calendario') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/calendario') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-calendar-week w-5"></i>
+                        <span>Calendario</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (hasRole(ROLE_CLIENT)): ?>
+                <li>
+                    <a href="<?= url('/mis-citas') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mis-citas') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-calendar-check w-5"></i>
+                        <span>Mis Citas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/reservaciones/nueva') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700">
+                        <i class="fas fa-plus-circle w-5"></i>
+                        <span>Nueva Cita</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN])): ?>
+                <li class="pt-4">
+                    <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Administraci&oacute;n</span>
+                </li>
+                
+                <li>
+                    <a href="<?= url('/sucursales') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/sucursales') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-building w-5"></i>
+                        <span>Sucursales</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/especialistas') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/especialistas') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-user-md w-5"></i>
+                        <span>Especialistas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/servicios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/servicios') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-concierge-bell w-5"></i>
+                        <span>Servicios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/categorias') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/categorias') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-tags w-5"></i>
+                        <span>Categor&iacute;as</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/clientes') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/clientes') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-users w-5"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN])): ?>
+                <li class="pt-4">
+                    <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Reportes</span>
+                </li>
+                <li>
+                    <a href="<?= url('/reportes') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/reportes') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-chart-bar w-5"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (hasRole(ROLE_SUPERADMIN)): ?>
+                <li class="pt-4">
+                    <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Sistema</span>
+                </li>
+                <li>
+                    <a href="<?= url('/configuraciones') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/configuraciones') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-cog w-5"></i>
+                        <span>Configuraciones</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/logs') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/logs') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-history w-5"></i>
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (hasRole(ROLE_SPECIALIST)): ?>
+                <li class="pt-4">
+                    <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Mi Configuraci&oacute;n</span>
+                </li>
+                <li>
+                    <a href="<?= url('/especialistas/horarios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/horarios') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-clock w-5"></i>
+                        <span>Mis Horarios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/especialistas/mis-servicios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mis-servicios') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-concierge-bell w-5"></i>
+                        <span>Mis Servicios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/pagos') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/pagos') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-money-bill-wave w-5"></i>
+                        <span>Pagos</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+            </ul>
+        </nav>
     </div>
     
     <script>
@@ -356,20 +489,27 @@
             }
         });
         
-        // Mobile menu
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
-            document.getElementById('mobile-sidebar').classList.remove('-translate-x-full');
-            document.getElementById('mobile-menu-overlay').classList.remove('hidden');
-        });
-        
-        document.getElementById('close-mobile-menu')?.addEventListener('click', function() {
+        // Mobile menu functions
+        function closeMobileMenu() {
             document.getElementById('mobile-sidebar').classList.add('-translate-x-full');
             document.getElementById('mobile-menu-overlay').classList.add('hidden');
-        });
+        }
         
-        document.getElementById('mobile-menu-overlay')?.addEventListener('click', function() {
-            document.getElementById('mobile-sidebar').classList.add('-translate-x-full');
-            this.classList.add('hidden');
+        function openMobileMenu() {
+            document.getElementById('mobile-sidebar').classList.remove('-translate-x-full');
+            document.getElementById('mobile-menu-overlay').classList.remove('hidden');
+        }
+        
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', openMobileMenu);
+        
+        document.getElementById('close-mobile-menu')?.addEventListener('click', closeMobileMenu);
+        
+        document.getElementById('mobile-menu-overlay')?.addEventListener('click', closeMobileMenu);
+        
+        // Close mobile menu when clicking any link inside it
+        document.querySelectorAll('#mobile-sidebar a').forEach(link => {
+            link.addEventListener('click', closeMobileMenu);
         });
     </script>
 </body>
