@@ -187,6 +187,22 @@
                     <i class="fas fa-chevron-right text-xl"></i>
                 </div>
             </button>
+            
+            <button onclick="selectCirugiaAction()" 
+                    class="w-full p-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                            <i class="fas fa-user-md text-2xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="text-lg font-bold">Programar Cirug&iacute;a</h4>
+                            <p class="text-sm text-purple-100">Agendar procedimiento quir&uacute;rgico</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </div>
+            </button>
         </div>
     </div>
 </div>
@@ -278,6 +294,86 @@
                 </button>
                 <button onclick="submitBlockSchedule()" class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md hover:shadow-lg">
                     <i class="fas fa-ban mr-2"></i>Bloquear Horario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Surgery Modal -->
+<div id="surgeryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all">
+        <div class="p-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-user-md mr-3"></i>
+                    <span>Programar Cirug&iacute;a</span>
+                </h3>
+                <button onclick="closeSurgeryModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <p class="text-purple-100 text-sm mt-2" id="surgery-date-display">Fecha seleccionada</p>
+        </div>
+        
+        <form id="surgeryScheduleForm" class="p-6 space-y-6">
+            <!-- Sucursal (solo si hay múltiples) -->
+            <?php if (!empty($branches) && count($branches) > 1): ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building mr-1"></i>Sucursal (opcional)
+                </label>
+                <select id="surgery_sucursal"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    <option value="">Todas las sucursales</option>
+                    <?php foreach ($branches as $branch): ?>
+                    <option value="<?= $branch['id'] ?>"><?= e($branch['nombre']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Dejar vacío para bloquear en todas las sucursales</p>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Hora Inicio -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1"></i>Hora de Inicio *
+                </label>
+                <input type="time" id="surgery_hora_inicio" required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            
+            <!-- Hora Fin -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1"></i>Hora de Fin *
+                </label>
+                <input type="time" id="surgery_hora_fin" required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            
+            <!-- Asistentes -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-users mr-1"></i>Asistentes (opcional)
+                </label>
+                <textarea id="surgery_asistentes" rows="2"
+                          placeholder="Ej: Dr. García, Enf. María López, etc."
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+            </div>
+            
+            <input type="hidden" id="surgery_fecha" value="">
+            <input type="hidden" id="surgery_especialista_id" value="<?= $currentSpecialistId ?? '' ?>">
+            <input type="hidden" id="surgery_tipo" value="cirugia">
+        </form>
+        
+        <div class="p-6 bg-gray-50 border-t rounded-b-2xl">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeSurgeryModal()" class="px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button onclick="submitSurgerySchedule()" class="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-user-md mr-2"></i>Programar Cirug&iacute;a
                 </button>
             </div>
         </div>
@@ -438,6 +534,10 @@
                     <button onclick="cancelReservation()" id="modal-cancel-btn" class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md hover:shadow-lg flex items-center justify-center" style="display:none;">
                         <i class="fas fa-times-circle mr-2"></i>Cancelar
                     </button>
+                    <!-- Ver en Pagos: solo si está completada -->
+                    <a href="<?= url('/pagos') ?>" id="modal-payments-btn" class="px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-md hover:shadow-lg flex items-center justify-center" style="display:none;">
+                        <i class="fas fa-money-bill-wave mr-2"></i>Ver en Pagos
+                    </a>
                     <!-- Ver Detalle: siempre visible -->
                     <a href="#" id="modal-view-link" class="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary transition shadow-md hover:shadow-lg flex items-center justify-center">
                         <i class="fas fa-eye mr-2"></i>Ver Detalle
@@ -691,6 +791,7 @@ function showEventModal(event) {
     const completeBtn = document.getElementById('modal-complete-btn');
     const noShowBtn = document.getElementById('modal-noshow-btn');
     const cancelBtn = document.getElementById('modal-cancel-btn');
+    const paymentsBtn = document.getElementById('modal-payments-btn');
     
     // Ocultar todos primero
     confirmBtn.style.display = 'none';
@@ -698,6 +799,7 @@ function showEventModal(event) {
     completeBtn.style.display = 'none';
     noShowBtn.style.display = 'none';
     cancelBtn.style.display = 'none';
+    paymentsBtn.style.display = 'none';
     
     // Lógica según estado
     switch(props.estado) {
@@ -715,8 +817,12 @@ function showEventModal(event) {
             cancelBtn.style.display = 'block';
             break;
             
-        case 'cancelada':
         case 'completada':
+            // Completada: mostrar botón de Ver en Pagos
+            paymentsBtn.style.display = 'block';
+            break;
+            
+        case 'cancelada':
         case 'no_asistio':
             // Estados finales: solo ver detalle (todos los botones ocultos)
             break;
@@ -766,6 +872,25 @@ function showEventModal(event) {
                     <p class="text-sm font-semibold text-emerald-700">${props.precio}</p>
                 </div>
             </div>
+            
+            ${props.estado === 'confirmada' ? `
+            <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                <p class="text-sm text-gray-700 mb-2">
+                    <i class="fas fa-credit-card mr-2"></i><strong>M&eacute;todo de Pago *</strong>
+                </p>
+                <p class="text-xs text-gray-600 mb-3 italic">
+                    Agregar método de pago marcará como completada la cita
+                </p>
+                <select id="quick-payment-method" onchange="quickCompleteWithPayment()"
+                        class="w-full px-4 py-2.5 border-2 border-yellow-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white">
+                    <option value="">-- Seleccione un método --</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="paypal">PayPal</option>
+                </select>
+            </div>
+            ` : ''}
         </div>
     `;
     document.getElementById('modal-view-link').href = '<?= url('/reservaciones/ver') ?>?id=' + event.id;
@@ -804,6 +929,7 @@ function showBlockDetails(event) {
         'pausa': { icon: '☕', label: 'Pausa/Descanso', color: 'yellow' },
         'personal': { icon: '👤', label: 'Asunto Personal', color: 'purple' },
         'puntual': { icon: '🔒', label: 'Bloqueo Puntual', color: 'red' },
+        'cirugia': { icon: '⚕️', label: 'Cirugía', color: 'purple' },
         'otro': { icon: '⛔', label: 'No Disponible', color: 'gray' }
     };
     
@@ -1171,6 +1297,59 @@ async function completeReservation() {
     }
 }
 
+// Completar rápido con método de pago
+async function quickCompleteWithPayment() {
+    if (!currentEvent) return;
+    
+    const paymentMethod = document.getElementById('quick-payment-method').value;
+    
+    if (!paymentMethod) {
+        alert('Por favor seleccione un método de pago');
+        return;
+    }
+    
+    // Mapeo de nombres para mostrar
+    const paymentNames = {
+        'efectivo': 'Efectivo',
+        'tarjeta': 'Tarjeta',
+        'transferencia': 'Transferencia',
+        'paypal': 'PayPal'
+    };
+    
+    if (!confirm(`¿Completar cita con pago en ${paymentNames[paymentMethod]}?`)) {
+        // Resetear selector si cancela
+        document.getElementById('quick-payment-method').value = '';
+        return;
+    }
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>/reservaciones/completar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id=${currentEvent.id}&metodo_pago=${encodeURIComponent(paymentMethod)}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('¡Cita completada exitosamente con pago registrado!');
+            closeModal();
+            window.calendar.refetchEvents();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo completar la cita'));
+            // Resetear selector en caso de error
+            document.getElementById('quick-payment-method').value = '';
+        }
+    } catch (error) {
+        console.error('Error al completar con pago:', error);
+        alert('Error al completar la cita');
+        // Resetear selector en caso de error
+        document.getElementById('quick-payment-method').value = '';
+    }
+}
+
 // Marcar como no asistió
 async function noShowReservation() {
     if (!currentEvent) return;
@@ -1466,6 +1645,160 @@ async function submitBlockSchedule() {
     } catch (error) {
         console.error('Error al bloquear horario:', error);
         alert('Error al bloquear horario. Por favor intente nuevamente.');
+    }
+}
+
+// ============= FUNCIONES PARA MODAL DE CIRUGÍA =============
+
+function selectCirugiaAction() {
+    // Guardar valores ANTES de cerrar el modal (que los limpia)
+    const fecha = selectedDateStr;
+    const hora = selectedHoraStr;
+    
+    closeActionModal();
+    
+    // Abrir el modal de cirugía con la fecha y hora guardadas
+    if (fecha) {
+        openSurgeryModal(fecha, hora);
+    }
+}
+
+function openSurgeryModal(dateStr, horaSeleccionada = null) {
+    const modal = document.getElementById('surgeryModal');
+    const dateDisplay = document.getElementById('surgery-date-display');
+    const dateInput = document.getElementById('surgery_fecha');
+    const horaInicioInput = document.getElementById('surgery_hora_inicio');
+    const horaFinInput = document.getElementById('surgery_hora_fin');
+    
+    // Extraer solo la fecha (YYYY-MM-DD) del dateStr
+    const fechaSoloDate = dateStr.split('T')[0];
+    
+    // Formatear fecha para display
+    const fecha = new Date(fechaSoloDate + 'T00:00:00');
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const fechaFormateada = fecha.toLocaleDateString('es-MX', opciones);
+    
+    dateDisplay.textContent = `Cirugía: ${fechaFormateada}`;
+    dateInput.value = fechaSoloDate;
+    
+    // Si viene hora pre-seleccionada, establecerla como inicio y calcular fin (+2 horas para cirugía)
+    if (horaSeleccionada) {
+        horaInicioInput.value = horaSeleccionada;
+        
+        // Calcular hora fin (2 horas después para cirugía)
+        const [horas, minutos] = horaSeleccionada.split(':');
+        const horaFin = new Date();
+        horaFin.setHours(parseInt(horas) + 2, parseInt(minutos), 0, 0);
+        const horaFinStr = horaFin.toTimeString().substring(0, 5);
+        horaFinInput.value = horaFinStr;
+    } else {
+        // Valores por defecto
+        horaInicioInput.value = '09:00';
+        horaFinInput.value = '11:00';
+    }
+    
+    // Resetear otros campos
+    document.getElementById('surgery_asistentes').value = '';
+    
+    <?php if (!empty($branches) && count($branches) > 1): ?>
+    document.getElementById('surgery_sucursal').value = '';
+    <?php endif; ?>
+    
+    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+    // Si es especialista, determinar automáticamente la sucursal según el día
+    const usuarioId = <?= $user['id'] ?>;
+    document.getElementById('surgery_especialista_id').value = usuarioId;
+    
+    // Calcular el día de la semana (1=Lunes, 7=Domingo)
+    const dayOfWeek = fecha.getDay();
+    const diaSemana = dayOfWeek === 0 ? 7 : dayOfWeek;
+    
+    // Obtener la sucursal donde trabaja ese día
+    fetch(`<?= BASE_URL ?>/api/especialista-sucursal-dia?usuario_id=${usuarioId}&dia_semana=${diaSemana}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucursal_id) {
+                document.getElementById('surgery_especialista_id').value = data.especialista_id;
+                <?php if (!empty($branches) && count($branches) > 1): ?>
+                document.getElementById('surgery_sucursal').value = data.sucursal_id;
+                <?php endif; ?>
+            } else {
+                // No trabaja ese día, preguntar si quiere continuar
+                if (!confirm('No tienes horarios configurados para este día. ¿Deseas programar la cirugía de todas formas?')) {
+                    closeSurgeryModal();
+                    return;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener sucursal:', error);
+        });
+    <?php endif; ?>
+    
+    modal.classList.remove('hidden');
+}
+
+function closeSurgeryModal() {
+    document.getElementById('surgeryModal').classList.add('hidden');
+}
+
+async function submitSurgerySchedule() {
+    const especialistaId = document.getElementById('surgery_especialista_id').value;
+    const sucursalId = document.getElementById('surgery_sucursal')?.value || null;
+    const fecha = document.getElementById('surgery_fecha').value;
+    const horaInicio = document.getElementById('surgery_hora_inicio').value;
+    const horaFin = document.getElementById('surgery_hora_fin').value;
+    const tipo = 'cirugia'; // Tipo fijo para cirugía
+    const asistentes = document.getElementById('surgery_asistentes').value;
+    
+    // Validaciones
+    if (!fecha || !horaInicio || !horaFin) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    if (horaInicio >= horaFin) {
+        alert('La hora de inicio debe ser menor que la hora de fin');
+        return;
+    }
+    
+    if (!especialistaId) {
+        alert('No se pudo determinar el especialista. Por favor intente nuevamente.');
+        return;
+    }
+    
+    // Crear FormData
+    const formData = new URLSearchParams();
+    formData.append('especialista_id', especialistaId);
+    if (sucursalId) {
+        formData.append('sucursal_id', sucursalId);
+    }
+    formData.append('fecha_inicio', `${fecha} ${horaInicio}:00`);
+    formData.append('fecha_fin', `${fecha} ${horaFin}:00`);
+    formData.append('tipo', tipo);
+    formData.append('motivo', asistentes); // Asistentes se guarda en el campo motivo
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>/calendario/bloquear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Cirugía programada exitosamente');
+            closeSurgeryModal();
+            window.calendar.refetchEvents();
+        } else {
+            alert('Error al programar cirugía: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al programar cirugía:', error);
+        alert('Error al programar cirugía. Por favor intente nuevamente.');
     }
 }
 

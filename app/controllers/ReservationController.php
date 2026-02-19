@@ -509,6 +509,7 @@ class ReservationController extends BaseController {
         $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST, ROLE_RECEPTIONIST]);
         
         $id = $this->isPost() ? $this->post('id') : $this->get('id');
+        $metodo_pago = $this->post('metodo_pago'); // Nuevo: obtener método de pago opcional
         
         $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
         
@@ -532,18 +533,25 @@ class ReservationController extends BaseController {
                 );
                 
                 if (!$existingPayment) {
-                    // Crear nuevo registro de pago
+                    // Crear nuevo registro de pago con método de pago si se proporcionó
                     $this->db->insert(
                         "INSERT INTO pagos (reservacion_id, monto, metodo_pago, estado, fecha_pago) 
-                         VALUES (?, ?, NULL, 'completado', NOW())",
-                        [$id, $reservation['precio_total']]
+                         VALUES (?, ?, ?, 'completado', NOW())",
+                        [$id, $reservation['precio_total'], $metodo_pago]
+                    );
+                } else if ($metodo_pago) {
+                    // Si ya existe el pago pero se proporcionó método, actualizarlo
+                    $this->db->update(
+                        "UPDATE pagos SET metodo_pago = ? WHERE reservacion_id = ?",
+                        [$metodo_pago, $id]
                     );
                 }
             } catch (Exception $e) {
                 error_log("Error al crear registro de pago: " . $e->getMessage());
             }
             
-            logAction('reservation_complete', 'Reservación completada: ' . $reservation['codigo']);
+            logAction('reservation_complete', 'Reservación completada: ' . $reservation['codigo'] . 
+                     ($metodo_pago ? ' - Método de pago: ' . $metodo_pago : ''));
             
             if ($this->isPost()) {
                 $this->json(['success' => true, 'message' => 'Reservación marcada como completada']);

@@ -279,38 +279,42 @@ $rolId = $user['rol_id'];
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Acciones Rápidas</h3>
         <div class="grid grid-cols-2 gap-4">
             <?php if ($rolId == ROLE_CLIENT): ?>
-            <a href="<?= url('/reservaciones/nueva') ?>" class="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition">
-                <i class="fas fa-plus-circle text-2xl text-blue-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Nueva Cita</p>
+            <a href="<?= url('/reservaciones/nueva') ?>" class="p-4 bg-blue-100 rounded-lg text-center hover:bg-blue-200 transition">
+                <i class="fas fa-plus-circle text-3xl text-blue-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Nueva Cita</p>
             </a>
-            <a href="<?= url('/mis-citas') ?>" class="p-4 bg-green-50 rounded-lg text-center hover:bg-green-100 transition">
-                <i class="fas fa-calendar-alt text-2xl text-green-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Mis Citas</p>
+            <a href="<?= url('/mis-citas') ?>" class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+                <i class="fas fa-calendar-alt text-3xl text-green-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Mis Citas</p>
             </a>
-            <a href="<?= url('/perfil') ?>" class="p-4 bg-purple-50 rounded-lg text-center hover:bg-purple-100 transition">
-                <i class="fas fa-user text-2xl text-purple-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Mi Perfil</p>
+            <a href="<?= url('/perfil') ?>" class="p-4 bg-purple-100 rounded-lg text-center hover:bg-purple-200 transition">
+                <i class="fas fa-user text-3xl text-purple-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Mi Perfil</p>
             </a>
-            <a href="<?= url('/notificaciones') ?>" class="p-4 bg-yellow-50 rounded-lg text-center hover:bg-yellow-100 transition">
-                <i class="fas fa-bell text-2xl text-yellow-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Notificaciones</p>
+            <a href="<?= url('/notificaciones') ?>" class="p-4 bg-yellow-100 rounded-lg text-center hover:bg-yellow-200 transition">
+                <i class="fas fa-bell text-3xl text-yellow-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Notificaciones</p>
             </a>
             <?php elseif ($rolId == ROLE_SPECIALIST): ?>
-            <a href="<?= url('/calendario') ?>" class="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition">
-                <i class="fas fa-calendar-week text-2xl text-blue-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Calendario</p>
+            <a href="<?= url('/calendario') ?>" class="p-4 bg-blue-100 rounded-lg text-center hover:bg-blue-200 transition">
+                <i class="fas fa-calendar-week text-3xl text-blue-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Calendario</p>
             </a>
-            <a href="<?= url('/especialistas/horarios') ?>" class="p-4 bg-green-50 rounded-lg text-center hover:bg-green-100 transition">
-                <i class="fas fa-clock text-2xl text-green-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Mis Horarios</p>
+            <a href="<?= url('/especialistas/horarios') ?>" class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+                <i class="fas fa-clock text-3xl text-green-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Mis Horarios</p>
             </a>
-            <a href="<?= url('/reservaciones') ?>" class="p-4 bg-purple-50 rounded-lg text-center hover:bg-purple-100 transition">
-                <i class="fas fa-list text-2xl text-purple-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Mis Citas</p>
+            <a href="<?= url('/reservaciones') ?>" class="p-4 bg-purple-100 rounded-lg text-center hover:bg-purple-200 transition">
+                <i class="fas fa-list text-3xl text-purple-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Mis Citas</p>
             </a>
-            <a href="<?= url('/perfil') ?>" class="p-4 bg-yellow-50 rounded-lg text-center hover:bg-yellow-100 transition">
-                <i class="fas fa-user text-2xl text-yellow-500 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">Mi Perfil</p>
+            <a href="<?= url('/perfil') ?>" class="p-4 bg-yellow-100 rounded-lg text-center hover:bg-yellow-200 transition">
+                <i class="fas fa-user text-3xl text-yellow-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Mi Perfil</p>
+            </a>
+            <a href="<?= url('/pagos') ?>" class="p-4 bg-emerald-100 rounded-lg text-center hover:bg-emerald-200 transition col-span-2">
+                <i class="fas fa-money-bill-wave text-3xl text-emerald-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Administraci&oacute;n de pagos</p>
             </a>
             <?php endif; ?>
         </div>

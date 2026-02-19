@@ -211,16 +211,29 @@ class CalendarController extends BaseController {
                 'pausa' => '☕ Pausa',
                 'personal' => '👤 Personal',
                 'puntual' => '🔒 Bloqueado',
+                'cirugia' => '⚕️ Cirugía',
                 'otro' => '⛔ No disponible'
             ];
+            
+            // Asignar colores según el tipo de bloqueo
+            $tipoColors = [
+                'vacaciones' => ['bg' => '#3B82F6', 'border' => '#1E40AF'], // Azul
+                'pausa' => ['bg' => '#F59E0B', 'border' => '#B45309'], // Amarillo/Ámbar
+                'personal' => ['bg' => '#8B5CF6', 'border' => '#6D28D9'], // Violeta
+                'puntual' => ['bg' => '#DC2626', 'border' => '#991B1B'], // Rojo
+                'cirugia' => ['bg' => '#9333EA', 'border' => '#6B21A8'], // Morado/Púrpura
+                'otro' => ['bg' => '#6B7280', 'border' => '#374151'] // Gris
+            ];
+            
+            $colors = $tipoColors[$b['tipo']] ?? $tipoColors['otro'];
             
             $events[] = [
                 'id' => 'block-' . $b['id'],
                 'title' => ($tipoLabel[$b['tipo']] ?? '⛔ Bloqueado') . ($b['motivo'] ? ': ' . $b['motivo'] : ''),
                 'start' => $b['fecha_inicio'],
                 'end' => $b['fecha_fin'],
-                'backgroundColor' => '#DC2626',
-                'borderColor' => '#991B1B',
+                'backgroundColor' => $colors['bg'],
+                'borderColor' => $colors['border'],
                 'display' => 'block',
                 'extendedProps' => [
                     'tipo' => 'bloqueo',
