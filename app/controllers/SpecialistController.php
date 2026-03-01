@@ -736,9 +736,10 @@ class SpecialistController extends BaseController {
                     $duracion = !empty($data['duracion']) ? intval($data['duracion']) : null;
                     $activo = isset($data['activo']) ? 1 : 0;
                     $es_emergencia = isset($data['es_emergencia']) ? 1 : 0;
+                    $visible_chatbot = isset($data['visible_chatbot']) ? 1 : 0;
                     
                     // Debug: ver valores
-                    error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo, Emergencia: $es_emergencia");
+                    error_log("Actualizando servicio $serviceId - Precio: $precio, Duración: $duracion, Activo: $activo, Emergencia: $es_emergencia, Visible Chatbot: $visible_chatbot");
                     
                     // Obtener el especialista_id del POST para asegurar que se actualiza el correcto
                     $especialista_id = $this->post('specialist_id');
@@ -748,9 +749,9 @@ class SpecialistController extends BaseController {
                     
                     $this->db->update(
                         "UPDATE especialistas_servicios 
-                         SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?, es_emergencia = ?
+                         SET precio_personalizado = ?, duracion_personalizada = ?, activo = ?, es_emergencia = ?, visible_chatbot = ?
                          WHERE especialista_id = ? AND servicio_id = ?",
-                        [$precio, $duracion, $activo, $es_emergencia, $especialista_id, $serviceId]
+                        [$precio, $duracion, $activo, $es_emergencia, $visible_chatbot, $especialista_id, $serviceId]
                     );
                 }
                 
@@ -782,6 +783,7 @@ class SpecialistController extends BaseController {
                 es.duracion_personalizada,
                 es.activo,
                 es.es_emergencia,
+                es.visible_chatbot,
                 c.nombre as categoria_nombre
             FROM especialistas_servicios es
             INNER JOIN servicios s ON es.servicio_id = s.id
