@@ -244,6 +244,8 @@ class ReservationController extends BaseController {
         if ($this->isPost()) {
             // Obtener datos del formulario
             $nombre_cliente = $this->post('nombre_cliente'); // Para especialistas
+            $telefono = $this->post('telefono'); // Teléfono del cliente
+            $correo = $this->post('correo'); // Correo del cliente
             $cliente_id = ($user['rol_id'] == ROLE_CLIENT) ? $user['id'] : $this->post('cliente_id');
             $sucursal_id = $this->post('sucursal_id');
             $especialista_id = $this->post('especialista_id');
@@ -300,10 +302,10 @@ class ReservationController extends BaseController {
                             
                             // Crear reservación
                             $reservationId = $this->db->insert(
-                                "INSERT INTO reservaciones (codigo, cliente_id, nombre_cliente, especialista_id, servicio_id, sucursal_id, 
+                                "INSERT INTO reservaciones (codigo, cliente_id, nombre_cliente, telefono, correo, especialista_id, servicio_id, sucursal_id, 
                                  fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, notas_cliente, creado_por) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                [$codigo, $cliente_id, $nombre_cliente, $especialista_id, $servicio_id, $sucursal_id, 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                [$codigo, $cliente_id, $nombre_cliente, $telefono, $correo, $especialista_id, $servicio_id, $sucursal_id, 
                                  $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $notas_cliente, $user['id']]
                             );
                             

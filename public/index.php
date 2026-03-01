@@ -59,6 +59,7 @@ $routes = [
     '/sucursales/crear' => ['controller' => 'BranchController', 'action' => 'create'],
     '/sucursales/editar' => ['controller' => 'BranchController', 'action' => 'edit'],
     '/sucursales/eliminar' => ['controller' => 'BranchController', 'action' => 'delete'],
+    '/sucursales/actualizar-color' => ['controller' => 'BranchController', 'action' => 'updateColor'],
     
     // Especialistas
     '/especialistas' => ['controller' => 'SpecialistController', 'action' => 'index'],

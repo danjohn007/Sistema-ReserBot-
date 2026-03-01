@@ -40,6 +40,7 @@ class BranchController extends BaseController {
         
         if ($this->isPost()) {
             $nombre = $this->post('nombre');
+            $color = $this->post('color') ?: '#3B82F6';
             $direccion = $this->post('direccion');
             $ciudad = $this->post('ciudad');
             $estado = $this->post('estado');
@@ -53,9 +54,9 @@ class BranchController extends BaseController {
                 $error = 'El nombre de la sucursal es obligatorio.';
             } else {
                 $this->db->insert(
-                    "INSERT INTO sucursales (nombre, direccion, ciudad, estado, codigo_postal, telefono, email, horario_apertura, horario_cierre) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [$nombre, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, $horario_apertura, $horario_cierre]
+                    "INSERT INTO sucursales (nombre, color, direccion, ciudad, estado, codigo_postal, telefono, email, horario_apertura, horario_cierre) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, $horario_apertura, $horario_cierre]
                 );
                 
                 logAction('branch_create', 'Sucursal creada: ' . $nombre);
@@ -96,6 +97,7 @@ class BranchController extends BaseController {
         
         if ($this->isPost()) {
             $nombre = $this->post('nombre');
+            $color = $this->post('color') ?: '#3B82F6';
             $direccion = $this->post('direccion');
             $ciudad = $this->post('ciudad');
             $estado = $this->post('estado');
@@ -110,10 +112,10 @@ class BranchController extends BaseController {
                 $error = 'El nombre de la sucursal es obligatorio.';
             } else {
                 $this->db->update(
-                    "UPDATE sucursales SET nombre = ?, direccion = ?, ciudad = ?, estado = ?, 
+                    "UPDATE sucursales SET nombre = ?, color = ?, direccion = ?, ciudad = ?, estado = ?, 
                      codigo_postal = ?, telefono = ?, email = ?, horario_apertura = ?, 
                      horario_cierre = ?, activo = ? WHERE id = ?",
-                    [$nombre, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, 
+                    [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, 
                      $horario_apertura, $horario_cierre, $activo, $id]
                 );
                 
@@ -147,5 +149,45 @@ class BranchController extends BaseController {
         }
         
         redirect('/sucursales');
+    }
+    
+    /**
+     * Actualizar solo el color de una sucursal (AJAX)
+     */
+    public function updateColor() {
+        $this->requireAuth();
+        header('Content-Type: application/json');
+        
+        $id = $this->post('id');
+        $color = $this->post('color');
+        
+        // Validar formato de color hexadecimal
+        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+            echo json_encode(['success' => false, 'message' => 'Formato de color inválido']);
+            return;
+        }
+        
+        $user = currentUser();
+        
+        // Verificar permisos
+        if ($user['rol_id'] == ROLE_BRANCH_ADMIN && $user['sucursal_id'] != $id) {
+            echo json_encode(['success' => false, 'message' => 'No tiene permisos para modificar esta sucursal']);
+            return;
+        }
+        
+        $branch = $this->db->fetch("SELECT nombre FROM sucursales WHERE id = ?", [$id]);
+        
+        if (!$branch) {
+            echo json_encode(['success' => false, 'message' => 'Sucursal no encontrada']);
+            return;
+        }
+        
+        try {
+            $this->db->update("UPDATE sucursales SET color = ? WHERE id = ?", [$color, $id]);
+            logAction('branch_color_update', 'Color actualizado para sucursal: ' . $branch['nombre'] . ' a ' . $color);
+            echo json_encode(['success' => true, 'message' => 'Color actualizado correctamente']);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar el color']);
+        }
     }
 }

@@ -25,6 +25,24 @@
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                 <p class="text-xs text-gray-500 mt-1">Ingrese el nombre del cliente para esta reservaci&oacute;n</p>
             </div>
+            
+            <!-- Teléfono del Cliente -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                <input type="tel" name="telefono"
+                       placeholder="Ej: 442 123 4567"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <p class="text-xs text-gray-500 mt-1">Tel&eacute;fono de contacto del cliente</p>
+            </div>
+            
+            <!-- Correo del Cliente -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                <input type="email" name="correo"
+                       placeholder="cliente@ejemplo.com"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <p class="text-xs text-gray-500 mt-1">Correo electr&oacute;nico del cliente</p>
+            </div>
             <?php elseif (!empty($clients) && count($clients) > 0): ?>
             <!-- Para admins/recepcionistas: selector de clientes existentes -->
             <div class="mb-6">

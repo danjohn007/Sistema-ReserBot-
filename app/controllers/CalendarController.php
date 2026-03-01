@@ -20,7 +20,7 @@ class CalendarController extends BaseController {
         $specialists = [];
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
-            $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre");
+            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE activo = 1 ORDER BY nombre");
             $specialists = $this->db->fetchAll(
                 "SELECT e.id, u.nombre, u.apellidos, s.nombre as sucursal_nombre
                  FROM especialistas e
@@ -30,7 +30,7 @@ class CalendarController extends BaseController {
                  ORDER BY u.nombre, u.apellidos"
             );
         } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
-            $branches = $this->db->fetchAll("SELECT id, nombre FROM sucursales WHERE id = ?", [$user['sucursal_id']]);
+            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE id = ?", [$user['sucursal_id']]);
             $specialists = $this->db->fetchAll(
                 "SELECT e.id, u.nombre, u.apellidos
                  FROM especialistas e
@@ -42,7 +42,7 @@ class CalendarController extends BaseController {
         } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
             // Para especialistas: obtener sus sucursales y sus registros de especialista
             $branches = $this->db->fetchAll(
-                "SELECT DISTINCT s.id, s.nombre 
+                "SELECT DISTINCT s.id, s.nombre, s.color 
                  FROM sucursales s
                  JOIN especialistas e ON s.id = e.sucursal_id
                  WHERE e.usuario_id = ? AND e.activo = 1 AND s.activo = 1
@@ -57,11 +57,72 @@ class CalendarController extends BaseController {
             $currentSpecialistId = $user['id'];
         }
         
+        // Obtener horarios de todos los especialistas para businessHours
+        $horariosEspecialistas = [];
+        if (!empty($specialists)) {
+            foreach ($specialists as $spec) {
+                // Obtener el usuario_id del especialista para buscar TODOS sus horarios
+                $usuarioId = $this->db->fetchColumn(
+                    "SELECT usuario_id FROM especialistas WHERE id = ?",
+                    [$spec['id']]
+                );
+                
+                if ($usuarioId) {
+                    // Obtener TODOS los horarios de este usuario en TODAS sus sucursales
+                    $todosLosHorarios = $this->db->fetchAll(
+                        "SELECT DISTINCT h.dia_semana, h.hora_inicio, h.hora_fin 
+                         FROM horarios_especialistas h
+                         JOIN especialistas e ON h.especialista_id = e.id
+                         WHERE e.usuario_id = ? AND h.activo = 1
+                         ORDER BY h.dia_semana, h.hora_inicio",
+                        [$usuarioId]
+                    );
+                    $horariosEspecialistas[$spec['id']] = $todosLosHorarios;
+                }
+            }
+        } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
+            // Para especialistas: obtener sus propios horarios de TODAS sus sucursales
+            $especialistaIds = $this->db->fetchAll(
+                "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+                [$user['id']]
+            );
+            
+            $todosLosHorarios = [];
+            foreach ($especialistaIds as $esp) {
+                $horarios = $this->db->fetchAll(
+                    "SELECT dia_semana, hora_inicio, hora_fin 
+                     FROM horarios_especialistas 
+                     WHERE especialista_id = ? AND activo = 1
+                     ORDER BY dia_semana, hora_inicio",
+                    [$esp['id']]
+                );
+                // Agregar todos los horarios al array combinado
+                if (!empty($horarios)) {
+                    $todosLosHorarios = array_merge($todosLosHorarios, $horarios);
+                }
+            }
+            
+            // Eliminar duplicados basados en dia_semana, hora_inicio, hora_fin
+            if (!empty($todosLosHorarios)) {
+                $horariosUnicos = [];
+                $keys = [];
+                foreach ($todosLosHorarios as $horario) {
+                    $key = $horario['dia_semana'] . '|' . $horario['hora_inicio'] . '|' . $horario['hora_fin'];
+                    if (!in_array($key, $keys)) {
+                        $keys[] = $key;
+                        $horariosUnicos[] = $horario;
+                    }
+                }
+                $horariosEspecialistas['current'] = $horariosUnicos;
+            }
+        }
+        
         $this->render('calendar/index', [
             'title' => 'Calendario',
             'branches' => $branches,
             'specialists' => $specialists,
             'currentSpecialistId' => $currentSpecialistId,
+            'horariosEspecialistas' => $horariosEspecialistas,
             'user' => $user
         ]);
     }

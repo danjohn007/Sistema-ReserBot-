@@ -53,6 +53,32 @@
             </div>
             <?php endif; ?>
             
+            <!-- Colores de Sucursales -->
+            <?php if (!empty($branches) && count($branches) > 1): ?>
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-palette text-gray-400 mr-1"></i>Colores de Sucursales
+                </label>
+                <button onclick="toggleColorPicker()" 
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center justify-between">
+                    <span class="text-sm text-gray-700">Cambiar colores</span>
+                    <i class="fas fa-chevron-down text-gray-400" id="colorPickerIcon"></i>
+                </button>
+                <div id="colorPickerPanel" class="hidden mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                    <?php foreach ($branches as $branch): ?>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-700 flex-1"><?= e($branch['nombre']) ?></span>
+                        <input type="color" 
+                               value="<?= e($branch['color'] ?? '#3B82F6') ?>" 
+                               data-branch-id="<?= $branch['id'] ?>"
+                               onchange="updateBranchColor(<?= $branch['id'] ?>, this.value)"
+                               class="h-8 w-16 border border-gray-300 rounded cursor-pointer">
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <!-- Estado Legend -->
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -124,6 +150,29 @@
     transform: scale(1.1);
     font-weight: 600;
     color: #3B82F6;
+}
+
+/* Estilo para horas fuera de horario disponible (non-business hours) */
+.fc-non-business {
+    background-color: #e5e7eb !important; /* gris oscuro */
+    opacity: 0.7;
+}
+
+/* En vista de semana/día, hacer más evidente las horas no disponibles */
+.fc-timegrid .fc-non-business {
+    background-color: #d1d5db !important; /* gris más oscuro */
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.03) 10px,
+        rgba(0, 0, 0, 0.03) 20px
+    );
+}
+
+/* Asegurar que las celdas de horario disponible se vean claras */
+.fc-timegrid-slot:not(.fc-non-business) {
+    background-color: #ffffff;
 }
 
 /* Animación de pulso para horario pre-seleccionado */
@@ -559,16 +608,78 @@
 </div>
 
 <script>
+// Variables globales
+<?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+// Crear mapeo de sucursales a colores personalizados
+const sucursalColorMap = {};
+<?php foreach ($branches as $branch): ?>
+sucursalColorMap[<?= $branch['id'] ?>] = '<?= $branch['color'] ?? '#3B82F6' ?>';
+<?php endforeach; ?>
+
+// Función para convertir color hex a rgba con opacidad
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+<?php endif; ?>
+
+// Horarios de especialistas para businessHours
+const horariosEspecialistas = <?= json_encode($horariosEspecialistas ?? []) ?>;
+
+// Función para convertir horarios a formato FullCalendar businessHours
+function convertirHorariosABusinessHours(horarios) {
+    if (!horarios || horarios.length === 0) {
+        return undefined; // Sin restricciones
+    }
+    
+    // Agrupar por día de la semana
+    const horariosPorDia = {};
+    horarios.forEach(h => {
+        // Convertir dia_semana (1=Lunes...7=Domingo) a daysOfWeek (0=Domingo, 1=Lunes...6=Sábado)
+        const diaFC = h.dia_semana === 7 ? 0 : h.dia_semana;
+        
+        if (!horariosPorDia[diaFC]) {
+            horariosPorDia[diaFC] = [];
+        }
+        horariosPorDia[diaFC].push({
+            startTime: h.hora_inicio.substring(0, 5), // "09:00:00" -> "09:00"
+            endTime: h.hora_fin.substring(0, 5)
+        });
+    });
+    
+    // Convertir a formato FullCalendar
+    const businessHours = [];
+    for (const dia in horariosPorDia) {
+        horariosPorDia[dia].forEach(rango => {
+            businessHours.push({
+                daysOfWeek: [parseInt(dia)],
+                startTime: rango.startTime,
+                endTime: rango.endTime
+            });
+        });
+    }
+    
+    return businessHours;
+}
+
+// Obtener businessHours inicial
+function getBusinessHours() {
+    const especialistaId = document.getElementById('filter_especialista')?.value;
+    
+    if (especialistaId && horariosEspecialistas[especialistaId]) {
+        return convertirHorariosABusinessHours(horariosEspecialistas[especialistaId]);
+    } else if (horariosEspecialistas['current']) {
+        // Para especialistas que ven su propio calendario
+        return convertirHorariosABusinessHours(horariosEspecialistas['current']);
+    }
+    
+    return undefined; // Sin restricciones si no hay horarios
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
-    
-    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
-    // Crear mapeo de sucursales a colores basado en el orden del filtro
-    const sucursalColorMap = {};
-    <?php foreach ($branches as $index => $branch): ?>
-    sucursalColorMap[<?= $branch['id'] ?>] = <?= $index ?>;
-    <?php endforeach; ?>
-    <?php endif; ?>
     
     window.calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -668,34 +779,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fechaStr = `${year}-${month}-${day}`;
                 
                 const sucursalId = info.event.extendedProps.sucursal_id;
-                const colorIndex = sucursalColorMap[sucursalId] !== undefined 
-                    ? sucursalColorMap[sucursalId] % 6
-                    : 0;
+                const colorHex = sucursalColorMap[sucursalId] || '#3B82F6';
                 
                 // Detectar si es hoy
                 const hoy = new Date();
                 const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
                 const esHoy = fechaStr === hoyStr;
                 
-                const coloresSuaves = [
-                    'rgba(59, 130, 246, 0.25)',   // Azul
-                    'rgba(236, 72, 153, 0.25)',   // Rosa
-                    'rgba(16, 185, 129, 0.25)',   // Verde
-                    'rgba(245, 158, 11, 0.25)',   // Naranja
-                    'rgba(139, 92, 246, 0.25)',   // Púrpura
-                    'rgba(239, 68, 68, 0.25)'     // Rojo
-                ];
-                
-                const coloresFuertes = [
-                    'rgba(59, 130, 246, 0.45)',   // Azul
-                    'rgba(236, 72, 153, 0.45)',   // Rosa
-                    'rgba(16, 185, 129, 0.45)',   // Verde
-                    'rgba(245, 158, 11, 0.45)',   // Naranja
-                    'rgba(139, 92, 246, 0.45)',   // Púrpura
-                    'rgba(239, 68, 68, 0.45)'     // Rojo
-                ];
-                
-                const color = esHoy ? coloresFuertes[colorIndex] : coloresSuaves[colorIndex];
+                // Usar opacidad diferente para hoy vs otros días
+                const opacidad = esHoy ? 0.45 : 0.25;
+                const color = hexToRgba(colorHex, opacidad);
                 
                 // Buscar la celda correspondiente
                 setTimeout(() => {
@@ -717,6 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectMirror: true,
         dayMaxEvents: 3,
         moreLinkText: 'más',
+        businessHours: getBusinessHours(),
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',
@@ -747,7 +841,85 @@ function filterCalendar() {
         celda.style.backgroundColor = '';
     });
     <?php endif; ?>
+    
+    // Actualizar businessHours según el especialista seleccionado
+    const newBusinessHours = getBusinessHours();
+    if (window.calendar) {
+        window.calendar.setOption('businessHours', newBusinessHours);
+    }
+    
     window.calendar.refetchEvents();
+}
+
+// Función para mostrar/ocultar el panel de colores
+function toggleColorPicker() {
+    const panel = document.getElementById('colorPickerPanel');
+    const icon = document.getElementById('colorPickerIcon');
+    
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        panel.classList.add('hidden');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
+// Función para actualizar el color de una sucursal
+async function updateBranchColor(branchId, color) {
+    try {
+        const response = await fetch('<?= url('/sucursales/actualizar-color') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id=${branchId}&color=${encodeURIComponent(color)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Actualizar el mapa de colores
+            if (typeof sucursalColorMap !== 'undefined') {
+                sucursalColorMap[branchId] = color;
+            }
+            
+            // Recargar eventos para reflejar el nuevo color
+            if (window.calendar) {
+                window.calendar.refetchEvents();
+            }
+            
+            // Mostrar mensaje de éxito
+            showToast('Color actualizado correctamente', 'success');
+        } else {
+            showToast(result.message || 'Error al actualizar el color', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al actualizar el color', 'error');
+    }
+}
+
+// Función auxiliar para mostrar mensajes toast
+function showToast(message, type = 'info') {
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 let currentEvent = null;
