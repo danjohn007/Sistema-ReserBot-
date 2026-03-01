@@ -25,7 +25,8 @@ class ReservationController extends BaseController {
                        COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
                        u.nombre as cliente_nombre, u.apellidos as cliente_apellidos, u.email as cliente_email, u.telefono as cliente_telefono,
                        s.nombre as servicio_nombre, suc.nombre as sucursal_nombre,
-                       ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos
+                       ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos,
+                       r.es_extraordinaria
                 FROM reservaciones r
                 LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
@@ -253,6 +254,7 @@ class ReservationController extends BaseController {
             $fecha_cita = $this->post('fecha_cita');
             $hora_inicio = $this->post('hora_inicio');
             $notas_cliente = $this->post('notas_cliente');
+            $es_extraordinaria = $this->post('es_extraordinaria') ? 1 : 0; // Capturar flag de cita extraordinaria
             
             // Validar campos obligatorios
             if (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
@@ -283,17 +285,21 @@ class ReservationController extends BaseController {
                         $precio = $service['precio'];
                         $hora_fin = date('H:i:s', strtotime($hora_inicio) + ($duracion * 60));
                         
-                        // Verificar disponibilidad
-                        $conflict = $this->db->fetch(
-                            "SELECT id FROM reservaciones 
-                             WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')
-                             AND ((hora_inicio <= ? AND hora_fin > ?) OR (hora_inicio < ? AND hora_fin >= ?))",
-                            [$especialista_id, $fecha_cita, $hora_inicio, $hora_inicio, $hora_fin, $hora_fin]
-                        );
+                        // Verificar disponibilidad SOLO si NO es extraordinaria
+                        if (!$es_extraordinaria) {
+                            $conflict = $this->db->fetch(
+                                "SELECT id FROM reservaciones 
+                                 WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')
+                                 AND ((hora_inicio <= ? AND hora_fin > ?) OR (hora_inicio < ? AND hora_fin >= ?))",
+                                [$especialista_id, $fecha_cita, $hora_inicio, $hora_inicio, $hora_fin, $hora_fin]
+                            );
+                            
+                            if ($conflict) {
+                                $error = 'El horario seleccionado ya no está disponible. Por favor seleccione otro.';
+                            }
+                        }
                         
-                        if ($conflict) {
-                            $error = 'El horario seleccionado ya no está disponible. Por favor seleccione otro.';
-                        } else {
+                        if (!$error) {
                             // Generar código único
                             $codigo = generateReservationCode();
                             
@@ -303,10 +309,10 @@ class ReservationController extends BaseController {
                             // Crear reservación
                             $reservationId = $this->db->insert(
                                 "INSERT INTO reservaciones (codigo, cliente_id, nombre_cliente, telefono, correo, especialista_id, servicio_id, sucursal_id, 
-                                 fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, notas_cliente, creado_por) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, es_extraordinaria, notas_cliente, creado_por) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                 [$codigo, $cliente_id, $nombre_cliente, $telefono, $correo, $especialista_id, $servicio_id, $sucursal_id, 
-                                 $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $notas_cliente, $user['id']]
+                                 $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $es_extraordinaria, $notas_cliente, $user['id']]
                             );
                             
                             if ($reservationId) {
@@ -317,7 +323,8 @@ class ReservationController extends BaseController {
                                         "Se ha programado una cita para el " . formatDate($fecha_cita) . " a las " . formatTime($hora_inicio));
                                 }
                                 
-                                logAction('reservation_create', 'Reservación creada: ' . $codigo);
+                                $msgType = $es_extraordinaria ? 'EXTRAORDINARIA - ' : '';
+                                logAction('reservation_create', 'Reservación creada: ' . $msgType . $codigo);
                                 setFlashMessage('success', 'Reservación creada exitosamente. Código: ' . $codigo);
                                 redirect('/reservaciones');
                             } else {

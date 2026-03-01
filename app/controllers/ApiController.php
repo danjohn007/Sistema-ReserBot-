@@ -564,4 +564,58 @@ class ApiController extends BaseController {
             $this->json(['hasNew' => false]);
         }
     }
+    
+    /**
+     * Obtener horario del especialista para una fecha específica
+     */
+    public function getSpecialistSchedule() {
+        $especialistaId = $this->get('especialista_id');
+        $fecha = $this->get('fecha');
+        
+        if (!$especialistaId || !$fecha) {
+            $this->json(['error' => 'Parámetros incompletos'], 400);
+            return;
+        }
+        
+        // Obtener día de la semana (1=Lunes, 7=Domingo)
+        $dayOfWeek = date('N', strtotime($fecha));
+        
+        // Obtener horario del especialista para ese día
+        $horario = $this->db->fetch(
+            "SELECT hora_inicio, hora_fin, dia_semana FROM horarios_especialistas 
+             WHERE especialista_id = ? AND dia_semana = ? AND activo = 1",
+            [$especialistaId, $dayOfWeek]
+        );
+        
+        if (!$horario) {
+            $this->json([
+                'horario' => null,
+                'mensaje' => 'No hay horario configurado para este día'
+            ]);
+            return;
+        }
+        
+        // Verificar si hay bloqueo ese día
+        $bloqueo = $this->db->fetch(
+            "SELECT id FROM bloqueos_horario 
+             WHERE especialista_id = ? AND ? BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)",
+            [$especialistaId, $fecha]
+        );
+        
+        if ($bloqueo) {
+            $this->json([
+                'horario' => null,
+                'mensaje' => 'El especialista tiene un bloqueo en esta fecha'
+            ]);
+            return;
+        }
+        
+        $this->json([
+            'horario' => [
+                'hora_inicio' => $horario['hora_inicio'],
+                'hora_fin' => $horario['hora_fin'],
+                'dia_semana' => $horario['dia_semana']
+            ]
+        ]);
+    }
 }

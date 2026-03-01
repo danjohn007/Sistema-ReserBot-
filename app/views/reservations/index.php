@@ -117,8 +117,15 @@
             <tbody class="divide-y divide-gray-200">
                 <?php foreach ($reservations as $res): ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 font-medium text-primary">
-                        <?= e($res['codigo']) ?>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-medium text-primary"><?= e($res['codigo']) ?></span>
+                            <?php if (!empty($res['es_extraordinaria'])): ?>
+                            <span class="mt-1 px-2 py-0.5 text-xs font-semibold bg-orange-500 text-white rounded w-fit">
+                                <i class="fas fa-user-clock mr-1"></i>EXTRAORDINARIA
+                            </span>
+                            <?php endif; ?>
+                        </div>
                     </td>
                     <td class="px-6 py-4">
                         <p class="font-medium text-gray-800"><?= e($res['cliente_nombre_completo']) ?></p>

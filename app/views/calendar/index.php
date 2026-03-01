@@ -175,6 +175,43 @@
     background-color: #ffffff;
 }
 
+/* Aumentar altura de cada slot de tiempo (cada 30 min) en la cuadrícula */
+.fc-timegrid-slot {
+    height: 50px !important;
+    min-height: 50px !important;
+}
+
+.fc-timegrid-slot-lane {
+    height: 50px !important;
+}
+
+/* Aumentar altura mínima de eventos en vista semanal para mostrar dos líneas */
+.fc-timegrid-event {
+    min-height: 45px !important;
+    padding: 3px 5px !important;
+    min-width: 140px !important; /* Ancho mínimo para que se vea el texto completo */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important; /* Sombra para diferenciar eventos solapados */
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 0 !important;
+    width: 100%;
+}
+
+.fc-timegrid-event .fc-event-title {
+    white-space: normal !important;
+    overflow: visible !important;
+    line-height: 1.25 !important;
+    font-size: 0.8em !important;
+    text-align: left !important;
+    word-wrap: break-word !important;
+}
+
+/* Cuando hay eventos simultáneos, ajustar posición */
+.fc-timegrid-col-events {
+    margin-right: 0 !important;
+}
+
 /* Animación de pulso para horario pre-seleccionado */
 @keyframes pulse {
     0%, 100% {
@@ -446,6 +483,40 @@
         </div>
         
         <form id="createReservationForm" class="p-6 space-y-6">
+            <!-- Opción: Cita Extraordinaria -->
+            <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-user-clock text-orange-600 text-xl"></i>
+                        <div>
+                            <label for="create_es_extraordinaria" class="font-semibold text-gray-900 cursor-pointer">
+                                Cita Extraordinaria
+                            </label>
+                            <p class="text-sm text-gray-600">
+                                Permite reservar sin validar disponibilidad
+                            </p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="create_es_extraordinaria" 
+                            name="es_extraordinaria" 
+                            value="1"
+                            class="sr-only peer"
+                            onchange="toggleCreateExtraordinariaWarning(this.checked)"
+                        >
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                    </label>
+                </div>
+                <div id="create_extraordinaria_warning" class="hidden mt-3 p-3 bg-orange-100 border border-orange-300 rounded-lg">
+                    <p class="text-sm text-orange-800 flex items-start">
+                        <i class="fas fa-exclamation-triangle mr-2 mt-0.5"></i>
+                        <span><strong>Advertencia:</strong> Esta cita NO validará horarios disponibles y puede causar empalmes.</span>
+                    </p>
+                </div>
+            </div>
+            
             <!-- Cliente -->
             <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
             <div>
@@ -751,6 +822,44 @@ document.addEventListener('DOMContentLoaded', function() {
             info.el.style.cursor = 'pointer';
             info.el.style.transition = 'all 0.2s';
             
+            // Para eventos de tipo reservacion, mostrar información en dos líneas
+            if (info.event.extendedProps.tipo === 'reservacion') {
+                const titleEl = info.el.querySelector('.fc-event-title');
+                if (titleEl) {
+                    const servicio = info.event.extendedProps.servicio || info.event.title;
+                    const cliente = info.event.extendedProps.cliente || '';
+                    const precio = info.event.extendedProps.precio || '';
+                    
+                    titleEl.innerHTML = `
+                        <div style="line-height: 1.2;">
+                            <div style="font-weight: 500;">${servicio}</div>
+                            <div style="font-size: 0.85em; margin-top: 2px;">${cliente} ${precio}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Marcar visualmente las citas extraordinarias
+            if (info.event.extendedProps.es_extraordinaria) {
+                info.el.style.borderLeft = '4px solid #ff6b00';
+                info.el.style.borderRight = '4px solid #ff6b00';
+                info.el.style.opacity = '0.9';
+                
+                // Agregar ícono de reloj en el título
+                const titleEl = info.el.querySelector('.fc-event-title');
+                if (titleEl) {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user-clock mr-1';
+                    icon.style.color = '#ff6b00';
+                    const firstDiv = titleEl.querySelector('div > div:first-child');
+                    if (firstDiv) {
+                        firstDiv.prepend(icon);
+                    } else {
+                        titleEl.prepend(icon);
+                    }
+                }
+            }
+            
             // Add hover effect
             info.el.addEventListener('mouseenter', function() {
                 this.style.transform = 'scale(1.02)';
@@ -803,6 +912,9 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         slotMinTime: '07:00:00',
         slotMaxTime: '21:00:00',
+        slotMinHeight: 50, // Aumentar altura de cada slot de 30 minutos para mejor visibilidad
+        slotEventOverlap: true, // Permitir que eventos se solapen visualmente
+        eventMinWidth: 120, // Ancho mínimo de eventos para que se vea el texto
         allDaySlot: false,
         nowIndicator: true,
         editable: false,
@@ -1010,6 +1122,18 @@ function showEventModal(event) {
                     <p class="text-sm text-blue-600 font-semibold">${timeStr}</p>
                 </div>
             </div>
+            
+            ${props.es_extraordinaria ? `
+            <div class="p-3 bg-orange-100 border-2 border-orange-400 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-user-clock text-orange-600 mr-2"></i>
+                    <div>
+                        <p class="text-sm font-bold text-orange-800">CITA EXTRAORDINARIA</p>
+                        <p class="text-xs text-orange-700">Esta cita se creó sin validar disponibilidad de horarios</p>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
             
             <div class="grid grid-cols-2 gap-4">
                 <div class="p-3 bg-gray-50 rounded-lg">
@@ -2012,6 +2136,12 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
     document.getElementById('create_time_section').style.display = 'none';
     document.getElementById('service_details').classList.add('hidden');
     
+    // Ocultar warning de cita extraordinaria
+    const extraordinariaWarning = document.getElementById('create_extraordinaria_warning');
+    if (extraordinariaWarning) {
+        extraordinariaWarning.classList.add('hidden');
+    }
+    
     // Mostrar el modal inmediatamente
     modal.classList.remove('hidden');
     
@@ -2120,9 +2250,13 @@ function loadTimeSlotsForCreate() {
     // Obtener si es servicio de emergencia
     const esEmergencia = selectedOption.dataset.esEmergencia === '1';
     
+    // Obtener si es cita extraordinaria
+    const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked;
+    
     // Debug: verificar detección
     console.log('Dataset esEmergencia:', selectedOption.dataset.esEmergencia, 'Tipo:', typeof selectedOption.dataset.esEmergencia);
     console.log('Es emergencia (booleano):', esEmergencia);
+    console.log('Es extraordinaria:', esExtraordinaria);
     
     // Mostrar detalles del servicio
     document.getElementById('service_duration').textContent = selectedOption.dataset.duracion;
@@ -2144,6 +2278,7 @@ function loadTimeSlotsForCreate() {
     const especialistaId = document.getElementById('create_especialista_id').value;
     const servicioId = selectedOption.value;
     const fecha = document.getElementById('create_fecha').value;
+    const duracion = parseInt(selectedOption.dataset.duracion);
     
     if (!especialistaId || !servicioId || !fecha) return;
     
@@ -2153,6 +2288,7 @@ function loadTimeSlotsForCreate() {
         servicioId,
         fecha,
         esServicioEmergencia: esEmergencia,
+        esExtraordinaria: esExtraordinaria,
         horaPreseleccionada: horaPreseleccionada
     });
     
@@ -2164,6 +2300,13 @@ function loadTimeSlotsForCreate() {
     container.innerHTML = loadingMsg;
     document.getElementById('create_time_section').style.display = 'block';
     
+    // Si es EXTRAORDINARIA, generar todos los horarios posibles
+    if (esExtraordinaria) {
+        generateAllTimeSlots(container, duracion, horaPreseleccionada);
+        return;
+    }
+    
+    // Si NO es extraordinaria, usar API normal
     fetch(`<?= BASE_URL ?>/api/disponibilidad?especialista_id=${especialistaId}&servicio_id=${servicioId}&fecha=${fecha}`)
         .then(response => response.json())
         .then(data => {
@@ -2270,6 +2413,7 @@ async function submitCreateReservation() {
     const fecha = document.getElementById('create_fecha').value;
     const horaInicio = document.getElementById('create_hora_inicio').value;
     const notas = document.getElementById('create_notas').value;
+    const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked ? '1' : '0';
     
     // Validaciones
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
@@ -2295,6 +2439,7 @@ async function submitCreateReservation() {
     formData.append('fecha_cita', fecha);
     formData.append('hora_inicio', horaInicio);
     formData.append('notas_cliente', notas);
+    formData.append('es_extraordinaria', esExtraordinaria);
     
     try {
         const response = await fetch('<?= BASE_URL ?>/reservaciones/nueva', {
@@ -2306,7 +2451,8 @@ async function submitCreateReservation() {
         });
         
         if (response.ok) {
-            alert('Reservación creada exitosamente');
+            const msgType = esExtraordinaria === '1' ? 'EXTRAORDINARIA ' : '';
+            alert(`Reservación ${msgType}creada exitosamente`);
             closeCreateModal();
             horaPreseleccionada = null; // Limpiar hora pre-seleccionada
             window.calendar.refetchEvents();
@@ -2318,6 +2464,119 @@ async function submitCreateReservation() {
     } catch (error) {
         console.error('Error al crear reservación:', error);
         alert('Error al crear la reservación. Por favor intente nuevamente.');
+    }
+}
+
+// Toggle warning de cita extraordinaria en modal de calendario
+function toggleCreateExtraordinariaWarning(isChecked) {
+    const warning = document.getElementById('create_extraordinaria_warning');
+    if (isChecked) {
+        warning.classList.remove('hidden');
+    } else {
+        warning.classList.add('hidden');
+    }
+    
+    // Recargar horarios si ya hay un servicio seleccionado
+    const servicioSelect = document.getElementById('create_servicio');
+    if (servicioSelect && servicioSelect.value) {
+        loadTimeSlotsForCreate();
+    }
+}
+
+// Generar todos los horarios posibles (para citas extraordinarias)
+async function generateAllTimeSlots(container, duracion, horaPreseleccionada) {
+    const noSlotsMsg = document.getElementById('no_slots_message');
+    container.innerHTML = '<div class="col-span-4 text-center py-2 text-orange-600"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando horario del especialista...</div>';
+    noSlotsMsg.style.display = 'none';
+    
+    const especialistaId = document.getElementById('create_especialista_id').value;
+    const fecha = document.getElementById('create_fecha').value;
+    
+    try {
+        // Obtener el horario del especialista para ese día
+        const response = await fetch(`<?= BASE_URL ?>/api/horario-especialista?especialista_id=${especialistaId}&fecha=${fecha}`);
+        const data = await response.json();
+        
+        console.log('Horario del especialista:', data);
+        
+        if (!data.horario || !data.horario.hora_inicio || !data.horario.hora_fin) {
+            container.innerHTML = '<div class="col-span-4 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>El especialista no tiene horario configurado para este día</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        // Banner informativo
+        const infoBanner = document.createElement('div');
+        infoBanner.className = 'col-span-4 p-3 bg-orange-100 border border-orange-400 rounded-lg mb-2';
+        infoBanner.innerHTML = `
+            <div class="flex items-center text-sm text-orange-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                <span><strong>Modo Extraordinario:</strong> Mostrando TODOS los horarios (incluidos ocupados) desde ${data.horario.hora_inicio.substring(0,5)} hasta ${data.horario.hora_fin.substring(0,5)}</span>
+            </div>
+        `;
+        container.appendChild(infoBanner);
+        
+        // Convertir horarios a minutos
+        const [horaInicioH, horaInicioM] = data.horario.hora_inicio.split(':').map(Number);
+        const [horaFinH, horaFinM] = data.horario.hora_fin.split(':').map(Number);
+        const horaInicio = horaInicioH * 60 + horaInicioM;
+        const horaFin = horaFinH * 60 + horaFinM;
+        const intervalo = 30; // slots cada 30 minutos
+        
+        console.log(`Generando slots desde ${horaInicio} hasta ${horaFin} minutos (cada ${intervalo} min)`);
+        
+        let slotsGenerados = 0;
+        for (let minutos = horaInicio; minutos < horaFin; minutos += intervalo) {
+            const horas = Math.floor(minutos / 60);
+            const mins = minutos % 60;
+            const horaStr = `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+            const horaCompleta = `${horaStr}:00`;
+            
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'px-3 py-2 border-2 border-orange-300 bg-orange-50 rounded-lg hover:border-orange-600 hover:bg-orange-100 transition text-sm font-medium time-slot-btn';
+            button.textContent = horaStr;
+            button.dataset.hora = horaCompleta;
+            button.dataset.tipo = 'extraordinaria';
+            
+            button.onclick = function() {
+                // Remover selección previa
+                document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                    btn.classList.remove('border-orange-600', 'bg-orange-200');
+                });
+                // Seleccionar este
+                this.classList.add('border-orange-600', 'bg-orange-200');
+                document.getElementById('create_hora_inicio').value = this.dataset.hora;
+            };
+            
+            container.appendChild(button);
+            slotsGenerados++;
+            
+            // Auto-seleccionar si coincide con la hora pre-seleccionada
+            if (horaPreseleccionada && horaStr === horaPreseleccionada) {
+                setTimeout(() => {
+                    button.click();
+                    button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    button.style.animation = 'pulse 1s ease-in-out 2';
+                    setTimeout(() => {
+                        button.style.animation = '';
+                    }, 2000);
+                }, 100);
+            }
+        }
+        
+        console.log(`Slots generados en modo extraordinario: ${slotsGenerados}`);
+        
+        if (slotsGenerados === 0) {
+            container.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-600"><i class="fas fa-info-circle mr-2"></i>No se pudieron generar horarios para este día</div>';
+        }
+        
+        document.getElementById('create_time_section').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error obteniendo horario del especialista:', error);
+        container.innerHTML = '<div class="col-span-4 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Error al obtener el horario. Por favor intente nuevamente.</div>';
     }
 }
 </script>

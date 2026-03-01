@@ -144,6 +144,7 @@ $routes = [
     '/api/especialistas' => ['controller' => 'ApiController', 'action' => 'specialists'],
     '/api/especialista-sucursal' => ['controller' => 'ApiController', 'action' => 'getSpecialistBranch'],
     '/api/especialista-sucursal-dia' => ['controller' => 'ApiController', 'action' => 'getSpecialistBranchByDay'],
+    '/api/horario-especialista' => ['controller' => 'ApiController', 'action' => 'getSpecialistSchedule'],
     '/api/servicios' => ['controller' => 'ApiController', 'action' => 'services'],
     '/api/servicios/crear' => ['controller' => 'ApiController', 'action' => 'createService'],
     '/api/sucursales' => ['controller' => 'ApiController', 'action' => 'branches'],

@@ -145,7 +145,7 @@ class CalendarController extends BaseController {
                        u.nombre as cliente_nombre, u.apellidos as cliente_apellidos,
                        s.nombre as servicio_nombre, ue.nombre as especialista_nombre, ue.apellidos as especialista_apellidos,
                        suc.nombre as sucursal_nombre, suc.id as sucursal_id,
-                       r.especialista_id, r.servicio_id
+                       r.especialista_id, r.servicio_id, r.es_extraordinaria
                 FROM reservaciones r
                 LEFT JOIN usuarios u ON r.cliente_id = u.id
                 JOIN servicios s ON r.servicio_id = s.id
@@ -210,7 +210,7 @@ class CalendarController extends BaseController {
             
             $events[] = [
                 'id' => $r['id'],
-                'title' => $r['servicio_nombre'] . ' - ' . $r['cliente_nombre_completo'],
+                'title' => $r['servicio_nombre'],
                 'start' => $r['fecha_cita'] . 'T' . $r['hora_inicio'],
                 'end' => $r['fecha_cita'] . 'T' . $r['hora_fin'],
                 'backgroundColor' => $color,
@@ -226,7 +226,8 @@ class CalendarController extends BaseController {
                     'sucursal_id' => $r['sucursal_id'],
                     'sucursal_nombre' => $r['sucursal_nombre'],
                     'especialista_id' => $r['especialista_id'],
-                    'servicio_id' => $r['servicio_id']
+                    'servicio_id' => $r['servicio_id'],
+                    'es_extraordinaria' => !empty($r['es_extraordinaria'])
                 ]
             ];
         }

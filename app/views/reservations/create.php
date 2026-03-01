@@ -15,6 +15,40 @@
         <?php endif; ?>
         
         <form method="POST" action="<?= url('/reservaciones/nueva') ?>" id="reservationForm">
+            <!-- Opción: Cita Extraordinaria -->
+            <div class="mb-6 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-user-clock text-orange-600 text-xl"></i>
+                        <div>
+                            <label for="es_extraordinaria" class="font-semibold text-gray-900 cursor-pointer">
+                                Cita Extraordinaria
+                            </label>
+                            <p class="text-sm text-gray-600">
+                                Permite reservar sin validar disponibilidad (walk-ins, pacientes no presentados)
+                            </p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="es_extraordinaria" 
+                            name="es_extraordinaria" 
+                            value="1"
+                            class="sr-only peer"
+                            onchange="toggleExtraordinariaWarning(this.checked)"
+                        >
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                    </label>
+                </div>
+                <div id="extraordinaria_warning" class="hidden mt-3 p-3 bg-orange-100 border border-orange-300 rounded-lg">
+                    <p class="text-sm text-orange-800 flex items-start">
+                        <i class="fas fa-exclamation-triangle mr-2 mt-0.5"></i>
+                        <span><strong>Advertencia:</strong> Esta cita NO validará horarios disponibles. Puede causar empalmes con otras reservaciones.</span>
+                    </p>
+                </div>
+            </div>
+            
             <!-- Step 0: Client Information -->
             <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
             <!-- Para especialistas: campo de texto para nombre del cliente -->
@@ -338,29 +372,112 @@ async function loadAvailability() {
     
     if (!specialistId || !serviceId || !date || !branchId) return;
     
-    const response = await fetch(`${baseUrl}/api/disponibilidad?especialista_id=${specialistId}&servicio_id=${serviceId}&fecha=${date}&sucursal_id=${branchId}`);
-    const data = await response.json();
-    
     const container = document.getElementById('timeList');
     container.innerHTML = '';
     
-    if (data.slots.length === 0) {
-        container.innerHTML = '<p class="col-span-6 text-center text-gray-500 py-4">No hay horarios disponibles para esta fecha</p>';
+    // Verificar si es cita extraordinaria
+    const esExtraordinaria = document.getElementById('es_extraordinaria')?.checked || false;
+    
+    if (esExtraordinaria) {
+        // Modo extraordinario: mostrar TODOS los horarios dentro del horario configurado
+        await generateAllTimeSlotsManual(specialistId, date, container);
     } else {
-        data.slots.forEach(slot => {
-            const time = slot.hora_inicio.substring(0, 5);
-            container.innerHTML += `
-                <label class="relative">
-                    <input type="radio" name="hora_inicio" value="${slot.hora_inicio}" class="peer sr-only">
-                    <div class="p-2 border-2 rounded-lg cursor-pointer text-center text-sm peer-checked:border-primary peer-checked:bg-blue-50 hover:border-gray-400">
-                        ${time}
-                    </div>
-                </label>
-            `;
-        });
+        // Modo normal: mostrar solo horarios disponibles
+        const response = await fetch(`${baseUrl}/api/disponibilidad?especialista_id=${specialistId}&servicio_id=${serviceId}&fecha=${date}&sucursal_id=${branchId}`);
+        const data = await response.json();
+        
+        if (data.slots.length === 0) {
+            container.innerHTML = '<p class="col-span-6 text-center text-gray-500 py-4">No hay horarios disponibles para esta fecha</p>';
+        } else {
+            data.slots.forEach(slot => {
+                const time = slot.hora_inicio.substring(0, 5);
+                container.innerHTML += `
+                    <label class="relative">
+                        <input type="radio" name="hora_inicio" value="${slot.hora_inicio}" class="peer sr-only">
+                        <div class="p-2 border-2 rounded-lg cursor-pointer text-center text-sm peer-checked:border-primary peer-checked:bg-blue-50 hover:border-gray-400">
+                            ${time}
+                        </div>
+                    </label>
+                `;
+            });
+        }
     }
     
     document.getElementById('timeSection').style.display = 'block';
+}
+
+async function generateAllTimeSlotsManual(especialistaId, fecha, container) {
+    try {
+        // Obtener el horario del especialista para ese día
+        const response = await fetch(`${baseUrl}/api/horario-especialista?especialista_id=${especialistaId}&fecha=${fecha}`);
+        const data = await response.json();
+        
+        console.log('Horario del especialista:', data);
+        
+        if (!data.horario || !data.horario.hora_inicio || !data.horario.hora_fin) {
+            container.innerHTML = '<div class="col-span-6 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>El especialista no tiene horario configurado para este día</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        // Banner informativo
+        const infoBanner = document.createElement('div');
+        infoBanner.className = 'col-span-6 p-3 bg-orange-100 border border-orange-400 rounded-lg mb-2';
+        infoBanner.innerHTML = `
+            <div class="flex items-center text-sm text-orange-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                <span><strong>Modo Extraordinario:</strong> Mostrando TODOS los horarios (incluidos ocupados) desde ${data.horario.hora_inicio.substring(0,5)} hasta ${data.horario.hora_fin.substring(0,5)}</span>
+            </div>
+        `;
+        container.appendChild(infoBanner);
+        
+        // Convertir horarios a minutos
+        const [horaInicioH, horaInicioM] = data.horario.hora_inicio.split(':').map(Number);
+        const [horaFinH, horaFinM] = data.horario.hora_fin.split(':').map(Number);
+        const horaInicio = horaInicioH * 60 + horaInicioM;
+        const horaFin = horaFinH * 60 + horaFinM;
+        const intervalo = 30; // slots cada 30 minutos
+        
+        console.log(`Generando slots desde ${horaInicio} hasta ${horaFin} minutos (cada ${intervalo} min)`);
+        
+        let slotsGenerados = 0;
+        for (let minutos = horaInicio; minutos < horaFin; minutos += intervalo) {
+            const horas = Math.floor(minutos / 60);
+            const mins = minutos % 60;
+            const horaStr = `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+            const horaCompleta = `${horaStr}:00`;
+            
+            // Crear label con input radio y estilo extraordinario
+            const label = document.createElement('label');
+            label.className = 'relative';
+            
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'hora_inicio';
+            input.value = horaCompleta;
+            input.className = 'peer sr-only';
+            
+            const div = document.createElement('div');
+            div.className = 'p-2 border-2 border-orange-300 bg-orange-50 rounded-lg cursor-pointer text-center text-sm peer-checked:border-orange-600 peer-checked:bg-orange-200 hover:border-orange-400';
+            div.textContent = horaStr;
+            
+            label.appendChild(input);
+            label.appendChild(div);
+            container.appendChild(label);
+            slotsGenerados++;
+        }
+        
+        console.log(`Slots generados en modo extraordinario: ${slotsGenerados}`);
+        
+        if (slotsGenerados === 0) {
+            container.innerHTML = '<div class="col-span-6 text-center py-4 text-gray-600"><i class="fas fa-info-circle mr-2"></i>No se pudieron generar horarios para este día</div>';
+        }
+        
+    } catch (error) {
+        console.error('Error obteniendo horario del especialista:', error);
+        container.innerHTML = '<div class="col-span-6 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Error al obtener el horario. Por favor intente nuevamente.</div>';
+    }
 }
 
 // Inicializar si es especialista y tiene sucursal seleccionada
@@ -372,4 +489,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Toggle warning de cita extraordinaria
+function toggleExtraordinariaWarning(isChecked) {
+    const warning = document.getElementById('extraordinaria_warning');
+    if (isChecked) {
+        warning.classList.remove('hidden');
+    } else {
+        warning.classList.add('hidden');
+    }
+    
+    // Recargar horarios si ya se seleccionó servicio y fecha
+    const serviceId = document.querySelector('input[name="servicio_id"]:checked')?.value;
+    const date = document.getElementById('fecha_cita')?.value;
+    
+    if (serviceId && date) {
+        loadAvailability();
+    }
+}
 </script>
