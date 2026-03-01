@@ -147,6 +147,7 @@ $routes = [
     '/api/servicios/crear' => ['controller' => 'ApiController', 'action' => 'createService'],
     '/api/sucursales' => ['controller' => 'ApiController', 'action' => 'branches'],
     '/api/sucursales/crear' => ['controller' => 'ApiController', 'action' => 'createBranch'],
+    '/api/check-new-reservations' => ['controller' => 'ApiController', 'action' => 'checkNewReservations'],
 ];
 
 // Buscar la ruta

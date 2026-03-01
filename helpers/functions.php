@@ -306,7 +306,7 @@ function timeAgo($datetime) {
 function getWhatsAppUrl($mensaje, $telefono = null) {
     // Número central de atención (si no se proporciona uno)
     if ($telefono === null) {
-        $telefono = '5215658472959';
+        $telefono = '5214463762553';
     }
     
     // Limpiar el teléfono (quitar espacios, guiones, paréntesis, +)

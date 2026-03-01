@@ -316,6 +316,13 @@ $rolId = $user['rol_id'];
                 <i class="fas fa-money-bill-wave text-3xl text-emerald-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800">Administraci&oacute;n de pagos</p>
             </a>
+            <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . e($user['nombre'] . ' ' . $user['apellidos'])) ?>" 
+               target="_blank" 
+               class="p-4 bg-pink-100 rounded-lg text-center hover:bg-pink-200 transition col-span-2">
+                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Tu enlace de WhatsApp</p>
+                <p class="text-xs text-gray-500 mt-1">Comparte este enlace con tus clientes</p>
+            </a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

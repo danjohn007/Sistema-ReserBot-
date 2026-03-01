@@ -512,5 +512,192 @@
             link.addEventListener('click', closeMobileMenu);
         });
     </script>
+    
+    <?php if (isLoggedIn() && currentUser()['rol_id'] == ROLE_SPECIALIST): ?>
+    <!-- Modal de Notificación de Nueva Reserva -->
+    <div id="newReservationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-bounce">
+            <div class="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-t-2xl">
+                <div class="flex items-center justify-center">
+                    <div class="bg-white bg-opacity-20 rounded-full p-4 mr-4">
+                        <i class="fas fa-bell text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">¡Nueva Reserva!</h3>
+                        <p class="text-green-100 text-sm">Tienes una nueva cita pendiente</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 space-y-4" id="newReservationContent">
+                <!-- Contenido dinámico de la reserva -->
+            </div>
+            
+            <div class="p-6 bg-gray-50 border-t rounded-b-2xl">
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="confirmNewReservation()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg font-semibold">
+                        <i class="fas fa-check-circle mr-2"></i>Confirmar
+                    </button>
+                    <a href="<?= url('/reservaciones') ?>" onclick="dismissNotification()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg font-semibold text-center">
+                        <i class="fas fa-calendar-alt mr-2"></i>Ver Reservas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sistema de notificación de nuevas reservas
+        let notificationSound = null;
+        let currentReservationId = null;
+        let lastNotifiedId = localStorage.getItem('lastNotifiedReservationId') || 0;
+        let pollingInterval = null;
+        
+        // Crear sonido de notificación usando Web Audio API
+        function createNotificationSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800; // Frecuencia del tono
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            return { oscillator, audioContext };
+        }
+        
+        // Reproducir sonido de notificación en loop
+        function playNotificationSound() {
+            if (notificationSound) return; // Ya está sonando
+            
+            notificationSound = setInterval(() => {
+                const { oscillator, audioContext } = createNotificationSound();
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            }, 1500); // Repetir cada 1.5 segundos
+        }
+        
+        // Detener sonido
+        function stopNotificationSound() {
+            if (notificationSound) {
+                clearInterval(notificationSound);
+                notificationSound = null;
+            }
+        }
+        
+        // Mostrar modal con información de la reserva
+        function showNewReservationModal(reservation) {
+            currentReservationId = reservation.id;
+            
+            document.getElementById('newReservationContent').innerHTML = `
+                <div class="space-y-3">
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-barcode mr-1"></i>Código</p>
+                        <p class="text-lg font-bold text-gray-900">${reservation.codigo}</p>
+                    </div>
+                    
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-user mr-1"></i>Cliente</p>
+                        <p class="text-sm font-semibold text-gray-900">${reservation.cliente}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-purple-50 rounded-lg">
+                            <p class="text-xs text-gray-500 mb-1"><i class="fas fa-concierge-bell mr-1"></i>Servicio</p>
+                            <p class="text-sm font-semibold text-gray-900">${reservation.servicio}</p>
+                        </div>
+                        <div class="p-3 bg-emerald-50 rounded-lg">
+                            <p class="text-xs text-gray-500 mb-1"><i class="fas fa-dollar-sign mr-1"></i>Precio</p>
+                            <p class="text-sm font-semibold text-emerald-700">${reservation.precio}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-calendar-alt mr-1"></i>Fecha y Hora</p>
+                        <p class="text-sm font-semibold text-gray-900">${reservation.fecha}</p>
+                        <p class="text-sm font-semibold text-blue-600">${reservation.hora}</p>
+                    </div>
+                    
+                    ${reservation.sucursal ? `
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-building mr-1"></i>Sucursal</p>
+                        <p class="text-sm font-semibold text-gray-900">${reservation.sucursal}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('newReservationModal').classList.remove('hidden');
+            playNotificationSound();
+        }
+        
+        // Confirmar reserva desde el modal
+        async function confirmNewReservation() {
+            if (!currentReservationId) return;
+            
+            try {
+                const response = await fetch('<?= BASE_URL ?>/reservaciones/confirmar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${currentReservationId}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    dismissNotification();
+                    alert('¡Reserva confirmada exitosamente!');
+                } else {
+                    alert('Error al confirmar: ' + (data.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error al confirmar reserva:', error);
+                alert('Error al confirmar la reserva');
+            }
+        }
+        
+        // Cerrar notificación
+        function dismissNotification() {
+            document.getElementById('newReservationModal').classList.add('hidden');
+            stopNotificationSound();
+            
+            // Guardar el ID de la última reserva notificada
+            if (currentReservationId) {
+                lastNotifiedId = currentReservationId;
+                localStorage.setItem('lastNotifiedReservationId', currentReservationId);
+            }
+        }
+        
+        // Verificar nuevas reservas (polling cada 15 segundos)
+        async function checkNewReservations() {
+            try {
+                const response = await fetch('<?= BASE_URL ?>/api/check-new-reservations?last_id=' + lastNotifiedId);
+                const data = await response.json();
+                
+                if (data.hasNew && data.reservation) {
+                    // Mostrar notificación solo si el modal no está ya visible
+                    if (document.getElementById('newReservationModal').classList.contains('hidden')) {
+                        showNewReservationModal(data.reservation);
+                    }
+                }
+            } catch (error) {
+                console.error('Error verificando nuevas reservas:', error);
+            }
+        }
+        
+        // Iniciar polling
+        pollingInterval = setInterval(checkNewReservations, 15000); // Cada 15 segundos
+        
+        // Verificar inmediatamente al cargar la página
+        setTimeout(checkNewReservations, 2000); // Esperar 2 segundos después de cargar
+    </script>
+    <?php endif; ?>
 </body>
 </html>

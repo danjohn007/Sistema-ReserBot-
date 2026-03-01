@@ -106,6 +106,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">C&oacute;digo</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tel&eacute;fono</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Especialista</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha/Hora</th>
@@ -123,6 +124,16 @@
                         <p class="font-medium text-gray-800"><?= e($res['cliente_nombre_completo']) ?></p>
                         <?php if ($res['cliente_email']): ?>
                         <p class="text-sm text-gray-500"><?= e($res['cliente_email']) ?></p>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4">
+                        <?php if (!empty($res['cliente_telefono']) || !empty($res['telefono'])): ?>
+                        <p class="text-gray-800">
+                            <i class="fas fa-phone text-green-600 mr-1"></i>
+                            <?= e($res['cliente_telefono'] ?? $res['telefono']) ?>
+                        </p>
+                        <?php else: ?>
+                        <p class="text-gray-400 text-sm italic">Sin n&uacute;mero</p>
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 text-gray-600">

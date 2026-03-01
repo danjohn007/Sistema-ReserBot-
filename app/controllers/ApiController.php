@@ -492,4 +492,76 @@ class ApiController extends BaseController {
             $this->json(['success' => false, 'message' => 'Error al crear el servicio'], 500);
         }
     }
+    
+    /**
+     * Verificar nuevas reservas pendientes para el especialista actual
+     */
+    public function checkNewReservations() {
+        // Solo especialistas pueden recibir notificaciones de nuevas reservas
+        if (!isLoggedIn()) {
+            $this->json(['hasNew' => false]);
+            return;
+        }
+        
+        $user = currentUser();
+        
+        // Solo para especialistas
+        if ($user['rol_id'] != ROLE_SPECIALIST) {
+            $this->json(['hasNew' => false]);
+            return;
+        }
+        
+        // Obtener el ID del especialista
+        $especialista = $this->db->fetch(
+            "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+            [$user['id']]
+        );
+        
+        if (!$especialista) {
+            $this->json(['hasNew' => false]);
+            return;
+        }
+        
+        // Obtener el último ID notificado desde el parámetro (para evitar duplicados)
+        $lastNotifiedId = $this->get('last_id') ?? 0;
+        
+        // Buscar la reserva pendiente más reciente que no haya sido notificada
+        $newReservation = $this->db->fetch(
+            "SELECT r.id, r.codigo, r.fecha_cita, r.hora_inicio, r.hora_fin,
+                    r.precio_total, r.created_at,
+                    COALESCE(c.nombre, r.nombre_cliente) as cliente_nombre,
+                    s.nombre as servicio_nombre,
+                    suc.nombre as sucursal_nombre
+             FROM reservaciones r
+             LEFT JOIN clientes c ON r.cliente_id = c.id
+             LEFT JOIN servicios s ON r.servicio_id = s.id
+             LEFT JOIN sucursales suc ON r.sucursal_id = suc.id
+             WHERE r.especialista_id = ?
+             AND r.estado = 'pendiente'
+             AND r.id > ?
+             ORDER BY r.created_at DESC
+             LIMIT 1",
+            [$especialista['id'], $lastNotifiedId]
+        );
+        
+        if ($newReservation) {
+            // Formatear la información de la reserva
+            $this->json([
+                'hasNew' => true,
+                'reservation' => [
+                    'id' => $newReservation['id'],
+                    'codigo' => $newReservation['codigo'],
+                    'cliente' => $newReservation['cliente_nombre'],
+                    'servicio' => $newReservation['servicio_nombre'],
+                    'sucursal' => $newReservation['sucursal_nombre'],
+                    'fecha' => formatDate($newReservation['fecha_cita'], 'd/m/Y'),
+                    'hora' => formatTime($newReservation['hora_inicio']) . ' - ' . formatTime($newReservation['hora_fin']),
+                    'precio' => formatMoney($newReservation['precio_total']),
+                    'created_at' => $newReservation['created_at']
+                ]
+            ]);
+        } else {
+            $this->json(['hasNew' => false]);
+        }
+    }
 }
