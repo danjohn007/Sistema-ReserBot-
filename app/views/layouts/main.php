@@ -514,6 +514,11 @@
     </script>
     
     <?php if (isLoggedIn() && currentUser()['rol_id'] == ROLE_SPECIALIST): ?>
+    <!-- Audio de notificación -->
+    <audio id="notificationAudio" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUA8PTZ/j8LllHAY2jdXzzn0vBSl+zPLaizsIGGS57OihUhELTKXl8LhjHQU1i9Lz0n4xBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L0034wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxEL" type="audio/wav">
+    </audio>
+    
     <!-- Modal de Notificación de Nueva Reserva -->
     <div id="newReservationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-bounce">
@@ -552,46 +557,90 @@
         let currentReservationId = null;
         let lastNotifiedId = localStorage.getItem('lastNotifiedReservationId') || 0;
         let pollingInterval = null;
+        let audioElement = null;
         
-        // Crear sonido de notificación usando Web Audio API
-        function createNotificationSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800; // Frecuencia del tono
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            return { oscillator, audioContext };
-        }
+        // Inicializar elemento de audio
+        document.addEventListener('DOMContentLoaded', function() {
+            audioElement = document.getElementById('notificationAudio');
+            if (audioElement) {
+                audioElement.volume = 0.5; // Volumen al 50%
+                console.log('✅ Audio de notificación inicializado');
+            } else {
+                console.error('❌ No se encontró el elemento de audio');
+            }
+        });
         
         // Reproducir sonido de notificación en loop
         function playNotificationSound() {
-            if (notificationSound) return; // Ya está sonando
+            console.log('🔔 Intentando reproducir sonido de notificación...');
             
-            notificationSound = setInterval(() => {
-                const { oscillator, audioContext } = createNotificationSound();
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            }, 1500); // Repetir cada 1.5 segundos
+            if (notificationSound) {
+                console.log('⚠️ El sonido ya está reproduciéndose');
+                return; // Ya está sonando
+            }
+            
+            if (!audioElement) {
+                console.error('❌ Elemento de audio no disponible');
+                return;
+            }
+            
+            // Reproducir el audio en loop cada 2 segundos
+            const playSound = () => {
+                audioElement.currentTime = 0;
+                audioElement.play()
+                    .then(() => {
+                        console.log('✅ Sonido reproducido exitosamente');
+                    })
+                    .catch(error => {
+                        console.error('❌ Error al reproducir sonido:', error);
+                        // Si falla, intentar con Web Audio API como respaldo
+                        try {
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            
+                            oscillator.frequency.value = 800;
+                            oscillator.type = 'sine';
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                            
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + 0.5);
+                            console.log('✅ Usando Web Audio API como respaldo');
+                        } catch (webAudioError) {
+                            console.error('❌ También falló Web Audio API:', webAudioError);
+                        }
+                    });
+            };
+            
+            // Reproducir inmediatamente
+            playSound();
+            
+            // Configurar intervalo para repetir
+            notificationSound = setInterval(playSound, 2000);
         }
         
         // Detener sonido
         function stopNotificationSound() {
+            console.log('🔇 Deteniendo sonido de notificación');
+            
             if (notificationSound) {
                 clearInterval(notificationSound);
                 notificationSound = null;
+            }
+            
+            if (audioElement) {
+                audioElement.pause();
+                audioElement.currentTime = 0;
             }
         }
         
         // Mostrar modal con información de la reserva
         function showNewReservationModal(reservation) {
+            console.log('📋 Mostrando modal de nueva reserva:', reservation);
             currentReservationId = reservation.id;
             
             document.getElementById('newReservationContent').innerHTML = `
@@ -633,6 +682,7 @@
             `;
             
             document.getElementById('newReservationModal').classList.remove('hidden');
+            console.log('🔔 Reproduciendo sonido de notificación...');
             playNotificationSound();
         }
         
@@ -665,6 +715,7 @@
         
         // Cerrar notificación
         function dismissNotification() {
+            console.log('❌ Cerrando notificación');
             document.getElementById('newReservationModal').classList.add('hidden');
             stopNotificationSound();
             
@@ -672,31 +723,45 @@
             if (currentReservationId) {
                 lastNotifiedId = currentReservationId;
                 localStorage.setItem('lastNotifiedReservationId', currentReservationId);
+                console.log('💾 Guardado último ID notificado:', currentReservationId);
             }
         }
         
         // Verificar nuevas reservas (polling cada 15 segundos)
         async function checkNewReservations() {
             try {
+                console.log('🔍 Verificando nuevas reservas... (last_id:', lastNotifiedId + ')');
                 const response = await fetch('<?= BASE_URL ?>/api/check-new-reservations?last_id=' + lastNotifiedId);
                 const data = await response.json();
                 
+                console.log('📥 Respuesta del servidor:', data);
+                
                 if (data.hasNew && data.reservation) {
+                    console.log('🆕 ¡Nueva reserva detectada!', data.reservation);
                     // Mostrar notificación solo si el modal no está ya visible
                     if (document.getElementById('newReservationModal').classList.contains('hidden')) {
                         showNewReservationModal(data.reservation);
+                    } else {
+                        console.log('⚠️ Modal ya visible, no se muestra de nuevo');
                     }
+                } else {
+                    console.log('✓ No hay nuevas reservas');
                 }
             } catch (error) {
-                console.error('Error verificando nuevas reservas:', error);
+                console.error('❌ Error verificando nuevas reservas:', error);
             }
         }
         
         // Iniciar polling
+        console.log('🚀 Iniciando sistema de notificaciones...');
+        console.log('📍 Último ID notificado:', lastNotifiedId);
         pollingInterval = setInterval(checkNewReservations, 15000); // Cada 15 segundos
         
         // Verificar inmediatamente al cargar la página
-        setTimeout(checkNewReservations, 2000); // Esperar 2 segundos después de cargar
+        setTimeout(() => {
+            console.log('⏰ Primera verificación de reservas...');
+            checkNewReservations();
+        }, 2000); // Esperar 2 segundos después de cargar
     </script>
     <?php endif; ?>
 </body>

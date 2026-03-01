@@ -48,6 +48,8 @@ class ServiceController extends BaseController {
             
             if (empty($nombre) || empty($categoria_id)) {
                 $error = 'El nombre y la categoría son obligatorios.';
+            } elseif ($duracion_minutos % 15 !== 0 || $duracion_minutos < 15) {
+                $error = 'La duración debe ser un múltiplo de 15 minutos (15, 30, 45, 60, etc.)';
             } else {
                 $this->db->insert(
                     "INSERT INTO servicios (categoria_id, nombre, descripcion, duracion_minutos, precio, precio_oferta) 
@@ -100,6 +102,8 @@ class ServiceController extends BaseController {
             
             if (empty($nombre) || empty($categoria_id)) {
                 $error = 'El nombre y la categoría son obligatorios.';
+            } elseif ($duracion_minutos % 15 !== 0 || $duracion_minutos < 15) {
+                $error = 'La duración debe ser un múltiplo de 15 minutos (15, 30, 45, 60, etc.)';
             } else {
                 $this->db->update(
                     "UPDATE servicios SET categoria_id = ?, nombre = ?, descripcion = ?, 

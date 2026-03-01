@@ -44,8 +44,9 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Duración (minutos)</label>
-                        <input type="number" name="duracion_minutos" value="30" min="5"
+                        <input type="number" id="duracion_minutos" name="duracion_minutos" value="30" min="15" step="15"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <p class="text-xs text-gray-500 mt-1">Debe ser múltiplo de 15 (ej: 15, 30, 45, 60)</p>
                     </div>
                     
                     <div>
@@ -76,3 +77,40 @@
         </form>
     </div>
 </div>
+
+<script>
+// Validar que la duración sea múltiplo de 15
+document.querySelector('form').addEventListener('submit', function(e) {
+    const duracion = parseInt(document.getElementById('duracion_minutos').value);
+    
+    if (duracion % 15 !== 0) {
+        e.preventDefault();
+        alert('⚠️ La duración debe ser un múltiplo de 15 minutos.\n\nEjemplos válidos: 15, 30, 45, 60, 75, 90, etc.');
+        document.getElementById('duracion_minutos').focus();
+        return false;
+    }
+});
+
+// Redondear automáticamente al múltiplo de 15 más cercano al perder foco
+document.getElementById('duracion_minutos').addEventListener('blur', function() {
+    let duracion = parseInt(this.value);
+    if (isNaN(duracion) || duracion < 15) {
+        this.value = 15;
+        return;
+    }
+    
+    const resto = duracion % 15;
+    if (resto !== 0) {
+        // Redondear al múltiplo de 15 más cercano
+        const redondeado = resto < 8 ? duracion - resto : duracion + (15 - resto);
+        this.value = Math.max(15, redondeado);
+        
+        // Mostrar mensaje
+        const mensaje = document.createElement('div');
+        mensaje.className = 'text-xs text-blue-600 mt-1';
+        mensaje.textContent = `Ajustado automáticamente a ${this.value} minutos`;
+        this.parentElement.appendChild(mensaje);
+        setTimeout(() => mensaje.remove(), 3000);
+    }
+});
+</script>

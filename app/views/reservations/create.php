@@ -437,7 +437,7 @@ async function generateAllTimeSlotsManual(especialistaId, fecha, container) {
         const [horaFinH, horaFinM] = data.horario.hora_fin.split(':').map(Number);
         const horaInicio = horaInicioH * 60 + horaInicioM;
         const horaFin = horaFinH * 60 + horaFinM;
-        const intervalo = 30; // slots cada 30 minutos
+        const intervalo = 15; // slots cada 15 minutos
         
         console.log(`Generando slots desde ${horaInicio} hasta ${horaFin} minutos (cada ${intervalo} min)`);
         

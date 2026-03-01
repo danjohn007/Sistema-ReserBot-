@@ -283,7 +283,7 @@ class ReservationController extends BaseController {
                     if ($service) {
                         $duracion = $service['duracion_minutos'];
                         $precio = $service['precio'];
-                        $hora_fin = date('H:i:s', strtotime($hora_inicio) + ($duracion * 60));
+                        $hora_fin = date('H:i:s', strtotime($fecha_cita . ' ' . $hora_inicio) + ($duracion * 60));
                         
                         // Verificar disponibilidad SOLO si NO es extraordinaria
                         if (!$es_extraordinaria) {
@@ -678,7 +678,7 @@ class ReservationController extends BaseController {
         
         // Calcular hora_fin basada en la duración del servicio
         $duracion = $reservation['duracion_minutos'];
-        $horaInicio = strtotime($hora_inicio);
+        $horaInicio = strtotime($fecha_cita . ' ' . $hora_inicio);
         $horaFin = date('H:i:s', $horaInicio + ($duracion * 60));
         
         // Verificar que la nueva fecha/hora no esté en el pasado
@@ -823,8 +823,8 @@ class ReservationController extends BaseController {
         
         // Generar slots disponibles
         $slots = [];
-        $currentTime = strtotime($schedule['hora_inicio']);
-        $endTime = strtotime($schedule['hora_fin']);
+        $currentTime = strtotime($fecha . ' ' . $schedule['hora_inicio']);
+        $endTime = strtotime($fecha . ' ' . $schedule['hora_fin']);
         
         while ($currentTime + ($duracion * 60) <= $endTime) {
             $slotStart = date('H:i:s', $currentTime);
@@ -833,8 +833,8 @@ class ReservationController extends BaseController {
             $available = true;
             
             foreach ($existingAppointments as $appt) {
-                $apptStart = strtotime($appt['hora_inicio']);
-                $apptEnd = strtotime($appt['hora_fin']);
+                $apptStart = strtotime($fecha . ' ' . $appt['hora_inicio']);
+                $apptEnd = strtotime($fecha . ' ' . $appt['hora_fin']);
                 
                 if (($currentTime >= $apptStart && $currentTime < $apptEnd) ||
                     ($currentTime + ($duracion * 60) > $apptStart && $currentTime + ($duracion * 60) <= $apptEnd)) {
@@ -858,7 +858,7 @@ class ReservationController extends BaseController {
                 ];
             }
             
-            $currentTime += 30 * 60; // Incrementar en intervalos de 30 minutos
+            $currentTime += 15 * 60; // Incrementar en intervalos de 15 minutos
         }
         
         return $slots;

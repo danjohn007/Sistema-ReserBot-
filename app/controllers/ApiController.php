@@ -21,9 +21,11 @@ class ApiController extends BaseController {
             $this->json(['error' => 'Parámetros incompletos'], 400);
         }
         
-        // Verificar si el servicio es de emergencia
+        // Verificar si el servicio es de emergencia y obtener duración personalizada
         $servicioEspecialista = $this->db->fetch(
-            "SELECT es.es_emergencia FROM especialistas_servicios es 
+            "SELECT es.es_emergencia, es.duracion_personalizada, s.duracion_minutos, s.nombre 
+             FROM especialistas_servicios es 
+             JOIN servicios s ON es.servicio_id = s.id
              WHERE es.especialista_id = ? AND es.servicio_id = ?",
             [$especialista_id, $servicio_id]
         );
@@ -34,16 +36,14 @@ class ApiController extends BaseController {
         
         $esServicioEmergencia = $servicioEspecialista['es_emergencia'];
         
-        // DEBUG: Log para verificar el tipo de servicio
-        error_log("[AVAILABILITY DEBUG] Especialista: $especialista_id, Servicio: $servicio_id, es_emergencia DB: " . ($esServicioEmergencia ? '1' : '0'));
+        // Usar duración personalizada si existe, de lo contrario usar la duración base del servicio
+        $duracion = $servicioEspecialista['duracion_personalizada'] ?? $servicioEspecialista['duracion_minutos'];
         
-        // Obtener duración del servicio
-        $service = $this->db->fetch("SELECT duracion_minutos FROM servicios WHERE id = ?", [$servicio_id]);
-        if (!$service) {
-            $this->json(['error' => 'Servicio no encontrado'], 404);
-        }
-        
-        $duracion = $service['duracion_minutos'];
+        // DEBUG: Log para verificar el tipo de servicio y duración
+        error_log("[AVAILABILITY DEBUG] Especialista: $especialista_id, Servicio: $servicio_id, es_emergencia: " . ($esServicioEmergencia ? '1' : '0'));
+        error_log("[AVAILABILITY DEBUG] Servicio: " . $servicioEspecialista['nombre'] . " - Duración personalizada: " . 
+                  ($servicioEspecialista['duracion_personalizada'] ?? 'NULL') . " - Duración base: " . 
+                  $servicioEspecialista['duracion_minutos'] . " - Duración final: " . $duracion . " minutos");
         
         // Obtener día de la semana
         $dayOfWeek = date('N', strtotime($fecha));
@@ -112,8 +112,8 @@ class ApiController extends BaseController {
             
             // Verificar conflictos con citas existentes
             foreach ($existingAppointments as $appt) {
-                $apptStart = strtotime($appt['hora_inicio']);
-                $apptEnd = strtotime($appt['hora_fin']);
+                $apptStart = strtotime($fecha . ' ' . $appt['hora_inicio']);
+                $apptEnd = strtotime($fecha . ' ' . $appt['hora_fin']);
                 
                 if (($slotStart >= $apptStart && $slotStart < $apptEnd) ||
                     ($slotEnd > $apptStart && $slotEnd <= $apptEnd) ||
@@ -138,16 +138,24 @@ class ApiController extends BaseController {
                   ", Emergencia Activa: " . ($schedule['emergencia_activa'] ? 'SI' : 'NO'));
         error_log("[AVAILABILITY DEBUG] Generar Normales: " . ($generarSlotsNormales ? 'SI' : 'NO') . 
                   ", Generar Emergencia: " . ($generarSlotsEmergencia ? 'SI' : 'NO'));
+        error_log("[AVAILABILITY DEBUG] Bloqueo Activo: " . ($schedule['bloqueo_activo'] ? 'SI' : 'NO') . 
+                  ", Bloqueo: " . ($schedule['hora_inicio_bloqueo'] ?? 'N/A') . "-" . ($schedule['hora_fin_bloqueo'] ?? 'N/A'));
+        error_log("[AVAILABILITY DEBUG] Citas existentes: " . count($existingAppointments));
+        foreach ($existingAppointments as $idx => $appt) {
+            error_log("[AVAILABILITY DEBUG] Cita $idx: " . $appt['hora_inicio'] . " - " . $appt['hora_fin']);
+        }
         
         // 1. Slots del horario normal (excluyendo horario de bloqueo)
         if ($generarSlotsNormales) {
-            $currentTime = strtotime($schedule['hora_inicio']);
-            $endTime = strtotime($schedule['hora_fin']);
+            $currentTime = strtotime($fecha . ' ' . $schedule['hora_inicio']);
+            $endTime = strtotime($fecha . ' ' . $schedule['hora_fin']);
+            
+            error_log("[AVAILABILITY DEBUG] Generando slots normales - Inicio: " . date('Y-m-d H:i:s', $currentTime) . " - Fin: " . date('Y-m-d H:i:s', $endTime) . " - Duración: $duracion min");
         
         // Si hay bloqueo activo, necesitamos dividir en dos rangos
         if ($schedule['bloqueo_activo'] && $schedule['hora_inicio_bloqueo'] && $schedule['hora_fin_bloqueo']) {
-            $blockStart = strtotime($schedule['hora_inicio_bloqueo']);
-            $blockEnd = strtotime($schedule['hora_fin_bloqueo']);
+            $blockStart = strtotime($fecha . ' ' . $schedule['hora_inicio_bloqueo']);
+            $blockEnd = strtotime($fecha . ' ' . $schedule['hora_fin_bloqueo']);
             
             // Rango 1: Desde inicio hasta inicio de bloqueo
             while ($currentTime + ($duracion * 60) <= $blockStart) {
@@ -163,7 +171,7 @@ class ApiController extends BaseController {
                     ];
                 }
                 
-                $currentTime += 30 * 60; // Intervalo de 30 minutos
+                $currentTime += 15 * 60; // Intervalo de 15 minutos
             }
             
             // Rango 2: Desde fin de bloqueo hasta fin del horario
@@ -181,7 +189,7 @@ class ApiController extends BaseController {
                     ];
                 }
                 
-                $currentTime += 30 * 60;
+                $currentTime += 15 * 60;
             }
         } else {
             // Sin bloqueo: rango continuo
@@ -198,15 +206,15 @@ class ApiController extends BaseController {
                     ];
                 }
                 
-                $currentTime += 30 * 60;
+                $currentTime += 15 * 60;
             }
         }
         } // Fin de generarSlotsNormales
         
         // 2. Slots del horario de emergencia (si está activo y el servicio es de emergencia)
         if ($generarSlotsEmergencia && $schedule['emergencia_activa'] && $schedule['hora_inicio_emergencia'] && $schedule['hora_fin_emergencia']) {
-            $emergencyStart = strtotime($schedule['hora_inicio_emergencia']);
-            $emergencyEnd = strtotime($schedule['hora_fin_emergencia']);
+            $emergencyStart = strtotime($fecha . ' ' . $schedule['hora_inicio_emergencia']);
+            $emergencyEnd = strtotime($fecha . ' ' . $schedule['hora_fin_emergencia']);
             
             $currentTime = $emergencyStart;
             while ($currentTime + ($duracion * 60) <= $emergencyEnd) {
@@ -222,7 +230,7 @@ class ApiController extends BaseController {
                     ];
                 }
                 
-                $currentTime += 30 * 60;
+                $currentTime += 15 * 60;
             }
         }
         
@@ -234,7 +242,19 @@ class ApiController extends BaseController {
         // DEBUG: Log de resultados
         error_log("[AVAILABILITY DEBUG] Total slots generados: " . count($slots));
         
-        $this->json(['slots' => $slots]);
+        // Retornar con información de debug
+        $this->json([
+            'slots' => $slots,
+            'debug' => [
+                'fecha' => $fecha,
+                'horario_normal' => $schedule['hora_inicio'] . ' - ' . $schedule['hora_fin'],
+                'horario_emergencia' => ($schedule['emergencia_activa'] ? ($schedule['hora_inicio_emergencia'] . ' - ' . $schedule['hora_fin_emergencia']) : 'Inactivo'),
+                'bloqueo' => ($schedule['bloqueo_activo'] ? ($schedule['hora_inicio_bloqueo'] . ' - ' . $schedule['hora_fin_bloqueo']) : 'Ninguno'),
+                'citas_existentes' => count($existingAppointments),
+                'duracion_servicio' => $duracion . ' min',
+                'total_slots_generados' => count($slots)
+            ]
+        ]);
     }
     
     /**
@@ -274,7 +294,7 @@ class ApiController extends BaseController {
             
             if ($fecha && $hora) {
                 $dia_semana = date('N', strtotime($fecha)); // 1=Lunes, 7=Domingo
-                $hora_consulta = strtotime($hora);
+                $hora_consulta = strtotime($fecha . ' ' . $hora);
                 
                 // Verificar si el especialista tiene horario de emergencia activo para ese día
                 $horario = $this->db->fetch(
@@ -286,10 +306,10 @@ class ApiController extends BaseController {
                 );
                 
                 if ($horario && $horario['emergencia_activa']) {
-                    $hora_inicio_normal = strtotime($horario['hora_inicio']);
-                    $hora_fin_normal = strtotime($horario['hora_fin']);
-                    $hora_inicio_emergencia = $horario['hora_inicio_emergencia'] ? strtotime($horario['hora_inicio_emergencia']) : null;
-                    $hora_fin_emergencia = $horario['hora_fin_emergencia'] ? strtotime($horario['hora_fin_emergencia']) : null;
+                    $hora_inicio_normal = strtotime($fecha . ' ' . $horario['hora_inicio']);
+                    $hora_fin_normal = strtotime($fecha . ' ' . $horario['hora_fin']);
+                    $hora_inicio_emergencia = $horario['hora_inicio_emergencia'] ? strtotime($fecha . ' ' . $horario['hora_inicio_emergencia']) : null;
+                    $hora_fin_emergencia = $horario['hora_fin_emergencia'] ? strtotime($fecha . ' ' . $horario['hora_fin_emergencia']) : null;
                     
                     // Si la hora está fuera del horario normal pero dentro del horario de emergencia
                     if ($hora_inicio_emergencia && $hora_fin_emergencia) {
@@ -497,71 +517,80 @@ class ApiController extends BaseController {
      * Verificar nuevas reservas pendientes para el especialista actual
      */
     public function checkNewReservations() {
-        // Solo especialistas pueden recibir notificaciones de nuevas reservas
-        if (!isLoggedIn()) {
-            $this->json(['hasNew' => false]);
-            return;
-        }
-        
-        $user = currentUser();
-        
-        // Solo para especialistas
-        if ($user['rol_id'] != ROLE_SPECIALIST) {
-            $this->json(['hasNew' => false]);
-            return;
-        }
-        
-        // Obtener el ID del especialista
-        $especialista = $this->db->fetch(
-            "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
-            [$user['id']]
-        );
-        
-        if (!$especialista) {
-            $this->json(['hasNew' => false]);
-            return;
-        }
-        
-        // Obtener el último ID notificado desde el parámetro (para evitar duplicados)
-        $lastNotifiedId = $this->get('last_id') ?? 0;
-        
-        // Buscar la reserva pendiente más reciente que no haya sido notificada
-        $newReservation = $this->db->fetch(
-            "SELECT r.id, r.codigo, r.fecha_cita, r.hora_inicio, r.hora_fin,
-                    r.precio_total, r.created_at,
-                    COALESCE(c.nombre, r.nombre_cliente) as cliente_nombre,
-                    s.nombre as servicio_nombre,
-                    suc.nombre as sucursal_nombre
-             FROM reservaciones r
-             LEFT JOIN clientes c ON r.cliente_id = c.id
-             LEFT JOIN servicios s ON r.servicio_id = s.id
-             LEFT JOIN sucursales suc ON r.sucursal_id = suc.id
-             WHERE r.especialista_id = ?
-             AND r.estado = 'pendiente'
-             AND r.id > ?
-             ORDER BY r.created_at DESC
-             LIMIT 1",
-            [$especialista['id'], $lastNotifiedId]
-        );
-        
-        if ($newReservation) {
-            // Formatear la información de la reserva
-            $this->json([
-                'hasNew' => true,
-                'reservation' => [
-                    'id' => $newReservation['id'],
-                    'codigo' => $newReservation['codigo'],
-                    'cliente' => $newReservation['cliente_nombre'],
-                    'servicio' => $newReservation['servicio_nombre'],
-                    'sucursal' => $newReservation['sucursal_nombre'],
-                    'fecha' => formatDate($newReservation['fecha_cita'], 'd/m/Y'),
-                    'hora' => formatTime($newReservation['hora_inicio']) . ' - ' . formatTime($newReservation['hora_fin']),
-                    'precio' => formatMoney($newReservation['precio_total']),
-                    'created_at' => $newReservation['created_at']
-                ]
-            ]);
-        } else {
-            $this->json(['hasNew' => false]);
+        try {
+            // Solo especialistas pueden recibir notificaciones de nuevas reservas
+            if (!isLoggedIn()) {
+                $this->json(['hasNew' => false]);
+                return;
+            }
+            
+            $user = currentUser();
+            
+            // Solo para especialistas
+            if ($user['rol_id'] != ROLE_SPECIALIST) {
+                $this->json(['hasNew' => false]);
+                return;
+            }
+            
+            // Obtener el ID del especialista
+            $especialista = $this->db->fetch(
+                "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+                [$user['id']]
+            );
+            
+            if (!$especialista) {
+                $this->json(['hasNew' => false]);
+                return;
+            }
+            
+            // Obtener el último ID notificado desde el parámetro (para evitar duplicados)
+            $lastNotifiedId = $this->get('last_id') ?? 0;
+            
+            // Buscar la reserva pendiente más reciente que no haya sido notificada
+            $newReservation = $this->db->fetch(
+                "SELECT r.id, r.codigo, r.fecha_cita, r.hora_inicio, r.hora_fin,
+                        r.precio_total, r.created_at,
+                        COALESCE(c.nombre, r.nombre_cliente) as cliente_nombre,
+                        s.nombre as servicio_nombre,
+                        suc.nombre as sucursal_nombre
+                 FROM reservaciones r
+                 LEFT JOIN clientes c ON r.cliente_id = c.id
+                 LEFT JOIN servicios s ON r.servicio_id = s.id
+                 LEFT JOIN sucursales suc ON r.sucursal_id = suc.id
+                 WHERE r.especialista_id = ?
+                 AND r.estado = 'pendiente'
+                 AND r.id > ?
+                 ORDER BY r.created_at DESC
+                 LIMIT 1",
+                [$especialista['id'], $lastNotifiedId]
+            );
+            
+            if ($newReservation) {
+                // Formatear la información de la reserva
+                $this->json([
+                    'hasNew' => true,
+                    'reservation' => [
+                        'id' => $newReservation['id'],
+                        'codigo' => $newReservation['codigo'],
+                        'cliente' => $newReservation['cliente_nombre'] ?? 'Sin nombre',
+                        'servicio' => $newReservation['servicio_nombre'] ?? 'Sin servicio',
+                        'sucursal' => $newReservation['sucursal_nombre'] ?? 'Sin sucursal',
+                        'fecha' => formatDate($newReservation['fecha_cita'], 'd/m/Y'),
+                        'hora' => formatTime($newReservation['hora_inicio']) . ' - ' . formatTime($newReservation['hora_fin']),
+                        'precio' => formatMoney($newReservation['precio_total']),
+                        'created_at' => $newReservation['created_at']
+                    ]
+                ]);
+            } else {
+                $this->json(['hasNew' => false]);
+            }
+        } catch (Exception $e) {
+            // Log del error para debugging
+            error_log('[NOTIFICATION ERROR] ' . $e->getMessage());
+            error_log('[NOTIFICATION ERROR] Trace: ' . $e->getTraceAsString());
+            
+            // Siempre retornar JSON válido
+            $this->json(['hasNew' => false, 'error' => $e->getMessage()]);
         }
     }
     
