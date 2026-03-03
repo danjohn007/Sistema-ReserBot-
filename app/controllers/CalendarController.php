@@ -70,7 +70,8 @@ class CalendarController extends BaseController {
                 if ($usuarioId) {
                     // Obtener TODOS los horarios de este usuario en TODAS sus sucursales
                     $todosLosHorarios = $this->db->fetchAll(
-                        "SELECT DISTINCT h.dia_semana, h.hora_inicio, h.hora_fin 
+                        "SELECT DISTINCT h.dia_semana, h.hora_inicio, h.hora_fin, 
+                         h.bloqueo_activo, h.hora_inicio_bloqueo, h.hora_fin_bloqueo
                          FROM horarios_especialistas h
                          JOIN especialistas e ON h.especialista_id = e.id
                          WHERE e.usuario_id = ? AND h.activo = 1
@@ -90,7 +91,8 @@ class CalendarController extends BaseController {
             $todosLosHorarios = [];
             foreach ($especialistaIds as $esp) {
                 $horarios = $this->db->fetchAll(
-                    "SELECT dia_semana, hora_inicio, hora_fin 
+                    "SELECT dia_semana, hora_inicio, hora_fin,
+                     bloqueo_activo, hora_inicio_bloqueo, hora_fin_bloqueo
                      FROM horarios_especialistas 
                      WHERE especialista_id = ? AND activo = 1
                      ORDER BY dia_semana, hora_inicio",
@@ -220,6 +222,7 @@ class CalendarController extends BaseController {
                     'codigo' => $r['codigo'],
                     'estado' => $r['estado'],
                     'cliente' => $r['cliente_nombre_completo'],
+                    'telefono' => $r['telefono'],
                     'especialista' => $r['especialista_nombre'] . ' ' . $r['especialista_apellidos'],
                     'servicio' => $r['servicio_nombre'],
                     'precio' => formatMoney($r['precio_total']),

@@ -175,20 +175,35 @@
     background-color: #ffffff;
 }
 
-/* Aumentar altura de cada slot de tiempo (cada 30 min) en la cuadrícula */
+/* Altura compacta de cada slot de tiempo para facilitar navegación */
 .fc-timegrid-slot {
-    height: 50px !important;
-    min-height: 50px !important;
+    height: 30px !important;
+    min-height: 30px !important;
 }
 
 .fc-timegrid-slot-lane {
-    height: 50px !important;
+    height: 30px !important;
 }
 
-/* Aumentar altura mínima de eventos en vista semanal para mostrar dos líneas */
+/* Alternar tonos de gris cada hora (cada 4 slots de 15 min) */
+.fc-timegrid-slot:nth-child(8n+1),
+.fc-timegrid-slot:nth-child(8n+2),
+.fc-timegrid-slot:nth-child(8n+3),
+.fc-timegrid-slot:nth-child(8n+4) {
+    background-color: #f9fafb !important;
+}
+
+.fc-timegrid-slot:nth-child(8n+5),
+.fc-timegrid-slot:nth-child(8n+6),
+.fc-timegrid-slot:nth-child(8n+7),
+.fc-timegrid-slot:nth-child(8n+8) {
+    background-color: #f3f4f6 !important;
+}
+
+/* Altura mínima de eventos en vista semanal para mostrar dos líneas */
 .fc-timegrid-event {
-    min-height: 45px !important;
-    padding: 3px 5px !important;
+    min-height: 35px !important;
+    padding: 2px 4px !important;
     min-width: 140px !important; /* Ancho mínimo para que se vea el texto completo */
     box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important; /* Sombra para diferenciar eventos solapados */
 }
@@ -222,6 +237,25 @@
         transform: scale(1.05);
         box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
     }
+}
+
+/* Estilos para bloqueos visuales */
+.fc-bg-event.bloqueo-visual {
+    opacity: 1 !important;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(220, 38, 38, 0.02) 10px,
+        rgba(220, 38, 38, 0.02) 20px
+    ) !important;
+    border-left: 2px solid rgba(220, 38, 38, 0.15) !important;
+    border-right: 2px solid rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Permitir que se pueda hacer clic sobre los bloqueos visuales */
+.fc-bg-event {
+    pointer-events: none !important;
 }
 </style>
 
@@ -735,6 +769,72 @@ function convertirHorariosABusinessHours(horarios) {
     return businessHours;
 }
 
+// Generar eventos de bloqueo visual para mostrar en el calendario
+function generarEventosBloqueoVisual(fechaInicio, fechaFin, especialistaId) {
+    const eventos = [];
+    
+    console.log('📅 Generando bloqueos visuales...');
+    console.log('- Fecha inicio:', fechaInicio);
+    console.log('- Fecha fin:', fechaFin);
+    console.log('- Especialista ID:', especialistaId);
+    console.log('- Horarios disponibles:', horariosEspecialistas);
+    
+    // Obtener horarios del especialista seleccionado
+    let horarios = [];
+    if (especialistaId && horariosEspecialistas[especialistaId]) {
+        horarios = horariosEspecialistas[especialistaId];
+        console.log('✓ Usando horarios del especialista', especialistaId);
+    } else if (horariosEspecialistas['current']) {
+        horarios = horariosEspecialistas['current'];
+        console.log('✓ Usando horarios current');
+    }
+    
+    console.log('- Horarios a procesar:', horarios);
+    
+    if (!horarios || horarios.length === 0) {
+        console.log('❌ No hay horarios para procesar');
+        return eventos;
+    }
+    
+    // Recorrer cada día en el rango visible
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    
+    for (let fecha = new Date(inicio); fecha <= fin; fecha.setDate(fecha.getDate() + 1)) {
+        // Obtener día de la semana (1=Lunes...7=Domingo)
+        const diaSemana = fecha.getDay() === 0 ? 7 : fecha.getDay();
+        
+        // Buscar horario de este día que tenga bloqueo activo
+        const horarioDelDia = horarios.find(h => parseInt(h.dia_semana) === diaSemana);
+        
+        console.log(`- Día ${diaSemana} (${fecha.toISOString().split('T')[0]}):`, horarioDelDia);
+        
+        if (horarioDelDia && horarioDelDia.bloqueo_activo && 
+            horarioDelDia.hora_inicio_bloqueo && horarioDelDia.hora_fin_bloqueo) {
+            
+            // Crear evento de bloqueo visual
+            const fechaStr = fecha.toISOString().split('T')[0];
+            const bloqueEvento = {
+                id: 'bloqueo_' + fechaStr + '_' + diaSemana,
+                start: fechaStr + 'T' + horarioDelDia.hora_inicio_bloqueo,
+                end: fechaStr + 'T' + horarioDelDia.hora_fin_bloqueo,
+                display: 'background',
+                backgroundColor: 'rgba(220, 38, 38, 0.08)', // Rojo muy suave
+                borderColor: 'rgba(220, 38, 38, 0.15)',
+                editable: false,
+                classNames: ['bloqueo-visual']
+            };
+            eventos.push(bloqueEvento);
+            console.log('  ✅ Bloqueo creado:', bloqueEvento);
+        } else if (horarioDelDia) {
+            console.log('  ⚠️ Día tiene horario pero no tiene bloqueo activo o no tiene horas configuradas');
+        }
+    }
+    
+    console.log('📊 Total bloqueos generados:', eventos.length);
+    return eventos;
+}
+
 // Obtener businessHours inicial
 function getBusinessHours() {
     const especialistaId = document.getElementById('filter_especialista')?.value;
@@ -753,11 +853,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
     
     window.calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: 'timeGridWeek',
         locale: 'es',
-        height: 650,
-        contentHeight: 600,
-        aspectRatio: 1.8,
+        height: 'auto',
+        expandRows: true,
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -785,7 +884,10 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    successCallback(data);
+                    // Agregar eventos de bloqueo visual
+                    const bloqueosVisuales = generarEventosBloqueoVisual(info.start, info.end, specialistId);
+                    const todosLosEventos = [...data, ...bloqueosVisuales];
+                    successCallback(todosLosEventos);
                 })
                 .catch(error => {
                     console.error('Error loading events:', error);
@@ -802,7 +904,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Extraer fecha y hora si viene en formato ISO
             const fechaSoloDate = info.dateStr.split('T')[0];
-            const clickedDate = new Date(fechaSoloDate);
+            // Crear fecha en hora local para evitar problemas de zona horaria
+            const partesFecha = fechaSoloDate.split('-');
+            const clickedDate = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+            clickedDate.setHours(0, 0, 0, 0);
             
             if (clickedDate >= today) {
                 // Extraer hora si viene en el dateStr (vista semanal/día)
@@ -933,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', function() {
             minute: '2-digit',
             meridiem: false
         },
+        slotLabelInterval: '00:15:00', // Mostrar etiquetas cada 15 minutos
         views: {
             timeGridWeek: {
                 slotDuration: '00:15:00'
@@ -1151,6 +1257,7 @@ function showEventModal(event) {
             <div class="p-3 bg-green-50 rounded-lg">
                 <p class="text-xs text-gray-500 mb-1"><i class="fas fa-user mr-1"></i>Cliente</p>
                 <p class="text-sm font-semibold text-gray-900">${props.cliente}</p>
+                <p class="text-xs text-gray-600 mt-1"><i class="fas fa-phone mr-1"></i>${props.telefono || 'Sin número'}</p>
             </div>
             
             <div class="p-3 bg-purple-50 rounded-lg">
