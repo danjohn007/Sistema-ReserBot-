@@ -248,28 +248,72 @@ class SpecialistController extends BaseController {
                     [$nombre, $apellidos, $email, $telefono, $sucursal_principal, $specialist['usuario_id']]
                 );
                 
-                // Eliminar todos los registros de especialista actuales de este usuario
-                $this->db->delete("DELETE FROM especialistas WHERE usuario_id = ?", [$specialist['usuario_id']]);
+                // SOLUCIÓN CORRECTA: Actualizar especialistas existentes en lugar de borrar todo
+                // ===============================================================================
                 
-                // Crear un registro de especialista por cada sucursal seleccionada
-                $specialistIds = [];
-                foreach ($sucursales as $sucursal_id) {
-                    $specialistId = $this->db->insert(
-                        "INSERT INTO especialistas (usuario_id, sucursal_id, profesion, especialidad, descripcion, experiencia_anos, tarifa_base, activo) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        [$specialist['usuario_id'], $sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base, $activo]
-                    );
-                    $specialistIds[] = $specialistId;
+                // 1. Obtener especialistas actuales del usuario (con sus IDs y sucursales)
+                $existingSpecialists = $this->db->fetchAll(
+                    "SELECT id, sucursal_id FROM especialistas WHERE usuario_id = ?",
+                    [$specialist['usuario_id']]
+                );
+                
+                // Crear mapas para comparación
+                $existingMap = []; // sucursal_id => especialista_id
+                foreach ($existingSpecialists as $esp) {
+                    $existingMap[$esp['sucursal_id']] = $esp['id'];
                 }
                 
-                // Asignar servicios a todos los registros de especialista creados
-                foreach ($specialistIds as $specialistId) {
-                    foreach ($servicios as $servicioId) {
-                        $this->db->insert(
-                            "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
-                            [$specialistId, $servicioId]
+                $sucursalesSeleccionadas = array_flip($sucursales); // para búsqueda rápida
+                $specialistIds = [];
+                
+                // 2. Para cada sucursal seleccionada: actualizar si existe o crear si es nueva
+                foreach ($sucursales as $sucursal_id) {
+                    if (isset($existingMap[$sucursal_id])) {
+                        // Ya existe este especialista en esta sucursal: ACTUALIZAR
+                        $especialista_id = $existingMap[$sucursal_id];
+                        $this->db->update(
+                            "UPDATE especialistas 
+                             SET profesion = ?, especialidad = ?, descripcion = ?, 
+                                 experiencia_anos = ?, tarifa_base = ?, activo = ?
+                             WHERE id = ?",
+                            [$profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base, $activo, $especialista_id]
                         );
+                        $specialistIds[] = $especialista_id;
+                    } else {
+                        // No existe en esta sucursal: CREAR NUEVO
+                        $especialista_id = $this->db->insert(
+                            "INSERT INTO especialistas (usuario_id, sucursal_id, profesion, especialidad, descripcion, experiencia_anos, tarifa_base, activo) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            [$specialist['usuario_id'], $sucursal_id, $profesion, $especialidad, $descripcion, $experiencia_anos, $tarifa_base, $activo]
+                        );
+                        $specialistIds[] = $especialista_id;
                     }
+                }
+                
+                // 3. Eliminar especialistas de sucursales que ya no están seleccionadas
+                foreach ($existingMap as $sucursal_id => $especialista_id) {
+                    if (!isset($sucursalesSeleccionadas[$sucursal_id])) {
+                        // Esta sucursal ya no está seleccionada: ELIMINAR solo ese registro
+                        $this->db->delete("DELETE FROM especialistas WHERE id = ?", [$especialista_id]);
+                    }
+                }
+                
+                // 4. Actualizar servicios de forma inteligente (solo para especialistas NUEVOS)
+                // Los especialistas existentes mantienen sus servicios con configuraciones
+                foreach ($specialistIds as $index => $specialistId) {
+                    // Verificar si este especialista es nuevo (no estaba en $existingMap)
+                    $esNuevo = !in_array($specialistId, $existingMap);
+                    
+                    if ($esNuevo) {
+                        // Es un especialista nuevo: asignar servicios básicos
+                        foreach ($servicios as $servicioId) {
+                            $this->db->insert(
+                                "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                                [$specialistId, $servicioId]
+                            );
+                        }
+                    }
+                    // Si NO es nuevo, mantener sus servicios existentes con todas sus configuraciones
                 }
                 
                 $sucursalesCount = count($sucursales);
@@ -928,15 +972,31 @@ class SpecialistController extends BaseController {
         $categoria_id = $this->post('categoria_id');
         $precio = $this->post('precio');
         $duracion = $this->post('duracion');
+        $is_extraordinary = $this->post('is_extraordinary');
         
-        // Validar campos obligatorios
-        if (empty($nombre) || empty($precio) || empty($duracion)) {
+        // Validar campos obligatorios (permitir precio 0 pero no vacío)
+        if (empty($nombre) || $precio === '' || $precio === null || empty($duracion)) {
             setFlashMessage('error', 'El nombre, precio y duración son obligatorios.');
             redirect('/especialistas/mis-servicios?specialist_id=' . $specialist_id);
         }
         
+        // Si es extraordinario, buscar o crear categoría "Extraordinario"
+        if ($is_extraordinary) {
+            $extraordinarioCategoria = $this->db->fetch(
+                "SELECT id FROM categorias_servicios WHERE LOWER(nombre) = 'extraordinario' AND activo = 1 LIMIT 1"
+            );
+            
+            if ($extraordinarioCategoria) {
+                $categoria_id = $extraordinarioCategoria['id'];
+            } else {
+                // Crear categoría "Extraordinario" si no existe
+                $categoria_id = $this->db->insert(
+                    "INSERT INTO categorias_servicios (nombre, descripcion, activo) VALUES ('Extraordinario', 'Servicios extraordinarios fuera del horario habitual', 1)"
+                );
+            }
+        }
         // Si no se proporciona categoría, buscar "Otros" o crear una por defecto
-        if (empty($categoria_id)) {
+        elseif (empty($categoria_id)) {
             $otrosCategoria = $this->db->fetch(
                 "SELECT id FROM categorias_servicios WHERE LOWER(nombre) IN ('otro', 'otros') AND activo = 1 LIMIT 1"
             );
@@ -959,9 +1019,10 @@ class SpecialistController extends BaseController {
         );
         
         if ($serviceId) {
-            // Asignar el servicio al especialista
+            // Asignar el servicio al especialista con estado activo y visible
             $this->db->insert(
-                "INSERT INTO especialistas_servicios (especialista_id, servicio_id) VALUES (?, ?)",
+                "INSERT INTO especialistas_servicios (especialista_id, servicio_id, activo, visible_chatbot) 
+                 VALUES (?, ?, 1, 1)",
                 [$specialist['id'], $serviceId]
             );
             

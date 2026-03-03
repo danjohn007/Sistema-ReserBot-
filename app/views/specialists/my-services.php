@@ -5,9 +5,9 @@
             <p class="text-gray-600 mt-2">Administra los precios y duraci&oacute;n de tus servicios</p>
         </div>
         <div class="flex space-x-3">
-            <button onclick="openAddServiceModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
-                <i class="fas fa-plus mr-2"></i>
-                Agregar Existente
+            <button onclick="openCreateExtraordinaryServiceModal()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center">
+                <i class="fas fa-bolt mr-2"></i>
+                Servicio Extraordinario
             </button>
             <button onclick="openCreateServiceModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
                 <i class="fas fa-plus-circle mr-2"></i>
@@ -172,10 +172,25 @@
                                     $categoryIndex++;
                                     $categorySlug = 'cat-' . $categoryIndex;
                             ?>
-                                <tr class="bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors" onclick="toggleCategory('<?= $categorySlug ?>')">
-                                    <td colspan="10" class="px-6 py-2 text-sm font-semibold text-gray-700">
+                                <?php 
+                                // Determinar clase de fondo según categoría
+                                $categoryClass = 'bg-gray-100 hover:bg-gray-200';
+                                $categoryIcon = 'fas fa-chevron-down';
+                                $textClass = 'text-gray-700';
+                                
+                                if (strtolower($currentCategory) === 'extraordinario') {
+                                    $categoryClass = 'bg-yellow-50 hover:bg-yellow-100';
+                                    $categoryIcon = 'fas fa-chevron-down';
+                                    $textClass = 'text-yellow-800';
+                                }
+                                ?>
+                                <tr class="<?= $categoryClass ?> cursor-pointer transition-colors" onclick="toggleCategory('<?= $categorySlug ?>')">
+                                    <td colspan="10" class="px-6 py-2 text-sm font-semibold <?= $textClass ?>">
                                         <div class="flex items-center">
-                                            <i id="icon-<?= $categorySlug ?>" class="fas fa-chevron-down mr-2 transition-transform"></i>
+                                            <i id="icon-<?= $categorySlug ?>" class="<?= $categoryIcon ?> mr-2 transition-transform"></i>
+                                            <?php if (strtolower($currentCategory) === 'extraordinario'): ?>
+                                                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                                            <?php endif; ?>
                                             <?php echo htmlspecialchars($currentCategory ?: 'Sin categor&iacute;a'); ?>
                                         </div>
                                     </td>
@@ -495,6 +510,88 @@
     </div>
 </div>
 
+<!-- Modal: Crear Servicio Extraordinario -->
+<div id="createExtraordinaryServiceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div class="p-6 border-b bg-yellow-500">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white"><i class="fas fa-bolt mr-2"></i>Crear Servicio Extraordinario</h3>
+                <button onclick="closeCreateExtraordinaryServiceModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <form method="POST" action="<?= url('/especialistas/crear-servicio') ?>">
+            <input type="hidden" name="is_extraordinary" value="1">
+            <div class="p-6 space-y-4">
+                <?php if (count($allSpecialists) > 1): ?>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sucursal *</label>
+                    <select name="specialist_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <option value="">Selecciona una sucursal</option>
+                        <?php foreach ($allSpecialists as $spec): ?>
+                            <option value="<?= $spec['id'] ?>" <?= $spec['id'] == $currentSpecialistId ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($spec['sucursal_nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php else: ?>
+                <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
+                <?php endif; ?>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio *</label>
+                    <input type="text" name="nombre" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                           placeholder="Ej: Consulta Urgente">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descripci&oacute;n</label>
+                    <textarea name="descripcion" rows="3" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                              placeholder="Descripci&oacute;n del servicio"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Precio *</label>
+                        <div class="flex items-center">
+                            <span class="text-gray-700 mr-2">$</span>
+                            <input type="number" name="precio" required step="0.01" min="0"
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duraci&oacute;n (min) *</label>
+                        <input type="number" name="duracion" required min="5" max="480" step="5"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                               placeholder="30">
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Este servicio se crear&aacute; en la categor&iacute;a <strong>Extraordinario</strong>.
+                    </p>
+                </div>
+            </div>
+            <div class="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateExtraordinaryServiceModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                    <i class="fas fa-bolt mr-2"></i>Crear Servicio Extraordinario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal: Editar Servicio -->
 <div id="editServiceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
@@ -572,6 +669,14 @@ function openCreateServiceModal() {
 
 function closeCreateServiceModal() {
     document.getElementById('createServiceModal').classList.add('hidden');
+}
+
+function openCreateExtraordinaryServiceModal() {
+    document.getElementById('createExtraordinaryServiceModal').classList.remove('hidden');
+}
+
+function closeCreateExtraordinaryServiceModal() {
+    document.getElementById('createExtraordinaryServiceModal').classList.add('hidden');
 }
 
 // Función para activar/desactivar el input de porcentaje de adelanto
@@ -665,6 +770,10 @@ document.getElementById('addServiceModal')?.addEventListener('click', function(e
 
 document.getElementById('createServiceModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeCreateServiceModal();
+});
+
+document.getElementById('createExtraordinaryServiceModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeCreateExtraordinaryServiceModal();
 });
 
 document.getElementById('editServiceModal')?.addEventListener('click', function(e) {

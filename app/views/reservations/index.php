@@ -1,12 +1,6 @@
-<div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-    <div>
-        <h2 class="text-2xl font-bold text-gray-800">Reservaciones</h2>
-        <p class="text-gray-500 text-sm">Gestiona las citas y reservaciones</p>
-    </div>
-    <a href="<?= url('/reservaciones/nueva') ?>" 
-       class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition">
-        <i class="fas fa-plus mr-2"></i>Nueva Reservaci&oacute;n
-    </a>
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Reservaciones</h2>
+    <p class="text-gray-500 text-sm">Gestiona las citas y reservaciones</p>
 </div>
 
 <?php if (!empty($allSpecialists) && count($allSpecialists) > 1): ?>
