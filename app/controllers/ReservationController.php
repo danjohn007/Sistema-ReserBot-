@@ -255,6 +255,7 @@ class ReservationController extends BaseController {
             $hora_inicio = $this->post('hora_inicio');
             $notas_cliente = $this->post('notas_cliente');
             $es_extraordinaria = $this->post('es_extraordinaria') ? 1 : 0; // Capturar flag de cita extraordinaria
+            $primera_consulta = $this->post('primera_consulta') ? 1 : 0; // Capturar flag de primera consulta
             
             // Validar campos obligatorios
             if (empty($sucursal_id) || empty($especialista_id) || empty($servicio_id) || empty($fecha_cita) || empty($hora_inicio)) {
@@ -309,10 +310,10 @@ class ReservationController extends BaseController {
                             // Crear reservación
                             $reservationId = $this->db->insert(
                                 "INSERT INTO reservaciones (codigo, cliente_id, nombre_cliente, telefono, correo, especialista_id, servicio_id, sucursal_id, 
-                                 fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, es_extraordinaria, notas_cliente, creado_por) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 fecha_cita, hora_inicio, hora_fin, duracion_minutos, precio_total, estado, es_extraordinaria, primera_consulta, notas_cliente, creado_por) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                 [$codigo, $cliente_id, $nombre_cliente, $telefono, $correo, $especialista_id, $servicio_id, $sucursal_id, 
-                                 $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $es_extraordinaria, $notas_cliente, $user['id']]
+                                 $fecha_cita, $hora_inicio, $hora_fin, $duracion, $precio, $estado, $es_extraordinaria, $primera_consulta, $notas_cliente, $user['id']]
                             );
                             
                             if ($reservationId) {

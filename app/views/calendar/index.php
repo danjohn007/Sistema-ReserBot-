@@ -567,6 +567,33 @@
                 </div>
             </div>
             
+            <!-- Opción: Primera Consulta -->
+            <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-user-plus text-blue-600 text-xl"></i>
+                        <div>
+                            <label for="create_primera_consulta" class="font-semibold text-gray-900 cursor-pointer">
+                                Primera Consulta
+                            </label>
+                            <p class="text-sm text-gray-600">
+                                Marcar si es la primera vez que el paciente consulta
+                            </p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="create_primera_consulta" 
+                            name="primera_consulta" 
+                            value="1"
+                            class="sr-only peer"
+                        >
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+            
             <!-- Cliente -->
             <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
             <div>
@@ -2313,18 +2340,27 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
     // Configurar el checkbox, título y colores según el tipo de consulta
     const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
     const checkboxContainer = checkboxExtraordinaria?.closest('.flex');
+    const checkboxPrimeraConsulta = document.getElementById('create_primera_consulta');
+    const primeraConsultaContainer = checkboxPrimeraConsulta?.closest('.p-4');
     const modalTitle = modal.querySelector('h3 span');
     const modalHeader = document.getElementById('createModalHeader');
     const modalSubtitle = document.getElementById('createModalSubtitle');
     const submitBtn = document.getElementById('createModalSubmitBtn');
     
     if (esConsultaExtraordinaria) {
-        // CONSULTA EXTRAORDINARIA: Ocultar checkbox y forzar valor
+        // CONSULTA EXTRAORDINARIA: Ocultar checkboxes y forzar valores
         if (checkboxContainer) {
             checkboxContainer.style.display = 'none';
         }
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = true;
+        }
+        // Ocultar checkbox de primera consulta en consultas extraordinarias
+        if (primeraConsultaContainer) {
+            primeraConsultaContainer.style.display = 'none';
+        }
+        if (checkboxPrimeraConsulta) {
+            checkboxPrimeraConsulta.checked = false;
         }
         if (modalTitle) {
             modalTitle.innerHTML = '<i class="fas fa-user-clock mr-2"></i>Nueva Consulta Extraordinaria';
@@ -2341,12 +2377,19 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
             submitBtn.className = 'px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-md hover:shadow-lg';
         }
     } else {
-        // CONSULTA NORMAL: Mostrar checkbox y resetear
+        // CONSULTA NORMAL: Mostrar checkboxes y resetear
         if (checkboxContainer) {
             checkboxContainer.style.display = 'flex';
         }
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = false;
+        }
+        // Mostrar checkbox de primera consulta en consultas normales
+        if (primeraConsultaContainer) {
+            primeraConsultaContainer.style.display = 'block';
+        }
+        if (checkboxPrimeraConsulta) {
+            checkboxPrimeraConsulta.checked = false;
         }
         if (modalTitle) {
             modalTitle.textContent = 'Nueva Reservación';
@@ -2736,6 +2779,7 @@ async function submitCreateReservation() {
     const horaInicio = document.getElementById('create_hora_inicio').value;
     const notas = document.getElementById('create_notas').value;
     const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked ? '1' : '0';
+    const primeraConsulta = document.getElementById('create_primera_consulta').checked ? '1' : '0';
     
     // Validaciones
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
@@ -2770,6 +2814,7 @@ async function submitCreateReservation() {
     formData.append('hora_inicio', horaInicio);
     formData.append('notas_cliente', notas);
     formData.append('es_extraordinaria', esExtraordinaria);
+    formData.append('primera_consulta', primeraConsulta);
     
     try {
         const response = await fetch('<?= BASE_URL ?>/reservaciones/nueva', {
