@@ -323,6 +323,22 @@
                     <i class="fas fa-chevron-right text-xl"></i>
                 </div>
             </button>
+            
+            <button onclick="selectConsultaExtraordinariaAction()" 
+                    class="w-full p-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                            <i class="fas fa-user-clock text-2xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="text-lg font-bold">Consulta Extraordinaria</h4>
+                            <p class="text-sm text-orange-100">Cita fuera de horario normal</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </div>
+            </button>
         </div>
     </div>
 </div>
@@ -503,7 +519,7 @@
 <!-- Create Reservation Modal -->
 <div id="createModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform transition-all">
-        <div class="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-t-2xl sticky top-0 z-10">
+        <div id="createModalHeader" class="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-t-2xl sticky top-0 z-10">
             <div class="flex justify-between items-center">
                 <h3 class="text-xl font-bold text-white flex items-center">
                     <i class="fas fa-plus-circle mr-3"></i>
@@ -513,7 +529,7 @@
                     <i class="fas fa-times text-2xl"></i>
                 </button>
             </div>
-            <p class="text-green-100 text-sm mt-2" id="selected-date-display">Fecha seleccionada</p>
+            <p id="createModalSubtitle" class="text-green-100 text-sm mt-2"><span id="selected-date-display">Fecha seleccionada</span></p>
         </div>
         
         <form id="createReservationForm" class="p-6 space-y-6">
@@ -559,6 +575,30 @@
                 </label>
                 <input type="text" id="create_nombre_cliente" required
                        placeholder="Ingrese el nombre completo del cliente"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+            </div>
+            
+            <!-- Teléfono del Cliente -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-phone mr-1"></i>Teléfono
+                </label>
+                <input type="tel" id="create_telefono"
+                       placeholder="Ej: 3331234567"
+                       maxlength="10"
+                       pattern="[0-9]{10}"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <p class="text-xs text-gray-500 mt-1">10 dígitos (opcional)</p>
+            </div>
+            
+            <!-- Correo del Cliente -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-envelope mr-1"></i>Correo Electrónico
+                </label>
+                <input type="email" id="create_correo"
+                       placeholder="cliente@ejemplo.com"
                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
             </div>
             <?php endif; ?>
@@ -633,7 +673,7 @@
                 <button onclick="closeCreateModal()" class="px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
                     <i class="fas fa-times mr-2"></i>Cancelar
                 </button>
-                <button onclick="submitCreateReservation()" class="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg">
+                <button id="createModalSubmitBtn" onclick="submitCreateReservation()" class="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg">
                     <i class="fas fa-check mr-2"></i>Crear Reservaci&oacute;n
                 </button>
             </div>
@@ -1850,6 +1890,9 @@ document.addEventListener('keydown', function(e) {
 let selectedDateStr = null;
 let selectedHoraStr = null;
 
+// Variable global para indicar si estamos en modo consulta extraordinaria
+let esConsultaExtraordinaria = false;
+
 function openActionModal(dateStr, horaSeleccionada = null) {
     const modal = document.getElementById('actionModal');
     const dateDisplay = document.getElementById('action-date-display');
@@ -2066,6 +2109,19 @@ function selectCirugiaAction() {
     }
 }
 
+function selectConsultaExtraordinariaAction() {
+    // Guardar valores ANTES de cerrar el modal (que los limpia)
+    const fecha = selectedDateStr;
+    const hora = selectedHoraStr;
+    
+    closeActionModal();
+    
+    // Abrir el modal de consulta extraordinaria con la fecha y hora guardadas
+    if (fecha) {
+        openCreateModal(fecha, hora, true); // true = es consulta extraordinaria
+    }
+}
+
 function openSurgeryModal(dateStr, horaSeleccionada = null) {
     const modal = document.getElementById('surgeryModal');
     const dateDisplay = document.getElementById('surgery-date-display');
@@ -2210,13 +2266,18 @@ async function submitSurgerySchedule() {
 // Variable global para almacenar la hora pre-seleccionada
 let horaPreseleccionada = null;
 
-function openCreateModal(dateStr, horaSeleccionada = null) {
+function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = false) {
+    // Establecer el modo de consulta extraordinaria
+    esConsultaExtraordinaria = esExtraordinaria;
+    
     const modal = document.getElementById('createModal');
     const dateDisplay = document.getElementById('selected-date-display');
     const dateInput = document.getElementById('create_fecha');
     
     // Guardar hora pre-seleccionada para usar después
     horaPreseleccionada = horaSeleccionada;
+    console.log('🕐 openCreateModal - Guardando horaPreseleccionada:', horaPreseleccionada);
+    console.log('📋 Modo Consulta Extraordinaria:', esConsultaExtraordinaria);
     
     // Extraer solo la fecha (YYYY-MM-DD) del dateStr
     // En vista mensual viene "2026-02-15"
@@ -2249,6 +2310,60 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
         extraordinariaWarning.classList.add('hidden');
     }
     
+    // Configurar el checkbox, título y colores según el tipo de consulta
+    const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
+    const checkboxContainer = checkboxExtraordinaria?.closest('.flex');
+    const modalTitle = modal.querySelector('h3 span');
+    const modalHeader = document.getElementById('createModalHeader');
+    const modalSubtitle = document.getElementById('createModalSubtitle');
+    const submitBtn = document.getElementById('createModalSubmitBtn');
+    
+    if (esConsultaExtraordinaria) {
+        // CONSULTA EXTRAORDINARIA: Ocultar checkbox y forzar valor
+        if (checkboxContainer) {
+            checkboxContainer.style.display = 'none';
+        }
+        if (checkboxExtraordinaria) {
+            checkboxExtraordinaria.checked = true;
+        }
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-user-clock mr-2"></i>Nueva Consulta Extraordinaria';
+        }
+        
+        // Cambiar colores a naranja
+        if (modalHeader) {
+            modalHeader.className = 'p-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl sticky top-0 z-10';
+        }
+        if (modalSubtitle) {
+            modalSubtitle.className = 'text-orange-100 text-sm mt-2';
+        }
+        if (submitBtn) {
+            submitBtn.className = 'px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-md hover:shadow-lg';
+        }
+    } else {
+        // CONSULTA NORMAL: Mostrar checkbox y resetear
+        if (checkboxContainer) {
+            checkboxContainer.style.display = 'flex';
+        }
+        if (checkboxExtraordinaria) {
+            checkboxExtraordinaria.checked = false;
+        }
+        if (modalTitle) {
+            modalTitle.textContent = 'Nueva Reservación';
+        }
+        
+        // Restaurar colores verdes
+        if (modalHeader) {
+            modalHeader.className = 'p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-t-2xl sticky top-0 z-10';
+        }
+        if (modalSubtitle) {
+            modalSubtitle.className = 'text-green-100 text-sm mt-2';
+        }
+        if (submitBtn) {
+            submitBtn.className = 'px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg';
+        }
+    }
+    
     // Mostrar el modal inmediatamente
     modal.classList.remove('hidden');
     
@@ -2266,7 +2381,7 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
         .then(response => response.json())
         .then(data => {
             if (data.sucursal_id) {
-                // Auto-seleccionar la sucursal
+                // Tiene horarios configurados: auto-seleccionar la sucursal
                 const sucursalSelect = document.getElementById('create_sucursal');
                 sucursalSelect.value = data.sucursal_id;
                 document.getElementById('create_especialista_id').value = data.especialista_id;
@@ -2274,8 +2389,63 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
                 // Cargar servicios automáticamente
                 loadServicesForCreate();
             } else {
-                alert('No tiene horarios configurados para este día de la semana');
-                closeCreateModal();
+                // NO tiene horarios configurados: Permitir creación manual (cita extraordinaria)
+                console.log('No hay horarios configurados para este día - Habilitando modo manual');
+                
+                // Marcar como cita extraordinaria y mostrar advertencia
+                const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
+                if (checkboxExtraordinaria) {
+                    checkboxExtraordinaria.checked = true;
+                }
+                
+                // Mostrar advertencia de cita extraordinaria
+                if (extraordinariaWarning) {
+                    extraordinariaWarning.innerHTML = `
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Cita Extraordinaria:</strong> No hay horarios configurados para este día. 
+                        Podrá crear la cita manualmente seleccionando sucursal y servicio.
+                    `;
+                    extraordinariaWarning.classList.remove('hidden');
+                }
+                
+                // Habilitar selector de sucursal manualmente (cargar todas las sucursales del especialista)
+                fetch(`<?= BASE_URL ?>/api/especialista-sucursales?usuario_id=${usuarioId}`)
+                    .then(response => response.json())
+                    .then(sucursales => {
+                        const sucursalSelect = document.getElementById('create_sucursal');
+                        sucursalSelect.innerHTML = '<option value="">-- Seleccione sucursal --</option>';
+                        
+                        if (sucursales && sucursales.length > 0) {
+                            sucursales.forEach(suc => {
+                                const option = document.createElement('option');
+                                option.value = suc.sucursal_id;
+                                option.textContent = suc.nombre;
+                                option.dataset.especialistaId = suc.especialista_id;
+                                sucursalSelect.appendChild(option);
+                            });
+                            
+                            // Si solo hay UNA sucursal, auto-seleccionarla
+                            if (sucursales.length === 1) {
+                                sucursalSelect.value = sucursales[0].sucursal_id;
+                                document.getElementById('create_especialista_id').value = sucursales[0].especialista_id;
+                                console.log('Auto-seleccionando única sucursal:', sucursales[0].nombre);
+                                // Cargar servicios automáticamente
+                                loadServicesForCreate();
+                            } else {
+                                // Hacer que al cambiar sucursal, cargue servicios
+                                sucursalSelect.onchange = function() {
+                                    const selectedOption = this.options[this.selectedIndex];
+                                    if (selectedOption && selectedOption.dataset.especialistaId) {
+                                        document.getElementById('create_especialista_id').value = selectedOption.dataset.especialistaId;
+                                        loadServicesForCreate();
+                                    }
+                                };
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar sucursales:', error);
+                    });
             }
         })
         .catch(error => {
@@ -2289,6 +2459,7 @@ function openCreateModal(dateStr, horaSeleccionada = null) {
 function closeCreateModal() {
     document.getElementById('createModal').classList.add('hidden');
     horaPreseleccionada = null; // Limpiar hora pre-seleccionada
+    esConsultaExtraordinaria = false; // Resetear modo extraordinario
 }
 
 async function loadServicesForCreate() {
@@ -2317,9 +2488,10 @@ async function loadServicesForCreate() {
     
     if (!finalEspecialistaId) return;
     
-    // Cargar servicios
+    // Cargar servicios (filtrar por categoría según si es consulta extraordinaria)
     try {
-        const response = await fetch(`<?= BASE_URL ?>/api/servicios?especialista_id=${finalEspecialistaId}`);
+        const esExtraordinariaParam = esConsultaExtraordinaria ? '&es_extraordinaria=1' : '';
+        const response = await fetch(`<?= BASE_URL ?>/api/servicios?especialista_id=${finalEspecialistaId}${esExtraordinariaParam}`);
         const data = await response.json();
         
         const select = document.getElementById('create_servicio');
@@ -2353,6 +2525,8 @@ function loadTimeSlotsForCreate() {
     const selectedOption = servicioSelect.options[servicioSelect.selectedIndex];
     
     if (!selectedOption.value) return;
+    
+    console.log('🕐 loadTimeSlotsForCreate - horaPreseleccionada global:', horaPreseleccionada);
     
     // Obtener si es servicio de emergencia
     const esEmergencia = selectedOption.dataset.esEmergencia === '1';
@@ -2491,20 +2665,59 @@ function loadTimeSlotsForCreate() {
                 noSlotsMsg.style.display = 'none';
                 document.getElementById('create_time_section').style.display = 'block';
                 
-                // Si había hora pre-seleccionada pero no se encontró, avisar al usuario
+                // Si había hora pre-seleccionada pero no se encontró, activar modo extraordinario automáticamente
                 if (horaPreseleccionada) {
                     const horaEncontrada = data.slots.some(slot => slot.hora_inicio.substring(0, 5) === horaPreseleccionada);
                     if (!horaEncontrada) {
-                        const container = document.getElementById('time_slots_container');
-                        const warningMsg = document.createElement('div');
-                        warningMsg.className = 'col-span-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 flex items-center justify-center';
-                        warningMsg.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>La hora seleccionada (' + horaPreseleccionada + ') no está disponible. Por favor elige otra.';
-                        container.insertBefore(warningMsg, container.firstChild);
+                        console.warn(`⚠️ Hora ${horaPreseleccionada} no disponible - Activando modo extraordinario automáticamente`);
+                        
+                        // Activar checkbox de cita extraordinaria
+                        const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
+                        if (checkboxExtraordinaria && !checkboxExtraordinaria.checked) {
+                            checkboxExtraordinaria.checked = true;
+                            
+                            // Mostrar advertencia
+                            const warning = document.getElementById('create_extraordinaria_warning');
+                            if (warning) {
+                                warning.innerHTML = `
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <span><strong>Modo Extraordinario Activado:</strong> La hora seleccionada (${horaPreseleccionada}) no estaba disponible. Se muestran todos los horarios posibles.</span>
+                                `;
+                                warning.classList.remove('hidden');
+                            }
+                            
+                            // Recargar slots en modo extraordinario
+                            console.log('🔄 Recargando slots en modo extraordinario...');
+                            const container = document.getElementById('time_slots_container');
+                            generateAllTimeSlots(container, duracion, horaPreseleccionada);
+                        }
                     }
                 }
             } else {
-                noSlotsMsg.style.display = 'block';
-                document.getElementById('create_time_section').style.display = 'block';
+                // No hay slots disponibles - Si hay hora preseleccionada, activar modo extraordinario
+                if (horaPreseleccionada) {
+                    console.warn('⚠️ No hay slots disponibles - Activando modo extraordinario automáticamente');
+                    
+                    const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
+                    if (checkboxExtraordinaria && !checkboxExtraordinaria.checked) {
+                        checkboxExtraordinaria.checked = true;
+                        
+                        const warning = document.getElementById('create_extraordinaria_warning');
+                        if (warning) {
+                            warning.innerHTML = `
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span><strong>Modo Extraordinario Activado:</strong> No hay horarios disponibles. Se muestran todos los horarios para creación manual.</span>
+                            `;
+                            warning.classList.remove('hidden');
+                        }
+                        
+                        const container = document.getElementById('time_slots_container');
+                        generateAllTimeSlots(container, duracion, horaPreseleccionada);
+                    }
+                } else {
+                    noSlotsMsg.style.display = 'block';
+                    document.getElementById('create_time_section').style.display = 'block';
+                }
             }
         })
         .catch(error => {
@@ -2514,6 +2727,8 @@ function loadTimeSlotsForCreate() {
 
 async function submitCreateReservation() {
     const nombreCliente = document.getElementById('create_nombre_cliente')?.value;
+    const telefono = document.getElementById('create_telefono')?.value;
+    const correo = document.getElementById('create_correo')?.value;
     const sucursalId = document.getElementById('create_sucursal').value;
     const especialistaId = document.getElementById('create_especialista_id').value;
     const servicioId = document.getElementById('create_servicio').value;
@@ -2528,6 +2743,12 @@ async function submitCreateReservation() {
         alert('Por favor ingrese el nombre del cliente');
         return;
     }
+    
+    // Validar teléfono si se proporciona
+    if (telefono && telefono.length !== 10) {
+        alert('El teléfono debe tener exactamente 10 dígitos');
+        return;
+    }
     <?php endif; ?>
     
     if (!sucursalId || !especialistaId || !servicioId || !fecha || !horaInicio) {
@@ -2539,6 +2760,8 @@ async function submitCreateReservation() {
     const formData = new URLSearchParams();
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     formData.append('nombre_cliente', nombreCliente);
+    if (telefono) formData.append('telefono', telefono);
+    if (correo) formData.append('correo', correo);
     <?php endif; ?>
     formData.append('sucursal_id', sucursalId);
     formData.append('especialista_id', especialistaId);
@@ -2578,6 +2801,10 @@ async function submitCreateReservation() {
 function toggleCreateExtraordinariaWarning(isChecked) {
     const warning = document.getElementById('create_extraordinaria_warning');
     if (isChecked) {
+        warning.innerHTML = `
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span><strong>Advertencia:</strong> Esta cita NO validará horarios disponibles y puede causar empalmes.</span>
+        `;
         warning.classList.remove('hidden');
     } else {
         warning.classList.add('hidden');
@@ -2586,6 +2813,7 @@ function toggleCreateExtraordinariaWarning(isChecked) {
     // Recargar horarios si ya hay un servicio seleccionado
     const servicioSelect = document.getElementById('create_servicio');
     if (servicioSelect && servicioSelect.value) {
+        console.log('🔄 Checkbox extraordinaria cambió - Recargando slots...');
         loadTimeSlotsForCreate();
     }
 }
@@ -2593,97 +2821,90 @@ function toggleCreateExtraordinariaWarning(isChecked) {
 // Generar todos los horarios posibles (para citas extraordinarias)
 async function generateAllTimeSlots(container, duracion, horaPreseleccionada) {
     const noSlotsMsg = document.getElementById('no_slots_message');
-    container.innerHTML = '<div class="col-span-4 text-center py-2 text-orange-600"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando horario del especialista...</div>';
+    container.innerHTML = '<div class="col-span-4 text-center py-2 text-orange-600"><i class="fas fa-spinner fa-spin mr-2"></i>Generando todos los horarios...</div>';
     noSlotsMsg.style.display = 'none';
     
-    const especialistaId = document.getElementById('create_especialista_id').value;
-    const fecha = document.getElementById('create_fecha').value;
+    console.log('🕐 generateAllTimeSlots llamado con horaPreseleccionada:', horaPreseleccionada);
     
-    try {
-        // Obtener el horario del especialista para ese día
-        const response = await fetch(`<?= BASE_URL ?>/api/horario-especialista?especialista_id=${especialistaId}&fecha=${fecha}`);
-        const data = await response.json();
+    // SIEMPRE usar rango amplio para citas extraordinarias
+    // Sin importar si el especialista tiene horarios configurados
+    const horaInicio = 7 * 60;  // 7:00 AM
+    const horaFin = 22 * 60;     // 10:00 PM
+    
+    console.log('🎯 Modo extraordinario: Generando TODOS los slots de 07:00 a 22:00');
+    
+    container.innerHTML = '';
+    
+    // Banner informativo
+    const infoBanner = document.createElement('div');
+    infoBanner.className = 'col-span-4 p-3 bg-orange-100 border border-orange-400 rounded-lg mb-2';
+    infoBanner.innerHTML = `
+        <div class="flex items-center text-sm text-orange-800">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span><strong>Creación Manual:</strong> Mostrando TODOS los horarios de 07:00 a 22:00. Puede seleccionar cualquier hora.</span>
+        </div>
+    `;
+    container.appendChild(infoBanner);
+    
+    const intervalo = 15; // slots cada 15 minutos
+    
+    console.log(`Generando slots desde ${horaInicio} hasta ${horaFin} minutos (cada ${intervalo} min)`);
+    
+    let slotsGenerados = 0;
+    let horaEncontrada = false;
+    
+    for (let minutos = horaInicio; minutos < horaFin; minutos += intervalo) {
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
+        const horaStr = `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        const horaCompleta = `${horaStr}:00`;
         
-        console.log('Horario del especialista:', data);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'px-3 py-2 border-2 border-orange-300 bg-orange-50 rounded-lg hover:border-orange-600 hover:bg-orange-100 transition text-sm font-medium time-slot-btn';
+        button.textContent = horaStr;
+        button.dataset.hora = horaCompleta;
+        button.dataset.tipo = 'extraordinaria';
         
-        if (!data.horario || !data.horario.hora_inicio || !data.horario.hora_fin) {
-            container.innerHTML = '<div class="col-span-4 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>El especialista no tiene horario configurado para este día</div>';
-            return;
-        }
+        button.onclick = function() {
+            // Remover selección previa
+            document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                btn.classList.remove('border-orange-600', 'bg-orange-200');
+            });
+            // Seleccionar este
+            this.classList.add('border-orange-600', 'bg-orange-200');
+            document.getElementById('create_hora_inicio').value = this.dataset.hora;
+            console.log('Hora seleccionada manualmente:', this.dataset.hora);
+        };
         
-        container.innerHTML = '';
+        container.appendChild(button);
+        slotsGenerados++;
         
-        // Banner informativo
-        const infoBanner = document.createElement('div');
-        infoBanner.className = 'col-span-4 p-3 bg-orange-100 border border-orange-400 rounded-lg mb-2';
-        infoBanner.innerHTML = `
-            <div class="flex items-center text-sm text-orange-800">
-                <i class="fas fa-info-circle mr-2"></i>
-                <span><strong>Modo Extraordinario:</strong> Mostrando TODOS los horarios (incluidos ocupados) desde ${data.horario.hora_inicio.substring(0,5)} hasta ${data.horario.hora_fin.substring(0,5)}</span>
-            </div>
-        `;
-        container.appendChild(infoBanner);
-        
-        // Convertir horarios a minutos
-        const [horaInicioH, horaInicioM] = data.horario.hora_inicio.split(':').map(Number);
-        const [horaFinH, horaFinM] = data.horario.hora_fin.split(':').map(Number);
-        const horaInicio = horaInicioH * 60 + horaInicioM;
-        const horaFin = horaFinH * 60 + horaFinM;
-        const intervalo = 15; // slots cada 15 minutos
-        
-        console.log(`Generando slots desde ${horaInicio} hasta ${horaFin} minutos (cada ${intervalo} min)`);
-        
-        let slotsGenerados = 0;
-        for (let minutos = horaInicio; minutos < horaFin; minutos += intervalo) {
-            const horas = Math.floor(minutos / 60);
-            const mins = minutos % 60;
-            const horaStr = `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-            const horaCompleta = `${horaStr}:00`;
-            
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'px-3 py-2 border-2 border-orange-300 bg-orange-50 rounded-lg hover:border-orange-600 hover:bg-orange-100 transition text-sm font-medium time-slot-btn';
-            button.textContent = horaStr;
-            button.dataset.hora = horaCompleta;
-            button.dataset.tipo = 'extraordinaria';
-            
-            button.onclick = function() {
-                // Remover selección previa
-                document.querySelectorAll('.time-slot-btn').forEach(btn => {
-                    btn.classList.remove('border-orange-600', 'bg-orange-200');
-                });
-                // Seleccionar este
-                this.classList.add('border-orange-600', 'bg-orange-200');
-                document.getElementById('create_hora_inicio').value = this.dataset.hora;
-            };
-            
-            container.appendChild(button);
-            slotsGenerados++;
-            
-            // Auto-seleccionar si coincide con la hora pre-seleccionada
-            if (horaPreseleccionada && horaStr === horaPreseleccionada) {
+        // Auto-seleccionar si coincide con la hora pre-seleccionada
+        if (horaPreseleccionada && horaStr === horaPreseleccionada) {
+            console.log(`✅ Hora preseleccionada encontrada: ${horaStr} === ${horaPreseleccionada}`);
+            horaEncontrada = true;
+            setTimeout(() => {
+                button.click();
+                button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                button.style.animation = 'pulse 1s ease-in-out 2';
                 setTimeout(() => {
-                    button.click();
-                    button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    button.style.animation = 'pulse 1s ease-in-out 2';
-                    setTimeout(() => {
-                        button.style.animation = '';
-                    }, 2000);
-                }, 100);
-            }
+                    button.style.animation = '';
+                }, 2000);
+            }, 100);
         }
-        
-        console.log(`Slots generados en modo extraordinario: ${slotsGenerados}`);
-        
-        if (slotsGenerados === 0) {
-            container.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-600"><i class="fas fa-info-circle mr-2"></i>No se pudieron generar horarios para este día</div>';
-        }
-        
-        document.getElementById('create_time_section').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error obteniendo horario del especialista:', error);
-        container.innerHTML = '<div class="col-span-4 text-center py-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Error al obtener el horario. Por favor intente nuevamente.</div>';
     }
+    
+    console.log(`✅ Slots generados en modo extraordinario: ${slotsGenerados} (de 07:00 a 22:00)`);
+    
+    if (horaPreseleccionada && !horaEncontrada) {
+        console.warn(`⚠️ La hora preseleccionada ${horaPreseleccionada} NO se encontró en los slots generados`);
+    }
+    
+    if (slotsGenerados === 0) {
+        container.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-600"><i class="fas fa-info-circle mr-2"></i>No se pudieron generar horarios</div>';
+    }
+    
+    document.getElementById('create_time_section').style.display = 'block';
 }
 </script>

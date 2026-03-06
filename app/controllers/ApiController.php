@@ -287,6 +287,7 @@ class ApiController extends BaseController {
         $especialista_id = $this->get('especialista_id');
         $fecha = $this->get('fecha'); // Opcional: para filtrar por horario de emergencia
         $hora = $this->get('hora'); // Opcional: para filtrar por horario de emergencia
+        $es_consulta_extraordinaria = $this->get('es_extraordinaria') === '1'; // Nuevo parámetro
         
         if ($especialista_id) {
             // Determinar si estamos en horario de emergencia
@@ -321,35 +322,53 @@ class ApiController extends BaseController {
                 }
             }
             
-            // Filtrar servicios según si es horario de emergencia o normal
-            // Si no se proporciona fecha/hora, mostrar TODOS los servicios disponibles
-            if ($fecha && $hora) {
-                // Filtrar por tipo de horario
+            // Filtrar servicios según si es consulta extraordinaria, horario de emergencia o normal
+            // Si es consulta extraordinaria: SOLO mostrar servicios de categoría 9 (Extraordinario)
+            // Si NO es consulta extraordinaria: EXCLUIR servicios de categoría 9
+            
+            if ($es_consulta_extraordinaria) {
+                // CONSULTA EXTRAORDINARIA: Solo servicios de categoría 9
                 $services = $this->db->fetchAll(
                     "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
                             COALESCE(es.precio_personalizado, s.precio) as precio,
                             COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
-                            c.nombre as categoria_nombre,
+                            c.nombre as categoria_nombre, c.id as categoria_id,
                             es.es_emergencia
                      FROM servicios s
                      JOIN especialistas_servicios es ON s.id = es.servicio_id
                      JOIN categorias_servicios c ON s.categoria_id = c.id
-                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND es.es_emergencia = ?
+                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND c.id = 9
+                     ORDER BY s.nombre",
+                    [$especialista_id]
+                );
+            } else if ($fecha && $hora) {
+                // Filtrar por tipo de horario (EXCLUYENDO categoría 9)
+                $services = $this->db->fetchAll(
+                    "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
+                            COALESCE(es.precio_personalizado, s.precio) as precio,
+                            COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
+                            c.nombre as categoria_nombre, c.id as categoria_id,
+                            es.es_emergencia
+                     FROM servicios s
+                     JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN categorias_servicios c ON s.categoria_id = c.id
+                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 
+                           AND es.es_emergencia = ? AND c.id != 9
                      ORDER BY c.nombre, s.nombre",
                     [$especialista_id, $es_horario_emergencia ? 1 : 0]
                 );
             } else {
-                // Mostrar todos los servicios (normal y emergencia)
+                // Mostrar todos los servicios EXCEPTO categoría 9 (normal y emergencia)
                 $services = $this->db->fetchAll(
                     "SELECT s.id, s.nombre, s.descripcion, s.duracion_minutos, s.precio,
                             COALESCE(es.precio_personalizado, s.precio) as precio,
                             COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos,
-                            c.nombre as categoria_nombre,
+                            c.nombre as categoria_nombre, c.id as categoria_id,
                             es.es_emergencia
                      FROM servicios s
                      JOIN especialistas_servicios es ON s.id = es.servicio_id
                      JOIN categorias_servicios c ON s.categoria_id = c.id
-                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1
+                     WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND c.id != 9
                      ORDER BY es.es_emergencia DESC, c.nombre, s.nombre",
                     [$especialista_id]
                 );
@@ -422,6 +441,29 @@ class ApiController extends BaseController {
         } else {
             $this->json(['error' => 'No se encontró horario para este día'], 404);
         }
+    }
+    
+    /**
+     * Obtener TODAS las sucursales de un especialista (para citas extraordinarias)
+     */
+    public function getSpecialistBranches() {
+        $usuario_id = $this->get('usuario_id');
+        
+        if (!$usuario_id) {
+            $this->json(['error' => 'Parámetro usuario_id requerido'], 400);
+        }
+        
+        // Obtener todas las sucursales donde el especialista está registrado
+        $sucursales = $this->db->fetchAll(
+            "SELECT e.id as especialista_id, e.sucursal_id, s.nombre, s.direccion
+             FROM especialistas e
+             INNER JOIN sucursales s ON s.id = e.sucursal_id
+             WHERE e.usuario_id = ? AND e.activo = 1 AND s.activo = 1
+             ORDER BY s.nombre",
+            [$usuario_id]
+        );
+        
+        $this->json($sucursales);
     }
     
     /**
