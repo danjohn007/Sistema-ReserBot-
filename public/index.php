@@ -50,6 +50,7 @@ $routes = [
     '/logout' => ['controller' => 'AuthController', 'action' => 'logout'],
     '/recuperar-password' => ['controller' => 'AuthController', 'action' => 'forgotPassword'],
     '/reset-password' => ['controller' => 'AuthController', 'action' => 'resetPassword'],
+    '/interesados' => ['controller' => 'InteresadosController', 'action' => 'index'],
     
     // Dashboard
     '/dashboard' => ['controller' => 'DashboardController', 'action' => 'index'],
