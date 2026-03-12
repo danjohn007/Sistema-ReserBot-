@@ -9,12 +9,17 @@ header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
 
+// Cargar configuración primero
+require_once __DIR__ . '/../config/config.php';
+
+// Configurar sesión antes de iniciarla
+ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+ini_set('session.cookie_lifetime', SESSION_LIFETIME);
+session_set_cookie_params(SESSION_LIFETIME);
+
 // Iniciar sesión
 session_name('reserbot_session');
 session_start();
-
-// Cargar configuración
-require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../helpers/functions.php';
 

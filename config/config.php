@@ -52,7 +52,7 @@ define('HELPERS_PATH', ROOT_PATH . '/helpers');
 
 // Configuración de sesión
 define('SESSION_NAME', 'reserbot_session');
-define('SESSION_LIFETIME', 3600); // 1 hora
+define('SESSION_LIFETIME', 28800); // 8 horas (28800 segundos)
 
 // Configuración de email (valores por defecto)
 define('MAIL_HOST', 'smtp.example.com');
