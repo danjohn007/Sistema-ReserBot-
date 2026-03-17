@@ -2355,9 +2355,18 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = true;
         }
-        // Ocultar checkbox de primera consulta en consultas extraordinarias
+        // Mostrar checkbox de primera consulta en consultas extraordinarias con tema naranja
         if (primeraConsultaContainer) {
-            primeraConsultaContainer.style.display = 'none';
+            primeraConsultaContainer.style.display = 'block';
+            primeraConsultaContainer.className = primeraConsultaContainer.className
+                .replace('bg-blue-50', 'bg-orange-50')
+                .replace('border-blue-400', 'border-orange-400');
+            const icon = primeraConsultaContainer.querySelector('.fa-user-plus');
+            if (icon) icon.className = icon.className.replace('text-blue-600', 'text-orange-600');
+            const toggle = primeraConsultaContainer.querySelector('.peer-focus\\:ring-blue-300');
+            if (toggle) toggle.className = toggle.className
+                .replace('peer-focus:ring-blue-300', 'peer-focus:ring-orange-300')
+                .replace('peer-checked:bg-blue-600', 'peer-checked:bg-orange-600');
         }
         if (checkboxPrimeraConsulta) {
             checkboxPrimeraConsulta.checked = false;
@@ -2384,9 +2393,18 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = false;
         }
-        // Mostrar checkbox de primera consulta en consultas normales
+        // Mostrar checkbox de primera consulta en consultas normales con tema azul
         if (primeraConsultaContainer) {
             primeraConsultaContainer.style.display = 'block';
+            primeraConsultaContainer.className = primeraConsultaContainer.className
+                .replace('bg-orange-50', 'bg-blue-50')
+                .replace('border-orange-400', 'border-blue-400');
+            const icon = primeraConsultaContainer.querySelector('.fa-user-plus');
+            if (icon) icon.className = icon.className.replace('text-orange-600', 'text-blue-600');
+            const toggle = primeraConsultaContainer.querySelector('.peer-focus\\:ring-orange-300');
+            if (toggle) toggle.className = toggle.className
+                .replace('peer-focus:ring-orange-300', 'peer-focus:ring-blue-300')
+                .replace('peer-checked:bg-orange-600', 'peer-checked:bg-blue-600');
         }
         if (checkboxPrimeraConsulta) {
             checkboxPrimeraConsulta.checked = false;

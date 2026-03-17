@@ -62,10 +62,11 @@ class CalendarController extends BaseController {
         if (!empty($specialists)) {
             foreach ($specialists as $spec) {
                 // Obtener el usuario_id del especialista para buscar TODOS sus horarios
-                $usuarioId = $this->db->fetchColumn(
+                $especialista = $this->db->fetch(
                     "SELECT usuario_id FROM especialistas WHERE id = ?",
                     [$spec['id']]
                 );
+                $usuarioId = $especialista['usuario_id'] ?? null;
                 
                 if ($usuarioId) {
                     // Obtener TODOS los horarios de este usuario en TODAS sus sucursales
