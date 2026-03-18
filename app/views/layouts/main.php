@@ -95,13 +95,8 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white shadow-lg fixed h-screen z-30 hidden md:flex md:flex-col">
             <div class="p-4 border-b flex-shrink-0">
-                <a href="<?= url('/dashboard') ?>" class="flex items-center space-x-2">
-                    <?php if (getConfig('logotipo')): ?>
-                        <img src="<?= asset(getConfig('logotipo')) ?>" alt="Logo" class="h-8">
-                    <?php else: ?>
-                        <i class="fas fa-calendar-check text-2xl text-primary"></i>
-                    <?php endif; ?>
-                    <span class="text-xl font-bold text-gray-800"><?= e(getConfig('nombre_sitio', 'ReserBot')) ?></span>
+                <a href="<?= url('/dashboard') ?>" class="flex items-center justify-center">
+                    <img src="<?= asset('images/logo.png') ?>" alt="Logo" class="h-16 w-auto object-contain">
                 </a>
             </div>
             

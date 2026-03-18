@@ -35,14 +35,7 @@
     <div class="w-full max-w-md">
         <!-- Logo -->
         <div class="text-center mb-8">
-            <?php if (getConfig('logotipo')): ?>
-                <img src="<?= asset(getConfig('logotipo')) ?>" alt="Logo" class="h-16 mx-auto mb-4">
-            <?php else: ?>
-                <div class="flex items-center justify-center space-x-2 mb-4">
-                    <i class="fas fa-calendar-check text-4xl text-primary"></i>
-                    <span class="text-3xl font-bold text-gray-800"><?= e(getConfig('nombre_sitio', 'ReserBot')) ?></span>
-                </div>
-            <?php endif; ?>
+            <img src="<?= asset('images/logo.png') ?>" alt="Logo" class="h-32 mx-auto mb-4 w-auto object-contain">
             <p class="text-gray-600">Sistema de Reservaciones y Citas Profesionales</p>
         </div>
         
