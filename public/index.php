@@ -56,6 +56,7 @@ $routes = [
     '/recuperar-password' => ['controller' => 'AuthController', 'action' => 'forgotPassword'],
     '/reset-password' => ['controller' => 'AuthController', 'action' => 'resetPassword'],
     '/interesados' => ['controller' => 'InteresadosController', 'action' => 'index'],
+    '/interesados/contactar' => ['controller' => 'InteresadosController', 'action' => 'marcarContactado'],
     
     // Dashboard
     '/dashboard' => ['controller' => 'DashboardController', 'action' => 'index'],

@@ -17,7 +17,7 @@ class InteresadosController extends BaseController
         // Obtener todos los registros de interesados
         try {
             $registros = $this->db->fetchAll(
-                "SELECT id, nombre, nombre_restaurante, telefono, estado, notas, created_at, updated_at 
+                "SELECT id, nombre, email, telefono, estado, notas, created_at, updated_at 
                  FROM registros_interesados 
                  ORDER BY created_at DESC"
             );
@@ -46,5 +46,38 @@ class InteresadosController extends BaseController
         
         // Cargar la vista pública (sin layout de autenticación)
         include VIEWS_PATH . '/interesados/index.php';
+    }
+
+    /**
+     * Marca un registro como "contactado" via AJAX
+     */
+    public function marcarContactado()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+        if (!$id) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'ID inválido']);
+            return;
+        }
+
+        try {
+            $this->db->update(
+                "UPDATE registros_interesados SET estado = 'contactado', updated_at = NOW() WHERE id = ? AND estado = 'pendiente'",
+                [$id]
+            );
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar']);
+        }
     }
 }

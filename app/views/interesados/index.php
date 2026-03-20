@@ -163,7 +163,7 @@
                                     Nombre
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Restaurante
+                                    Email
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Teléfono
@@ -176,6 +176,9 @@
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Fecha Registro
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Acción
                                 </th>
                             </tr>
                         </thead>
@@ -212,7 +215,13 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900 font-medium">
-                                            <?php echo htmlspecialchars($registro['nombre_restaurante'] ?? 'N/A'); ?>
+                                            <?php if (!empty($registro['email'])): ?>
+                                                <a href="mailto:<?php echo htmlspecialchars($registro['email']); ?>" class="text-blue-600 hover:underline">
+                                                    <i class="fas fa-envelope mr-1 text-gray-400"></i><?php echo htmlspecialchars($registro['email']); ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="text-gray-400">N/A</span>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -260,6 +269,17 @@
                                             <?php echo date('H:i', $fecha); ?>
                                         </div>
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php if ($estado === 'pendiente'): ?>
+                                            <button
+                                                onclick="marcarContactado(<?php echo $registro['id']; ?>, this)"
+                                                class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                                                <i class="fas fa-phone-alt mr-1.5"></i>Marcar Contactado
+                                            </button>
+                                        <?php else: ?>
+                                            <span class="text-gray-400 text-xs">—</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -277,6 +297,43 @@
         </div>
         
     </div>
-    
+
+    <script>
+        function marcarContactado(id, btn) {
+            if (!confirm('¿Marcar este registro como Contactado?')) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>Guardando...';
+
+            fetch('/chatbot/interesados/contactar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id=' + id
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Reemplazar botón por badge de contactado
+                    btn.parentElement.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300"><i class="fas fa-check mr-1.5"></i>Actualizado</span>';
+                    // Actualizar el badge de estado en la misma fila
+                    const row = btn.closest('tr');
+                    const estadoCell = row.querySelector('td:nth-child(5)');
+                    if (estadoCell) {
+                        estadoCell.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300"><i class="fas fa-phone mr-1.5"></i>Contactado</span>';
+                    }
+                } else {
+                    alert('Error al actualizar: ' + (data.message || 'Intenta de nuevo'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-phone-alt mr-1.5"></i>Marcar Contactado';
+                }
+            })
+            .catch(() => {
+                alert('Error de conexión');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-phone-alt mr-1.5"></i>Marcar Contactado';
+            });
+        }
+    </script>
+
 </body>
 </html>
