@@ -119,6 +119,9 @@ $routes = [
     '/clientes/ver' => ['controller' => 'ClientController', 'action' => 'view'],
     '/clientes/editar' => ['controller' => 'ClientController', 'action' => 'edit'],
     
+    // Métricas
+    '/metricas/origen-reservas' => ['controller' => 'MetricasController', 'action' => 'origenReservas'],
+
     // Reportes
     '/reportes' => ['controller' => 'ReportController', 'action' => 'index'],
     '/reportes/citas' => ['controller' => 'ReportController', 'action' => 'appointments'],

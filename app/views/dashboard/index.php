@@ -185,6 +185,18 @@ $rolId = $user['rol_id'];
     <?php endif; ?>
 </div>
 
+<?php if ($rolId == ROLE_SUPERADMIN || $rolId == ROLE_BRANCH_ADMIN || $rolId == ROLE_SPECIALIST): ?>
+<!-- Botón de Métricas de Origen -->
+<div class="mb-6">
+    <a href="<?= url('/metricas/origen-reservas') ?>"
+       class="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md hover:from-blue-700 hover:to-indigo-700 transition font-semibold">
+        <i class="fas fa-chart-pie text-xl"></i>
+        <span>Métricas de Origen de Reservas</span>
+        <i class="fas fa-arrow-right text-sm opacity-75"></i>
+    </a>
+</div>
+<?php endif; ?>
+
 <!-- Two Column Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Upcoming Appointments -->
