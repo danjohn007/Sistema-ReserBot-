@@ -83,8 +83,20 @@
                 <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
                    target="_blank"
                    class="text-green-600 hover:text-green-800 text-sm whitespace-nowrap"
-                   title="Contactar por WhatsApp">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
+                   title="Liga 1: quiero reservar">
+                    <i class="fab fa-whatsapp"></i> Liga 1
+                </a>
+                <a href="<?= getWhatsAppUrl('Hola me gustaria reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
+                   target="_blank"
+                   class="text-green-500 hover:text-green-700 text-sm whitespace-nowrap"
+                   title="Liga 2: me gustaria reservar">
+                    <i class="fab fa-whatsapp"></i> Liga 2
+                </a>
+                <a href="<?= getWhatsAppUrl('Hola deseo reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
+                   target="_blank"
+                   class="text-emerald-600 hover:text-emerald-800 text-sm whitespace-nowrap"
+                   title="Liga 3: deseo reservar">
+                    <i class="fab fa-whatsapp"></i> Liga 3
                 </a>
                 <a href="<?= url('/especialistas/horarios?id=' . $spec['id']) ?>" 
                    class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">

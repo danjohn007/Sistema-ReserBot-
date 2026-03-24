@@ -60,6 +60,7 @@ $routes = [
     
     // Dashboard
     '/dashboard' => ['controller' => 'DashboardController', 'action' => 'index'],
+    '/dashboard/guardar-nombres-ligas' => ['controller' => 'DashboardController', 'action' => 'guardarNombresLigas'],
     
     // Sucursales
     '/sucursales' => ['controller' => 'BranchController', 'action' => 'index'],

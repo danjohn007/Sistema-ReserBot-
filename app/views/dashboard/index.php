@@ -316,13 +316,106 @@ $rolId = $user['rol_id'];
                 <i class="fas fa-money-bill-wave text-3xl text-emerald-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800">Administraci&oacute;n de pagos</p>
             </a>
-            <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . e($user['nombre'] . ' ' . $user['apellidos'])) ?>" 
+            <?php
+            $liga1 = e($specialist['nombre_liga1'] ?? 'Liga 1');
+            $liga2 = e($specialist['nombre_liga2'] ?? 'Liga 2');
+            $liga3 = e($specialist['nombre_liga3'] ?? 'Liga 3');
+            $nombreEsp = e($user['nombre'] . ' ' . $user['apellidos']);
+            ?>
+            <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
+               target="_blank" 
+               class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800"><?= $liga1 ?></p>
+            </a>
+            <a href="<?= getWhatsAppUrl('Hola me gustaria reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
+               target="_blank" 
+               class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800"><?= $liga2 ?></p>
+            </a>
+            <a href="<?= getWhatsAppUrl('Hola deseo reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
                target="_blank" 
                class="p-4 bg-pink-100 rounded-lg text-center hover:bg-pink-200 transition col-span-2">
                 <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
-                <p class="text-sm font-semibold text-gray-800">Tu enlace de WhatsApp</p>
-                <p class="text-xs text-gray-500 mt-1">Comparte este enlace con tus clientes</p>
+                <p class="text-sm font-semibold text-gray-800"><?= $liga3 ?></p>
             </a>
+
+            <!-- Botón para editar nombres -->
+            <div class="col-span-2 flex justify-end">
+                <button onclick="document.getElementById('formNombresLigas').classList.toggle('hidden')"
+                        class="text-xs text-gray-400 hover:text-gray-600 transition flex items-center gap-1">
+                    <i class="fas fa-pen text-xs"></i> Personalizar nombres de ligas
+                </button>
+            </div>
+
+            <!-- Formulario inline de edición -->
+            <div id="formNombresLigas" class="col-span-2 hidden bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombres de las ligas</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Liga 1</label>
+                        <input id="inp_liga1" type="text" maxlength="60" value="<?= $liga1 ?>"
+                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Liga 2</label>
+                        <input id="inp_liga2" type="text" maxlength="60" value="<?= $liga2 ?>"
+                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Liga 3</label>
+                        <input id="inp_liga3" type="text" maxlength="60" value="<?= $liga3 ?>"
+                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="document.getElementById('formNombresLigas').classList.add('hidden')"
+                            class="text-sm px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                        Cancelar
+                    </button>
+                    <button onclick="guardarNombresLigas()"
+                            id="btnGuardarLigas"
+                            class="text-sm px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                        <i class="fas fa-save mr-1"></i> Guardar
+                    </button>
+                </div>
+            </div>
+
+            <script>
+            function guardarNombresLigas() {
+                const btn = document.getElementById('btnGuardarLigas');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+
+                const body = new URLSearchParams({
+                    nombre_liga1: document.getElementById('inp_liga1').value,
+                    nombre_liga2: document.getElementById('inp_liga2').value,
+                    nombre_liga3: document.getElementById('inp_liga3').value,
+                });
+
+                fetch('<?= BASE_URL ?>/dashboard/guardar-nombres-ligas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al guardar: ' + (data.message || 'Intenta de nuevo'));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
+                    }
+                })
+                .catch(() => {
+                    alert('Error de conexión');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
+                });
+            }
+            </script>
             <?php endif; ?>
         </div>
         <?php endif; ?>

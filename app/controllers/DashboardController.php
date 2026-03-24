@@ -175,8 +175,11 @@ class DashboardController extends BaseController {
     /**
      * Estadísticas para Especialista
      */
+    /**
+     * Estadísticas para Especialista
+     */
     private function getSpecialistStats($userId) {
-        // Obtener el especialista
+        // Obtener el especialista (incluyendo nombres de ligas)
         $specialist = $this->db->fetch(
             "SELECT * FROM especialistas WHERE usuario_id = ?",
             [$userId]
@@ -223,10 +226,34 @@ class DashboardController extends BaseController {
             'upcomingAppointments' => $upcomingAppointments
         ];
     }
-    
+
     /**
-     * Estadísticas para Recepcionista
+     * Guarda los nombres personalizados de las ligas de WhatsApp
      */
+    public function guardarNombresLigas() {
+        $this->requireAuth();
+        $this->requireRole(ROLE_SPECIALIST);
+
+        if (!$this->isPost()) {
+            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
+            return;
+        }
+
+        $user = currentUser();
+        $nombre_liga1 = substr(strip_tags($this->post('nombre_liga1', 'Liga 1')), 0, 60);
+        $nombre_liga2 = substr(strip_tags($this->post('nombre_liga2', 'Liga 2')), 0, 60);
+        $nombre_liga3 = substr(strip_tags($this->post('nombre_liga3', 'Liga 3')), 0, 60);
+
+        try {
+            $this->db->update(
+                "UPDATE especialistas SET nombre_liga1 = ?, nombre_liga2 = ?, nombre_liga3 = ? WHERE usuario_id = ?",
+                [$nombre_liga1, $nombre_liga2, $nombre_liga3, $user['id']]
+            );
+            $this->json(['success' => true]);
+        } catch (Exception $e) {
+            $this->json(['success' => false, 'message' => 'Error al guardar']);
+        }
+    }
     private function getReceptionistStats($branchId) {
         return $this->getBranchAdminStats($branchId);
     }
