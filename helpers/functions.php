@@ -315,6 +315,6 @@ function getWhatsAppUrl($mensaje, $telefono = null) {
     // Codificar el mensaje
     $mensajeCodificado = urlencode($mensaje);
     
-    // Retornar URL en formato API de WhatsApp
-    return "https://api.whatsapp.com/send/?phone={$telefonoLimpio}&text={$mensajeCodificado}&type=phone_number&app_absent=0";
+    // Retornar URL en formato corto wa.me
+    return "https://wa.me/{$telefonoLimpio}?text={$mensajeCodificado}";
 }

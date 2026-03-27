@@ -334,24 +334,21 @@ $rolId = $user['rol_id'];
             $liga3 = e($specialist['nombre_liga3'] ?? 'Liga 3');
             $nombreEsp = e($user['nombre'] . ' ' . $user['apellidos']);
             ?>
-            <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
-               target="_blank" 
-               class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+            <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola quiero reservar con " . $user["nombre"] . " " . $user["apellidos"])) ?>, this)'
+                    class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition cursor-pointer w-full">
                 <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800"><?= $liga1 ?></p>
-            </a>
-            <a href="<?= getWhatsAppUrl('Hola me gustaria reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
-               target="_blank" 
-               class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition">
+            </button>
+            <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola me gustaria reservar con " . $user["nombre"] . " " . $user["apellidos"])) ?>, this)'
+                    class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition cursor-pointer w-full">
                 <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800"><?= $liga2 ?></p>
-            </a>
-            <a href="<?= getWhatsAppUrl('Hola deseo reservar con ' . $user['nombre'] . ' ' . $user['apellidos']) ?>" 
-               target="_blank" 
-               class="p-4 bg-pink-100 rounded-lg text-center hover:bg-pink-200 transition col-span-2">
+            </button>
+            <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola deseo reservar con " . $user["nombre"] . " " . $user["apellidos"])) ?>, this)'
+                    class="p-4 bg-pink-100 rounded-lg text-center hover:bg-pink-200 transition cursor-pointer w-full col-span-2">
                 <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800"><?= $liga3 ?></p>
-            </a>
+            </button>
 
             <!-- Botón para editar nombres -->
             <div class="col-span-2 flex justify-end">
@@ -395,6 +392,22 @@ $rolId = $user['rol_id'];
             </div>
 
             <script>
+            function copiarLiga(url, btn) {
+                navigator.clipboard.writeText(url).then(function() {
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check text-2xl text-green-600 mb-2"></i><p class="text-sm font-semibold text-green-700">¡Copiado!</p>';
+                    setTimeout(function() { btn.innerHTML = orig; }, 1800);
+                }).catch(function() {
+                    const ta = document.createElement('textarea');
+                    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check text-2xl text-green-600 mb-2"></i><p class="text-sm font-semibold text-green-700">¡Copiado!</p>';
+                    setTimeout(function() { btn.innerHTML = orig; }, 1800);
+                });
+            }
+
             function guardarNombresLigas() {
                 const btn = document.getElementById('btnGuardarLigas');
                 btn.disabled = true;

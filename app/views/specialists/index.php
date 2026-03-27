@@ -80,24 +80,21 @@
                 <i class="fas fa-user"></i> Perfil
             </a>
             <div class="space-x-2 flex flex-wrap items-center">
-                <a href="<?= getWhatsAppUrl('Hola quiero reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
-                   target="_blank"
-                   class="text-green-600 hover:text-green-800 text-sm whitespace-nowrap"
-                   title="Liga 1: quiero reservar">
+                <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola quiero reservar con " . $spec["nombre"] . " " . $spec["apellidos"])) ?>, this)'
+                        class="text-green-600 hover:text-green-800 text-sm whitespace-nowrap cursor-pointer"
+                        title="Copiar Liga 1">
                     <i class="fab fa-whatsapp"></i> Liga 1
-                </a>
-                <a href="<?= getWhatsAppUrl('Hola me gustaria reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
-                   target="_blank"
-                   class="text-green-500 hover:text-green-700 text-sm whitespace-nowrap"
-                   title="Liga 2: me gustaria reservar">
+                </button>
+                <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola me gustaria reservar con " . $spec["nombre"] . " " . $spec["apellidos"])) ?>, this)'
+                        class="text-green-500 hover:text-green-700 text-sm whitespace-nowrap cursor-pointer"
+                        title="Copiar Liga 2">
                     <i class="fab fa-whatsapp"></i> Liga 2
-                </a>
-                <a href="<?= getWhatsAppUrl('Hola deseo reservar con ' . $spec['nombre'] . ' ' . $spec['apellidos']) ?>" 
-                   target="_blank"
-                   class="text-emerald-600 hover:text-emerald-800 text-sm whitespace-nowrap"
-                   title="Liga 3: deseo reservar">
+                </button>
+                <button type="button" onclick='copiarLiga(<?= json_encode(getWhatsAppUrl("Hola deseo reservar con " . $spec["nombre"] . " " . $spec["apellidos"])) ?>, this)'
+                        class="text-emerald-600 hover:text-emerald-800 text-sm whitespace-nowrap cursor-pointer"
+                        title="Copiar Liga 3">
                     <i class="fab fa-whatsapp"></i> Liga 3
-                </a>
+                </button>
                 <a href="<?= url('/especialistas/horarios?id=' . $spec['id']) ?>" 
                    class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
                     <i class="fas fa-clock"></i> Horarios
@@ -126,3 +123,30 @@
     <p class="text-gray-500 mt-2">Comienza agregando el primer especialista</p>
 </div>
 <?php endif; ?>
+
+<script>
+function copiarLiga(url, btn) {
+    navigator.clipboard.writeText(url).then(function() {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+        btn.classList.add('text-white', 'bg-green-500', 'px-2', 'rounded');
+        setTimeout(function() {
+            btn.innerHTML = original;
+            btn.classList.remove('text-white', 'bg-green-500', 'px-2', 'rounded');
+        }, 1800);
+    }).catch(function() {
+        // Fallback: seleccionar texto
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+        setTimeout(function() { btn.innerHTML = original; }, 1800);
+    });
+}
+</script>
