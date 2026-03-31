@@ -586,7 +586,7 @@ class ApiController extends BaseController {
             }
             
             // Obtener el último ID notificado desde el parámetro (para evitar duplicados)
-            $lastNotifiedId = $this->get('last_id') ?? 0;
+            $lastNotifiedId = (int)($this->get('last_id') ?? 0);
             
             // Buscar la reserva pendiente más reciente que no haya sido notificada
             $newReservation = $this->db->fetch(

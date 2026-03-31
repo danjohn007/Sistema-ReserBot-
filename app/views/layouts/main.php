@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -509,254 +509,150 @@
     </script>
     
     <?php if (isLoggedIn() && currentUser()['rol_id'] == ROLE_SPECIALIST): ?>
-    <!-- Audio de notificación -->
-    <audio id="notificationAudio" preload="auto">
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUA8PTZ/j8LllHAY2jdXzzn0vBSl+zPLaizsIGGS57OihUhELTKXl8LhjHQU1i9Lz0n4xBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L0034wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxELTKXm8LljHQU1i9L00n4wBSh7yvLaizsIG2W56eujUxEL" type="audio/wav">
-    </audio>
-    
-    <!-- Modal de Notificación de Nueva Reserva -->
-    <div id="newReservationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-bounce">
+    <!-- ═══════════════════════════════════════════════════
+         SISTEMA DE NOTIFICACION DE NUEVAS RESERVAS
+    ════════════════════════════════════════════════════ -->
+
+    <!-- Modal de Nueva Reserva -->
+    <div id="newReservationModal"
+         class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center p-4"
+         style="display:none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div class="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-t-2xl">
-                <div class="flex items-center justify-center">
-                    <div class="bg-white bg-opacity-20 rounded-full p-4 mr-4">
+                <div class="flex items-center justify-center gap-4">
+                    <div class="bg-white bg-opacity-20 rounded-full p-4">
                         <i class="fas fa-bell text-white text-3xl"></i>
                     </div>
                     <div>
-                        <h3 class="text-2xl font-bold text-white">¡Nueva Reserva!</h3>
+                        <h3 class="text-2xl font-bold text-white">Nueva Reserva!</h3>
                         <p class="text-green-100 text-sm">Tienes una nueva cita pendiente</p>
                     </div>
                 </div>
             </div>
-            
-            <div class="p-6 space-y-4" id="newReservationContent">
-                <!-- Contenido dinámico de la reserva -->
-            </div>
-            
+            <div class="p-6 space-y-3" id="newReservationContent"></div>
             <div class="p-6 bg-gray-50 border-t rounded-b-2xl">
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="confirmNewReservation()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg font-semibold">
-                        <i class="fas fa-check-circle mr-2"></i>Confirmar
+                    <button type="button" onclick="dismissNotification()"
+                            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                        <i class="fas fa-check-circle mr-2"></i>Entendido
                     </button>
-                    <a href="<?= url('/reservaciones') ?>" onclick="dismissNotification()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg font-semibold text-center">
+                    <a href="<?= url('/reservaciones') ?>" onclick="dismissNotification()"
+                       class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-center">
                         <i class="fas fa-calendar-alt mr-2"></i>Ver Reservas
                     </a>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
-        // Sistema de notificación de nuevas reservas
-        let notificationSound = null;
-        let currentReservationId = null;
-        let lastNotifiedId = localStorage.getItem('lastNotifiedReservationId') || 0;
-        let pollingInterval = null;
-        let audioElement = null;
-        
-        // Inicializar elemento de audio
-        document.addEventListener('DOMContentLoaded', function() {
-            audioElement = document.getElementById('notificationAudio');
-            if (audioElement) {
-                audioElement.volume = 0.5; // Volumen al 50%
-                console.log('✅ Audio de notificación inicializado');
-            } else {
-                console.error('❌ No se encontró el elemento de audio');
+    (function () {
+        var audioCtx     = null;
+        var beepTimer    = null;
+        var pollingTimer = null;
+        var currentResId = null;
+        var modalVisible = false;
+        var lastNotifiedId = parseInt(localStorage.getItem('lastNotifiedResId') || '0', 10);
+
+        function getCtx() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+            return audioCtx;
+        }
+
+        ['click','keydown','touchstart','pointerdown'].forEach(function(evt) {
+            document.addEventListener(evt, function() {
+                var ctx = getCtx();
+                if (ctx.state === 'suspended') ctx.resume();
+            }, { passive: true });
         });
-        
-        // Reproducir sonido de notificación en loop
-        function playNotificationSound() {
-            console.log('🔔 Intentando reproducir sonido de notificación...');
-            
-            if (notificationSound) {
-                console.log('⚠️ El sonido ya está reproduciéndose');
-                return; // Ya está sonando
-            }
-            
-            if (!audioElement) {
-                console.error('❌ Elemento de audio no disponible');
-                return;
-            }
-            
-            // Reproducir el audio en loop cada 2 segundos
-            const playSound = () => {
-                audioElement.currentTime = 0;
-                audioElement.play()
-                    .then(() => {
-                        console.log('✅ Sonido reproducido exitosamente');
-                    })
-                    .catch(error => {
-                        console.error('❌ Error al reproducir sonido:', error);
-                        // Si falla, intentar con Web Audio API como respaldo
-                        try {
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const oscillator = audioContext.createOscillator();
-                            const gainNode = audioContext.createGain();
-                            
-                            oscillator.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-                            
-                            oscillator.frequency.value = 800;
-                            oscillator.type = 'sine';
-                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                            
-                            oscillator.start(audioContext.currentTime);
-                            oscillator.stop(audioContext.currentTime + 0.5);
-                            console.log('✅ Usando Web Audio API como respaldo');
-                        } catch (webAudioError) {
-                            console.error('❌ También falló Web Audio API:', webAudioError);
-                        }
-                    });
-            };
-            
-            // Reproducir inmediatamente
-            playSound();
-            
-            // Configurar intervalo para repetir
-            notificationSound = setInterval(playSound, 2000);
+
+        function playTone(freq, startTime, duration) {
+            var ctx  = getCtx();
+            var osc  = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
         }
-        
-        // Detener sonido
-        function stopNotificationSound() {
-            console.log('🔇 Deteniendo sonido de notificación');
-            
-            if (notificationSound) {
-                clearInterval(notificationSound);
-                notificationSound = null;
-            }
-            
-            if (audioElement) {
-                audioElement.pause();
-                audioElement.currentTime = 0;
-            }
-        }
-        
-        // Mostrar modal con información de la reserva
-        function showNewReservationModal(reservation) {
-            console.log('📋 Mostrando modal de nueva reserva:', reservation);
-            currentReservationId = reservation.id;
-            
-            document.getElementById('newReservationContent').innerHTML = `
-                <div class="space-y-3">
-                    <div class="p-4 bg-blue-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-barcode mr-1"></i>Código</p>
-                        <p class="text-lg font-bold text-gray-900">${reservation.codigo}</p>
-                    </div>
-                    
-                    <div class="p-4 bg-green-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-user mr-1"></i>Cliente</p>
-                        <p class="text-sm font-semibold text-gray-900">${reservation.cliente}</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="p-3 bg-purple-50 rounded-lg">
-                            <p class="text-xs text-gray-500 mb-1"><i class="fas fa-concierge-bell mr-1"></i>Servicio</p>
-                            <p class="text-sm font-semibold text-gray-900">${reservation.servicio}</p>
-                        </div>
-                        <div class="p-3 bg-emerald-50 rounded-lg">
-                            <p class="text-xs text-gray-500 mb-1"><i class="fas fa-dollar-sign mr-1"></i>Precio</p>
-                            <p class="text-sm font-semibold text-emerald-700">${reservation.precio}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 bg-yellow-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-calendar-alt mr-1"></i>Fecha y Hora</p>
-                        <p class="text-sm font-semibold text-gray-900">${reservation.fecha}</p>
-                        <p class="text-sm font-semibold text-blue-600">${reservation.hora}</p>
-                    </div>
-                    
-                    ${reservation.sucursal ? `
-                    <div class="p-3 bg-gray-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-building mr-1"></i>Sucursal</p>
-                        <p class="text-sm font-semibold text-gray-900">${reservation.sucursal}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            document.getElementById('newReservationModal').classList.remove('hidden');
-            console.log('🔔 Reproduciendo sonido de notificación...');
-            playNotificationSound();
-        }
-        
-        // Confirmar reserva desde el modal
-        async function confirmNewReservation() {
-            if (!currentReservationId) return;
-            
+
+        function beep() {
             try {
-                const response = await fetch('<?= BASE_URL ?>/reservaciones/confirmar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `id=${currentReservationId}`
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    dismissNotification();
-                    alert('¡Reserva confirmada exitosamente!');
-                } else {
-                    alert('Error al confirmar: ' + (data.message || 'Error desconocido'));
-                }
-            } catch (error) {
-                console.error('Error al confirmar reserva:', error);
-                alert('Error al confirmar la reserva');
-            }
+                var ctx = getCtx();
+                if (ctx.state === 'suspended') { ctx.resume().then(beep); return; }
+                var t = ctx.currentTime;
+                playTone(880,  t,        0.18);
+                playTone(1100, t + 0.22, 0.28);
+                playTone(880,  t + 0.55, 0.18);
+            } catch(e) {}
         }
-        
-        // Cerrar notificación
-        function dismissNotification() {
-            console.log('❌ Cerrando notificación');
-            document.getElementById('newReservationModal').classList.add('hidden');
-            stopNotificationSound();
-            
-            // Guardar el ID de la última reserva notificada
-            if (currentReservationId) {
-                lastNotifiedId = currentReservationId;
-                localStorage.setItem('lastNotifiedReservationId', currentReservationId);
-                console.log('💾 Guardado último ID notificado:', currentReservationId);
-            }
+
+        function startBeeping() {
+            if (beepTimer) return;
+            beep();
+            beepTimer = setInterval(beep, 3500);
         }
-        
-        // Verificar nuevas reservas (polling cada 15 segundos)
-        async function checkNewReservations() {
+
+        function stopBeeping() {
+            if (beepTimer) { clearInterval(beepTimer); beepTimer = null; }
+        }
+
+        function showModal(reservation) {
+            currentResId = reservation.id;
+            modalVisible = true;
+
+            var sucursalHtml = reservation.sucursal
+                ? '<div class="p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 mb-1"><i class="fas fa-building mr-1"></i>Sucursal</p><p class="text-sm font-semibold text-gray-900">' + reservation.sucursal + '</p></div>'
+                : '';
+
+            document.getElementById('newReservationContent').innerHTML =
+                '<div class="space-y-3">' +
+                '<div class="p-4 bg-blue-50 rounded-lg"><p class="text-xs text-gray-500 mb-1">Codigo</p><p class="text-lg font-bold text-gray-900">' + reservation.codigo + '</p></div>' +
+                '<div class="p-4 bg-green-50 rounded-lg"><p class="text-xs text-gray-500 mb-1">Cliente</p><p class="text-sm font-semibold text-gray-900">' + reservation.cliente + '</p></div>' +
+                '<div class="grid grid-cols-2 gap-3">' +
+                '<div class="p-3 bg-purple-50 rounded-lg"><p class="text-xs text-gray-500 mb-1">Servicio</p><p class="text-sm font-semibold text-gray-900">' + reservation.servicio + '</p></div>' +
+                '<div class="p-3 bg-emerald-50 rounded-lg"><p class="text-xs text-gray-500 mb-1">Precio</p><p class="text-sm font-semibold text-emerald-700">' + reservation.precio + '</p></div>' +
+                '</div>' +
+                '<div class="p-4 bg-yellow-50 rounded-lg"><p class="text-xs text-gray-500 mb-1">Fecha y Hora</p><p class="text-sm font-semibold text-gray-900">' + reservation.fecha + '</p><p class="text-sm font-semibold text-blue-600">' + reservation.hora + '</p></div>' +
+                sucursalHtml +
+                '</div>';
+
+            document.getElementById('newReservationModal').style.display = 'flex';
+            startBeeping();
+        }
+
+        window.dismissNotification = function() {
+            document.getElementById('newReservationModal').style.display = 'none';
+            stopBeeping();
+            modalVisible = false;
+            if (currentResId) {
+                lastNotifiedId = currentResId;
+                localStorage.setItem('lastNotifiedResId', currentResId);
+            }
+        };
+
+        async function poll() {
             try {
-                console.log('🔍 Verificando nuevas reservas... (last_id:', lastNotifiedId + ')');
-                const response = await fetch('<?= BASE_URL ?>/api/check-new-reservations?last_id=' + lastNotifiedId);
-                const data = await response.json();
-                
-                console.log('📥 Respuesta del servidor:', data);
-                
-                if (data.hasNew && data.reservation) {
-                    console.log('🆕 ¡Nueva reserva detectada!', data.reservation);
-                    // Mostrar notificación solo si el modal no está ya visible
-                    if (document.getElementById('newReservationModal').classList.contains('hidden')) {
-                        showNewReservationModal(data.reservation);
-                    } else {
-                        console.log('⚠️ Modal ya visible, no se muestra de nuevo');
-                    }
-                } else {
-                    console.log('✓ No hay nuevas reservas');
+                var res  = await fetch('<?= BASE_URL ?>/api/check-new-reservations?last_id=' + lastNotifiedId);
+                var data = await res.json();
+                if (data.hasNew && data.reservation && !modalVisible) {
+                    showModal(data.reservation);
                 }
-            } catch (error) {
-                console.error('❌ Error verificando nuevas reservas:', error);
-            }
+            } catch(e) {}
         }
-        
-        // Iniciar polling
-        console.log('🚀 Iniciando sistema de notificaciones...');
-        console.log('📍 Último ID notificado:', lastNotifiedId);
-        pollingInterval = setInterval(checkNewReservations, 15000); // Cada 15 segundos
-        
-        // Verificar inmediatamente al cargar la página
-        setTimeout(() => {
-            console.log('⏰ Primera verificación de reservas...');
-            checkNewReservations();
-        }, 2000); // Esperar 2 segundos después de cargar
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(poll, 3000);
+            pollingTimer = setInterval(poll, 20000);
+        });
+    }());
     </script>
     <?php endif; ?>
 </body>
