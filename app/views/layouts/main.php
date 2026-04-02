@@ -524,22 +524,26 @@
                         <i class="fas fa-bell text-white text-3xl"></i>
                     </div>
                     <div>
-                        <h3 class="text-2xl font-bold text-white">Nueva Reserva!</h3>
-                        <p class="text-green-100 text-sm">Tienes una nueva cita pendiente</p>
+                        <h3 class="text-2xl font-bold text-white">&#x21A8; Nueva Reserva</h3>
+                        <p class="text-green-100 text-sm">Confirmada autom&#225;ticamente</p>
                     </div>
                 </div>
             </div>
             <div class="p-6 space-y-3" id="newReservationContent"></div>
             <div class="p-6 bg-gray-50 border-t rounded-b-2xl">
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="dismissNotification()"
-                            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
-                        <i class="fas fa-check-circle mr-2"></i>Entendido
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" onclick="confirmAndDismiss()"
+                            class="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm">
+                        <i class="fas fa-check-circle mr-1"></i>Entendido
                     </button>
-                    <a href="<?= url('/reservaciones') ?>" onclick="dismissNotification()"
-                       class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-center">
-                        <i class="fas fa-calendar-alt mr-2"></i>Ver Reservas
+                    <a href="<?= url('/reservaciones') ?>" onclick="confirmAndDismiss()"
+                       class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-center text-sm">
+                        <i class="fas fa-calendar-alt mr-1"></i>Ver Reservas
                     </a>
+                    <button type="button" onclick="dismissNotification()"
+                            class="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold text-sm">
+                        <i class="fas fa-clock mr-1"></i>Revisar despu&eacute;s
+                    </button>
                 </div>
             </div>
         </div>
@@ -547,66 +551,76 @@
 
     <script>
     (function () {
-        var audioCtx     = null;
-        var beepTimer    = null;
-        var pollingTimer = null;
-        var currentResId = null;
-        var modalVisible = false;
+        var alarmAudio      = null;
+        var audioCtx       = null;
+        var beepTimer      = null;
+        var pollingTimer   = null;
+        var modalVisible   = false;
+        var pendingConfirmId = null;
         var lastNotifiedId = parseInt(localStorage.getItem('lastNotifiedResId') || '0', 10);
+        var WAV_URL = '<?= asset('alarm.wav') ?>';
 
+        /* ── Desbloquear AudioContext con gesto del usuario ── */
         function getCtx() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             return audioCtx;
         }
-
         ['click','keydown','touchstart','pointerdown'].forEach(function(evt) {
             document.addEventListener(evt, function() {
-                var ctx = getCtx();
-                if (ctx.state === 'suspended') ctx.resume();
+                try { var c = getCtx(); if (c.state === 'suspended') c.resume(); } catch(e) {}
             }, { passive: true });
         });
 
+        /* ── Fallback: tonos sintéticos ── */
         function playTone(freq, startTime, duration) {
-            var ctx  = getCtx();
-            var osc  = ctx.createOscillator();
+            var ctx = getCtx();
+            var osc = ctx.createOscillator();
             var gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = 'sine';
-            osc.frequency.value = freq;
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.value = freq;
             gain.gain.setValueAtTime(0, startTime);
             gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
             gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-            osc.start(startTime);
-            osc.stop(startTime + duration);
+            osc.start(startTime); osc.stop(startTime + duration);
         }
-
-        function beep() {
+        function syntheticBeep() {
             try {
                 var ctx = getCtx();
-                if (ctx.state === 'suspended') { ctx.resume().then(beep); return; }
+                if (ctx.state === 'suspended') { ctx.resume().then(syntheticBeep); return; }
                 var t = ctx.currentTime;
-                playTone(880,  t,        0.18);
-                playTone(1100, t + 0.22, 0.28);
-                playTone(880,  t + 0.55, 0.18);
-            } catch(e) {}
+                playTone(880, t, 0.18); playTone(1100, t + 0.22, 0.28); playTone(880, t + 0.55, 0.18);
+            } catch(e) { console.warn('[ReserBot] synth beep error:', e); }
         }
 
         function startBeeping() {
-            if (beepTimer) return;
-            beep();
-            beepTimer = setInterval(beep, 3500);
+            if (alarmAudio || beepTimer) return;
+            /* Intentar WAV primero */
+            alarmAudio = new Audio(WAV_URL);
+            alarmAudio.loop = true;
+            alarmAudio.play().then(function() {
+                console.log('[ReserBot] alarm.wav reproduciendo');
+            }).catch(function(e) {
+                console.warn('[ReserBot] WAV bloqueado, usando sintetizador:', e.message);
+                alarmAudio = null;
+                /* Fallback a tonos sintéticos */
+                syntheticBeep();
+                beepTimer = setInterval(syntheticBeep, 3500);
+            });
         }
 
         function stopBeeping() {
+            if (alarmAudio) {
+                alarmAudio.pause();
+                alarmAudio.currentTime = 0;
+                alarmAudio = null;
+            }
             if (beepTimer) { clearInterval(beepTimer); beepTimer = null; }
         }
 
+        /* ── Modal ── */
         function showModal(reservation) {
-            currentResId = reservation.id;
             modalVisible = true;
+            console.log('[ReserBot] showModal() id=' + reservation.id);
 
             var sucursalHtml = reservation.sucursal
                 ? '<div class="p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 mb-1"><i class="fas fa-building mr-1"></i>Sucursal</p><p class="text-sm font-semibold text-gray-900">' + reservation.sucursal + '</p></div>'
@@ -625,33 +639,54 @@
                 '</div>';
 
             document.getElementById('newReservationModal').style.display = 'flex';
+            console.log('[ReserBot] Modal visible');
             startBeeping();
         }
 
-        window.dismissNotification = function() {
+        window.confirmAndDismiss = async function() {
+            if (pendingConfirmId !== null) {
+                try {
+                    await fetch('<?= BASE_URL ?>/reservaciones/confirmar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + encodeURIComponent(pendingConfirmId)
+                    });
+                    console.log('[ReserBot] Reserva confirmada id=' + pendingConfirmId);
+                } catch(e) { console.error('[ReserBot] confirmar error:', e); }
+                pendingConfirmId = null;
+            }
             document.getElementById('newReservationModal').style.display = 'none';
             stopBeeping();
             modalVisible = false;
-            if (currentResId) {
-                lastNotifiedId = currentResId;
-                localStorage.setItem('lastNotifiedResId', currentResId);
-            }
         };
 
+        window.dismissNotification = function() {
+            console.log('[ReserBot] Revisar después — sin confirmar');
+            pendingConfirmId = null;
+            document.getElementById('newReservationModal').style.display = 'none';
+            stopBeeping();
+            modalVisible = false;
+        };
+
+        /* ── Polling ── */
         async function poll() {
             try {
                 var res  = await fetch('<?= BASE_URL ?>/api/check-new-reservations?last_id=' + lastNotifiedId);
                 var data = await res.json();
+                console.log('[ReserBot] poll →', data);
                 if (data.hasNew && data.reservation && !modalVisible) {
-                    showModal(data.reservation);
+                    var r = data.reservation;
+                    lastNotifiedId = r.id;
+                    localStorage.setItem('lastNotifiedResId', String(r.id));
+                    pendingConfirmId = r.id;
+                    showModal(r);
                 }
-            } catch(e) {}
+            } catch(e) { console.error('[ReserBot] poll error:', e); }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(poll, 3000);
-            pollingTimer = setInterval(poll, 20000);
-        });
+        console.log('[ReserBot] Iniciado. lastNotifiedId=' + lastNotifiedId);
+        setTimeout(poll, 3000);
+        pollingTimer = setInterval(poll, 20000);
     }());
     </script>
     <?php endif; ?>

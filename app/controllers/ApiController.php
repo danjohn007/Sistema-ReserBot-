@@ -592,17 +592,18 @@ class ApiController extends BaseController {
             $newReservation = $this->db->fetch(
                 "SELECT r.id, r.codigo, r.fecha_cita, r.hora_inicio, r.hora_fin,
                         r.precio_total, r.created_at,
-                        COALESCE(c.nombre, r.nombre_cliente) as cliente_nombre,
+                        COALESCE(u.nombre, r.nombre_cliente) as cliente_nombre,
                         s.nombre as servicio_nombre,
                         suc.nombre as sucursal_nombre
                  FROM reservaciones r
-                 LEFT JOIN clientes c ON r.cliente_id = c.id
+                 LEFT JOIN usuarios u ON r.cliente_id = u.id
                  LEFT JOIN servicios s ON r.servicio_id = s.id
                  LEFT JOIN sucursales suc ON r.sucursal_id = suc.id
                  WHERE r.especialista_id = ?
                  AND r.estado = 'pendiente'
                  AND r.id > ?
-                 ORDER BY r.created_at DESC
+                 AND r.created_at >= NOW() - INTERVAL 10 MINUTE
+                 ORDER BY r.created_at ASC
                  LIMIT 1",
                 [$especialista['id'], $lastNotifiedId]
             );
