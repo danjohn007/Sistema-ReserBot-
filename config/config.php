@@ -98,3 +98,22 @@ $GLOBALS['ROLE_NAMES'] = [
     ROLE_CLIENT => 'Cliente',
     ROLE_RECEPTIONIST => 'Recepcionista'
 ];
+
+// =====================================================================
+// Recordatorios automáticos por WhatsApp (Firebase Cloud Function)
+// =====================================================================
+// URL pública del endpoint sendRecordatorio desplegado en Firebase
+// Functions. Reemplaza el placeholder con la URL real (Firebase Console
+// -> Functions -> sendRecordatorio -> Trigger URL).
+if (!defined('WHATSAPP_REMINDER_URL')) {
+    define('WHATSAPP_REMINDER_URL', 'https://sendrecordatorio-7amu346q5a-uc.a.run.app');
+}
+// API key compartida (debe coincidir con API_KEY_RECORDATORIO_RESERBOT
+// en functions_Chatbot/config.js).
+if (!defined('WHATSAPP_REMINDER_API_KEY')) {
+    define('WHATSAPP_REMINDER_API_KEY', '781830135017382');
+}
+// Nombre del template aprobado en Meta (es_MX).
+if (!defined('WHATSAPP_REMINDER_TEMPLATE')) {
+    define('WHATSAPP_REMINDER_TEMPLATE', 'recordatorio_reserva_cita');
+}

@@ -25,3 +25,25 @@ AddDefaultCharset UTF-8
     Order Allow,Deny
     Deny from all
 </FilesMatch>
+
+# Permitir explícitamente el endpoint de diagnóstico del cron
+# (útil si existen reglas heredadas de cPanel/Apache que bloquean PHP directo).
+<Files "cron_debug.php">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Allow from all
+    </IfModule>
+</Files>
+
+<Files "cron_status.php">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Allow from all
+    </IfModule>
+</Files>

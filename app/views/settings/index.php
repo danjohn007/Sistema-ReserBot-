@@ -49,5 +49,13 @@
             <h3 class="font-semibold text-gray-800">Plantillas de Notificaciones</h3>
             <p class="text-sm text-gray-500 mt-1">Personaliza los mensajes</p>
         </a>
+
+        <a href="<?= url('/configuraciones/recordatorios') ?>" class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fab fa-whatsapp text-green-600 text-xl"></i>
+            </div>
+            <h3 class="font-semibold text-gray-800">Recordatorios WhatsApp</h3>
+            <p class="text-sm text-gray-500 mt-1">Env&iacute;o autom&aacute;tico de recordatorios de cita</p>
+        </a>
     </div>
 </div>

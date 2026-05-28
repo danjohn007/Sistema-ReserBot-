@@ -228,6 +228,12 @@
                             <span>Pagos</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="<?= url('/configuraciones/recordatorios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/configuraciones/recordatorios') !== false ? 'active' : '' ?>">
+                            <i class="fab fa-whatsapp w-5"></i>
+                            <span>Recordatorios</span>
+                        </a>
+                    </li>
                     <?php endif; ?>
                 </ul>
             </nav>
@@ -460,6 +466,12 @@
                     <a href="<?= url('/pagos') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/pagos') !== false ? 'active' : '' ?>">
                         <i class="fas fa-money-bill-wave w-5"></i>
                         <span>Pagos</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/configuraciones/recordatorios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/configuraciones/recordatorios') !== false ? 'active' : '' ?>">
+                        <i class="fab fa-whatsapp w-5"></i>
+                        <span>Recordatorios</span>
                     </a>
                 </li>
                 <?php endif; ?>

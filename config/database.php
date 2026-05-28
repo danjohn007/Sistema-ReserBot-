@@ -20,6 +20,20 @@ class Database {
             // Asegurar UTF-8 en la conexión
             $this->connection->exec("SET NAMES utf8mb4");
             $this->connection->exec("SET CHARACTER SET utf8mb4");
+
+            // Alinear zona horaria de la sesión MySQL con la zona horaria de PHP.
+            // Evita desfases entre NOW() en BD y date() en PHP.
+            if (defined('APP_TIMEZONE')) {
+                $tz = new DateTimeZone(APP_TIMEZONE);
+                $now = new DateTime('now', $tz);
+                $offsetSeconds = $tz->getOffset($now);
+                $sign = $offsetSeconds >= 0 ? '+' : '-';
+                $abs = abs($offsetSeconds);
+                $hours = str_pad((string) floor($abs / 3600), 2, '0', STR_PAD_LEFT);
+                $minutes = str_pad((string) floor(($abs % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                $mysqlTz = $sign . $hours . ':' . $minutes;
+                $this->connection->exec("SET time_zone = '{$mysqlTz}'");
+            }
         } catch (PDOException $e) {
             die("Error de conexión a la base de datos: " . $e->getMessage());
         }

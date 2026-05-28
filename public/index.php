@@ -141,6 +141,13 @@ $routes = [
     '/configuraciones/correo' => ['controller' => 'SettingsController', 'action' => 'email'],
     '/configuraciones/paypal' => ['controller' => 'SettingsController', 'action' => 'paypal'],
     '/configuraciones/feriados' => ['controller' => 'SettingsController', 'action' => 'holidays'],
+    '/configuraciones/recordatorios' => ['controller' => 'SettingsController', 'action' => 'reminders'],
+    '/configuraciones/recordatorios/guardar' => ['controller' => 'SettingsController', 'action' => 'saveReminders'],
+    '/configuraciones/recordatorios/probar' => ['controller' => 'SettingsController', 'action' => 'testReminder'],
+    '/configuraciones/recordatorios/debug' => ['controller' => 'SettingsController', 'action' => 'debugTemplate'],
+    '/configuraciones/recordatorios/cron-status' => ['controller' => 'SettingsController', 'action' => 'cronStatus'],
+    '/configuraciones/recordatorios/estado' => ['controller' => 'SettingsController', 'action' => 'reminderStatus'],
+    '/configuraciones/recordatorios/estado/ejecutar' => ['controller' => 'SettingsController', 'action' => 'runRemindersNow'],
     
     // Logs / Seguridad
     '/logs' => ['controller' => 'LogController', 'action' => 'index'],
