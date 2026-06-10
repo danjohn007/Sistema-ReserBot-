@@ -234,6 +234,12 @@
                             <span>Recordatorios</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="<?= url('/ia') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/ia') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-robot w-5"></i>
+                            <span>Configuraci&oacute;n de IA</span>
+                        </a>
+                    </li>
                     <?php endif; ?>
                 </ul>
             </nav>
@@ -472,6 +478,12 @@
                     <a href="<?= url('/configuraciones/recordatorios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/configuraciones/recordatorios') !== false ? 'active' : '' ?>">
                         <i class="fab fa-whatsapp w-5"></i>
                         <span>Recordatorios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/ia') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/ia') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-robot w-5"></i>
+                        <span>Configuraci&oacute;n de IA</span>
                     </a>
                 </li>
                 <?php endif; ?>

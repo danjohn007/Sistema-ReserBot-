@@ -316,6 +316,10 @@ $rolId = $user['rol_id'];
                 <i class="fas fa-clock text-3xl text-green-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800">Mis Horarios</p>
             </a>
+            <a href="<?= url('/ia') ?>" class="p-4 bg-indigo-100 rounded-lg text-center hover:bg-indigo-200 transition">
+                <i class="fas fa-robot text-3xl text-indigo-600 mb-2"></i>
+                <p class="text-sm font-semibold text-gray-800">Config. IA</p>
+            </a>
             <a href="<?= url('/reservaciones') ?>" class="p-4 bg-purple-100 rounded-lg text-center hover:bg-purple-200 transition">
                 <i class="fas fa-list text-3xl text-purple-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800">Mis Citas</p>

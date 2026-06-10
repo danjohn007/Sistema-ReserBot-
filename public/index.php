@@ -148,6 +148,10 @@ $routes = [
     '/configuraciones/recordatorios/cron-status' => ['controller' => 'SettingsController', 'action' => 'cronStatus'],
     '/configuraciones/recordatorios/estado' => ['controller' => 'SettingsController', 'action' => 'reminderStatus'],
     '/configuraciones/recordatorios/estado/ejecutar' => ['controller' => 'SettingsController', 'action' => 'runRemindersNow'],
+
+    // Configuración de IA
+    '/ia' => ['controller' => 'AIController', 'action' => 'index'],
+    '/ia/guardar' => ['controller' => 'AIController', 'action' => 'save'],
     
     // Logs / Seguridad
     '/logs' => ['controller' => 'LogController', 'action' => 'index'],
