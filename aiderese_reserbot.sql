@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost:3306
--- Tiempo de generación: 06-02-2026 a las 11:27:46
+-- Tiempo de generación: 24-06-2026 a las 14:32:10
 -- Versión del servidor: 5.7.23-23
 -- Versión de PHP: 8.1.34
 
@@ -30,10 +30,11 @@ SET time_zone = "+00:00";
 CREATE TABLE `bloqueos_horario` (
   `id` int(11) NOT NULL,
   `especialista_id` int(11) NOT NULL,
+  `sucursal_id` int(11) DEFAULT NULL,
   `fecha_inicio` datetime NOT NULL,
   `fecha_fin` datetime NOT NULL,
   `motivo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `tipo` enum('vacaciones','pausa','personal','otro') COLLATE utf8mb4_unicode_ci DEFAULT 'otro',
+  `tipo` enum('vacaciones','pausa','personal','puntual','cirugia','otro') COLLATE utf8mb4_unicode_ci DEFAULT 'otro',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -67,7 +68,8 @@ INSERT INTO `categorias_servicios` (`id`, `nombre`, `descripcion`, `icono`, `col
 (5, 'Consultoría Financiera', 'Asesoría en finanzas e inversiones', 'fas fa-chart-line', '#10B981', 5, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (6, 'Psicología', 'Terapia y consulta psicológica', 'fas fa-brain', '#F59E0B', 6, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (7, 'Categoria Ejemplo', 'Descripción ejemplo', 'fas fa-concierge-bell', '#009942', 6, 1, '2025-12-02 17:39:26', '2025-12-02 17:39:44'),
-(8, 'Otros', 'Otros servicios', 'fas fa-ellipsis-h', '#9CA3AF', 999, 1, '2026-01-27 16:21:42', '2026-01-27 16:21:42');
+(8, 'Otros', 'Otros servicios', 'fas fa-ellipsis-h', '#9CA3AF', 999, 1, '2026-01-27 16:21:42', '2026-01-27 16:21:42'),
+(9, 'Extraordinario', '', 'fas fa-concierge-bell', '#ffbb00', 100, 1, '2026-03-03 17:22:16', '2026-03-03 17:38:51');
 
 -- --------------------------------------------------------
 
@@ -90,14 +92,14 @@ CREATE TABLE `configuraciones` (
 --
 
 INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `tipo`, `descripcion`, `created_at`, `updated_at`) VALUES
-(1, 'nombre_sitio', 'AIDE Reservaciones', 'text', 'Nombre del sistema', '2025-11-29 03:20:01', '2025-12-04 15:26:58'),
+(1, 'nombre_sitio', '', 'text', 'Nombre del sistema', '2025-11-29 03:20:01', '2026-03-18 16:57:02'),
 (2, 'logotipo', NULL, 'image', 'Logotipo del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (3, 'email_sistema', 'contacto@reserbot.com', 'text', 'Correo principal del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(4, 'telefono_contacto', '+52 442 123 4567', 'text', 'Teléfono de contacto', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(4, 'telefono_contacto', '4421234567', 'text', 'Teléfono de contacto', '2025-11-29 03:20:01', '2026-03-18 16:57:02'),
 (5, 'horario_atencion', 'Lunes a Viernes 8:00 - 20:00', 'text', 'Horario de atención', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(6, 'color_primario', '#3B82F6', 'color', 'Color primario del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(7, 'color_secundario', '#1E40AF', 'color', 'Color secundario del sistema', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(8, 'color_acento', '#10B981', 'color', 'Color de acento', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(6, 'color_primario', '#3b8293', 'color', 'Color primario del sistema', '2025-11-29 03:20:01', '2026-03-18 17:32:28'),
+(7, 'color_secundario', '#5f97a5', 'color', 'Color secundario del sistema', '2025-11-29 03:20:01', '2026-03-18 17:32:28'),
+(8, 'color_acento', '#83b0ba', 'color', 'Color de acento', '2025-11-29 03:20:01', '2026-03-18 17:32:28'),
 (9, 'paypal_client_id', '', 'text', 'Client ID de PayPal', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (10, 'paypal_secret', '', 'text', 'Secret de PayPal', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (11, 'paypal_modo', 'sandbox', 'text', 'Modo de PayPal (sandbox/live)', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
@@ -107,6 +109,18 @@ INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `tipo`, `descripcion`, `c
 (15, 'recordatorio_1h', '1', 'boolean', 'Enviar recordatorio 1h antes', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (16, 'permitir_cancelacion_cliente', '1', 'boolean', 'Permitir que clientes cancelen citas', '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (17, 'horas_anticipacion_cancelacion', '24', 'number', 'Horas mínimas de anticipación para cancelar', '2025-11-29 03:20:01', '2025-11-29 03:20:01');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `configuracion_bot`
+--
+
+CREATE TABLE `configuracion_bot` (
+  `id` int(11) NOT NULL,
+  `clave` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `valor` text COLLATE utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -158,25 +172,27 @@ CREATE TABLE `especialistas` (
   `foto` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `activo` tinyint(1) DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `nombre_liga1` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre personalizado para Liga 1',
+  `nombre_liga2` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre personalizado para Liga 2',
+  `nombre_liga3` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre personalizado para Liga 3'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `especialistas`
 --
 
-INSERT INTO `especialistas` (`id`, `usuario_id`, `sucursal_id`, `profesion`, `especialidad`, `descripcion`, `experiencia_anos`, `tarifa_base`, `duracion_cita_default`, `calificacion_promedio`, `total_resenas`, `foto`, `activo`, `created_at`, `updated_at`) VALUES
-(18, 20, 16, 'Fraccionamiento', '', '', 1, 0.00, 30, 0.00, 0, NULL, 1, '2026-01-28 18:41:39', '2026-01-28 18:41:39'),
-(26, 5, 11, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(27, 5, 7, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(28, 5, 1, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(29, 5, 3, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(30, 5, 2, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(31, 5, 9, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(32, 5, 12, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(33, 5, 13, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-01-30 19:07:17'),
-(34, 14, 6, 'Médico', 'Otorrinolaringologo', 'Consultas', 13, 1200.00, 30, 0.00, 0, NULL, 1, '2026-02-03 19:59:53', '2026-02-03 19:59:53'),
-(35, 14, 17, 'Médico', 'Otorrinolaringologo', 'Consultas', 13, 1200.00, 30, 0.00, 0, NULL, 1, '2026-02-03 19:59:53', '2026-02-03 19:59:53');
+INSERT INTO `especialistas` (`id`, `usuario_id`, `sucursal_id`, `profesion`, `especialidad`, `descripcion`, `experiencia_anos`, `tarifa_base`, `duracion_cita_default`, `calificacion_promedio`, `total_resenas`, `foto`, `activo`, `created_at`, `updated_at`, `nombre_liga1`, `nombre_liga2`, `nombre_liga3`) VALUES
+(18, 20, 16, 'Fraccionamiento', '', '', 1, 0.00, 30, 0.00, 0, NULL, 1, '2026-01-28 18:41:39', '2026-01-28 18:41:39', NULL, NULL, NULL),
+(29, 5, 3, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-03-24 18:12:15', 'Web', 'Instagram', 'Facebook'),
+(30, 5, 2, 'Abogada', 'Derecho Civil y Mercantil', 'Especialista en derecho civil, contratos y asuntos mercantiles. Miembro del Colegio de Abogados de Querétaro.', 10, 800.00, 30, 0.00, 0, NULL, 1, '2026-01-30 19:07:17', '2026-03-24 18:12:15', 'Web', 'Instagram', 'Facebook'),
+(36, 21, 6, 'Doctor', 'Otorinolaringologo', '', 20, 1200.00, 30, 0.00, 0, NULL, 1, '2026-02-27 19:00:11', '2026-02-27 19:00:11', NULL, NULL, NULL),
+(41, 14, 6, 'Médico', 'Otorrinolaringologo', 'Consultas', 13, 1200.00, 30, 0.00, 0, NULL, 1, '2026-03-03 18:11:59', '2026-03-03 18:11:59', NULL, NULL, NULL),
+(42, 14, 17, 'Médico', 'Otorrinolaringologo', 'Consultas', 13, 1200.00, 30, 0.00, 0, NULL, 1, '2026-03-03 18:11:59', '2026-03-03 18:11:59', NULL, NULL, NULL),
+(43, 22, 18, 'Lic', 'Fisioteraputa', 'Terapia Física/ rehabilitación/ descargas musculares/fisioterapia dermatofuncional.', 10, 500.00, 30, 0.00, 0, NULL, 1, '2026-03-09 22:40:41', '2026-03-09 22:40:41', NULL, NULL, NULL),
+(44, 23, 20, 'Doctor de injerto', 'Injerto capilar', 'es muy bueno', 7, 0.00, 30, 0.00, 0, NULL, 1, '2026-05-13 20:13:22', '2026-05-13 20:13:22', NULL, NULL, NULL),
+(45, 23, 19, 'Doctor de injerto', 'Injerto capilar', 'es muy bueno', 7, 0.00, 30, 0.00, 0, NULL, 1, '2026-05-13 20:13:22', '2026-05-13 20:13:22', NULL, NULL, NULL),
+(46, 24, 6, 'Médico', 'Otorrinolaringologo', 'Médico Otorrinolaringologo', 7, 0.00, 30, 0.00, 0, NULL, 1, '2026-06-16 21:34:31', '2026-06-16 21:34:31', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -190,35 +206,47 @@ CREATE TABLE `especialistas_servicios` (
   `servicio_id` int(11) NOT NULL,
   `precio_personalizado` decimal(10,2) DEFAULT NULL,
   `duracion_personalizada` int(11) DEFAULT NULL,
-  `activo` tinyint(1) DEFAULT '1'
+  `activo` tinyint(1) DEFAULT '1',
+  `visible_chatbot` tinyint(1) DEFAULT '1',
+  `es_emergencia` tinyint(1) DEFAULT '0' COMMENT '1 si el servicio solo está disponible en horarios de emergencia, 0 si está disponible en horarios normales'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `especialistas_servicios`
 --
 
-INSERT INTO `especialistas_servicios` (`id`, `especialista_id`, `servicio_id`, `precio_personalizado`, `duracion_personalizada`, `activo`) VALUES
-(63, 18, 24, NULL, 60, 1),
-(78, 26, 10, NULL, NULL, 1),
-(79, 26, 11, NULL, NULL, 1),
-(80, 27, 10, NULL, NULL, 1),
-(81, 27, 11, NULL, NULL, 1),
-(82, 28, 10, NULL, NULL, 1),
-(83, 28, 11, NULL, NULL, 1),
-(84, 29, 10, NULL, NULL, 1),
-(85, 29, 11, NULL, NULL, 1),
-(86, 30, 10, NULL, NULL, 1),
-(87, 30, 11, NULL, NULL, 1),
-(88, 31, 10, NULL, NULL, 1),
-(89, 31, 11, NULL, NULL, 1),
-(90, 32, 10, NULL, NULL, 1),
-(91, 32, 11, NULL, NULL, 1),
-(92, 33, 10, NULL, NULL, 1),
-(93, 33, 11, NULL, NULL, 1),
-(94, 34, 1, 1000.00, NULL, 1),
-(95, 34, 25, 2000.00, NULL, 1),
-(96, 35, 1, NULL, NULL, 1),
-(97, 35, 25, NULL, NULL, 1);
+INSERT INTO `especialistas_servicios` (`id`, `especialista_id`, `servicio_id`, `precio_personalizado`, `duracion_personalizada`, `activo`, `visible_chatbot`, `es_emergencia`) VALUES
+(63, 18, 24, NULL, 60, 1, 1, 0),
+(84, 29, 10, 900.00, 15, 1, 1, 0),
+(85, 29, 11, NULL, NULL, 1, 1, 0),
+(86, 30, 10, NULL, NULL, 1, 1, 0),
+(87, 30, 11, NULL, NULL, 1, 1, 0),
+(102, 36, 1, 1200.00, NULL, 1, 1, 0),
+(103, 36, 28, NULL, NULL, 1, 1, 0),
+(127, 41, 31, NULL, NULL, 1, 1, 0),
+(128, 41, 2, NULL, NULL, 1, 1, 0),
+(129, 41, 25, NULL, NULL, 1, 1, 0),
+(130, 41, 1, NULL, NULL, 1, 1, 0),
+(131, 41, 20, NULL, NULL, 1, 1, 0),
+(132, 42, 31, NULL, NULL, 1, 1, 0),
+(133, 42, 2, NULL, NULL, 1, 1, 0),
+(134, 42, 25, NULL, NULL, 1, 1, 0),
+(135, 42, 1, NULL, NULL, 1, 1, 0),
+(136, 42, 20, NULL, NULL, 1, 1, 0),
+(151, 36, 32, NULL, NULL, 1, 0, 0),
+(152, 36, 33, NULL, NULL, 1, 0, 0),
+(155, 29, 34, NULL, NULL, 1, 0, 0),
+(156, 30, 35, NULL, NULL, 1, 0, 0),
+(157, 43, 36, NULL, NULL, 1, 1, 0),
+(159, 43, 39, NULL, NULL, 1, 1, 0),
+(160, 45, 40, NULL, NULL, 1, 1, 0),
+(161, 45, 41, NULL, NULL, 1, 1, 0),
+(162, 44, 42, NULL, NULL, 1, 1, 0),
+(163, 44, 43, NULL, NULL, 1, 1, 0),
+(164, 46, 32, NULL, NULL, 1, 1, 0),
+(165, 46, 33, NULL, NULL, 1, 1, 0),
+(166, 46, 28, NULL, NULL, 1, 1, 0),
+(167, 46, 1, NULL, NULL, 1, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -236,32 +264,49 @@ CREATE TABLE `horarios_especialistas` (
   `intervalo_espacios` int(11) DEFAULT '60' COMMENT 'Intervalo en minutos para separar las citas (30 o 60)',
   `hora_inicio_bloqueo` time DEFAULT NULL COMMENT 'Hora de inicio del bloqueo dentro del día',
   `hora_fin_bloqueo` time DEFAULT NULL COMMENT 'Hora de fin del bloqueo dentro del día',
-  `bloqueo_activo` tinyint(1) DEFAULT '0' COMMENT '1 si el bloqueo está activo para este día'
+  `bloqueo_activo` tinyint(1) DEFAULT '0' COMMENT '1 si el bloqueo está activo para este día',
+  `hora_inicio_emergencia` time DEFAULT NULL COMMENT 'Hora de inicio del horario de emergencia (fuera del horario normal)',
+  `hora_fin_emergencia` time DEFAULT NULL COMMENT 'Hora de fin del horario de emergencia (fuera del horario normal)',
+  `emergencia_activa` tinyint(1) DEFAULT '0' COMMENT '1 si el horario de emergencia está activo para este día'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `horarios_especialistas`
 --
 
-INSERT INTO `horarios_especialistas` (`id`, `especialista_id`, `dia_semana`, `hora_inicio`, `hora_fin`, `activo`, `intervalo_espacios`, `hora_inicio_bloqueo`, `hora_fin_bloqueo`, `bloqueo_activo`) VALUES
-(129, 18, 2, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(130, 18, 3, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(131, 18, 4, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(132, 18, 5, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(133, 18, 6, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(134, 18, 7, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0),
-(139, 26, 1, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(140, 26, 7, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(141, 31, 2, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(142, 31, 6, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(143, 27, 3, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(144, 27, 5, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0),
-(145, 34, 1, '09:00:00', '14:00:00', 1, 60, NULL, NULL, 0),
-(146, 34, 2, '09:00:00', '14:00:00', 1, 60, NULL, NULL, 0),
-(147, 34, 3, '09:00:00', '14:00:00', 1, 60, NULL, NULL, 0),
-(152, 35, 4, '16:00:00', '19:00:00', 1, 60, NULL, NULL, 0),
-(153, 35, 5, '16:00:00', '19:00:00', 1, 60, NULL, NULL, 0),
-(154, 35, 6, '11:00:00', '13:00:00', 1, 60, NULL, NULL, 0);
+INSERT INTO `horarios_especialistas` (`id`, `especialista_id`, `dia_semana`, `hora_inicio`, `hora_fin`, `activo`, `intervalo_espacios`, `hora_inicio_bloqueo`, `hora_fin_bloqueo`, `bloqueo_activo`, `hora_inicio_emergencia`, `hora_fin_emergencia`, `emergencia_activa`) VALUES
+(129, 18, 2, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(130, 18, 3, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(131, 18, 4, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(132, 18, 5, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(133, 18, 6, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(134, 18, 7, '09:00:00', '17:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(205, 29, 1, '09:00:00', '17:00:00', 1, 60, '13:00:00', '14:00:00', 1, NULL, NULL, 0),
+(206, 29, 2, '09:00:00', '17:00:00', 1, 60, '13:00:00', '14:00:00', 1, NULL, NULL, 0),
+(207, 29, 3, '09:00:00', '17:00:00', 1, 60, '13:00:00', '14:00:00', 1, NULL, NULL, 0),
+(208, 30, 4, '18:00:00', '21:00:00', 1, 60, '19:30:00', '20:00:00', 1, NULL, NULL, 0),
+(209, 30, 5, '18:00:00', '21:00:00', 1, 60, '19:30:00', '20:00:00', 1, NULL, NULL, 0),
+(210, 30, 6, '18:00:00', '21:00:00', 1, 60, '19:30:00', '20:00:00', 1, NULL, NULL, 0),
+(216, 43, 1, '08:00:00', '19:30:00', 1, 60, '13:00:00', '16:00:00', 1, NULL, NULL, 0),
+(217, 43, 2, '08:00:00', '19:30:00', 1, 60, '13:00:00', '16:00:00', 1, NULL, NULL, 0),
+(218, 43, 3, '08:00:00', '19:30:00', 1, 60, '13:00:00', '16:00:00', 1, NULL, NULL, 0),
+(219, 43, 4, '08:00:00', '19:30:00', 1, 60, '13:00:00', '16:00:00', 1, NULL, NULL, 0),
+(220, 43, 5, '08:00:00', '19:30:00', 1, 60, '13:00:00', '16:00:00', 1, NULL, NULL, 0),
+(221, 44, 2, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(222, 44, 4, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(223, 44, 6, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(224, 45, 1, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(225, 45, 5, '09:00:00', '18:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(226, 36, 1, '10:00:00', '18:30:00', 1, 60, '14:00:00', '16:00:00', 1, NULL, NULL, 0),
+(227, 36, 2, '14:30:00', '18:30:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(228, 36, 3, '10:00:00', '18:30:00', 1, 60, '14:00:00', '16:00:00', 1, NULL, NULL, 0),
+(229, 36, 4, '14:30:00', '18:30:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(230, 36, 5, '10:00:00', '13:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(231, 46, 1, '10:00:00', '18:30:00', 1, 60, '14:00:00', '16:00:00', 1, NULL, NULL, 0),
+(232, 46, 2, '14:30:00', '18:30:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(233, 46, 3, '10:00:00', '18:30:00', 1, 60, '14:00:00', '16:00:00', 1, NULL, NULL, 0),
+(234, 46, 4, '14:30:00', '18:30:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0),
+(235, 46, 5, '10:00:00', '13:00:00', 1, 60, NULL, NULL, 0, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -612,7 +657,544 @@ INSERT INTO `logs_seguridad` (`id`, `usuario_id`, `accion`, `descripcion`, `ip_a
 (324, 5, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-02-06 04:01:45'),
 (325, 1, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-06 16:08:29'),
 (326, 1, 'logout', 'Cierre de sesión', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 16:12:29'),
-(327, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 16:12:57');
+(327, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 16:12:57'),
+(328, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 17:31:13'),
+(329, 14, 'login', 'Inicio de sesión exitoso', '189.201.8.84', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 18:44:06'),
+(330, 14, 'logout', 'Cierre de sesión', '189.201.8.84', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', NULL, '2026-02-06 18:48:37'),
+(331, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 18:52:03'),
+(332, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-87006', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 19:51:58'),
+(333, 14, 'reservation_create', 'Reservación creada: RES-2026-72013', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 20:18:25'),
+(334, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-06 21:11:39'),
+(335, 14, 'reservation_reschedule', 'Reservación reagendada: RES-2026-87001 - Nueva fecha: 2026-02-11 12:00:00', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 21:12:55'),
+(336, 14, 'reservation_reschedule', 'Reservación reagendada: RES-2026-87001 - Nueva fecha: 2026-02-10 10:30:00', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 21:13:13'),
+(337, 14, 'reservation_reschedule', 'Reservación reagendada: RES-2026-87001 - Nueva fecha: 2026-02-11 10:30:00', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-06 21:13:41'),
+(338, 14, 'login', 'Inicio de sesión exitoso', '187.200.96.213', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-07 00:23:11'),
+(339, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-72014', '187.200.96.213', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', NULL, '2026-02-07 00:25:50'),
+(340, 14, 'login', 'Inicio de sesión exitoso', '189.201.8.84', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-07 00:51:41'),
+(341, 5, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-02-08 19:38:44'),
+(342, 5, 'logout', 'Cierre de sesión', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-08 19:38:57'),
+(343, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-08 19:39:03'),
+(344, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-08 19:41:43'),
+(345, 14, 'specialist_service_assigned', 'Servicio asignado al especialista', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-08 19:42:01'),
+(346, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-08 19:42:10'),
+(347, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-08 23:04:56'),
+(348, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-08 23:48:13'),
+(349, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-09 18:11:10'),
+(350, 20, 'login', 'Inicio de sesión exitoso', '202.5.99.95', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-02-09 18:46:36'),
+(351, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-09 19:15:11'),
+(352, 14, 'reservation_create', 'Reservación creada: RES-2026-98645', '189.180.252.218', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-09 19:20:42'),
+(353, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-09 19:21:04'),
+(354, 14, 'reservation_create', 'Reservación creada: RES-2026-93545', '189.180.252.218', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-09 19:21:37'),
+(355, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-09 20:40:05'),
+(356, 14, 'login', 'Inicio de sesión exitoso', '187.190.197.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-09 23:56:44'),
+(357, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-10 15:32:48'),
+(358, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-10 15:32:51'),
+(359, 14, 'reservation_create', 'Reservación creada: RES-2026-02367', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 17:40:11'),
+(360, 14, 'reservation_reschedule', 'Reservación reagendada: RES-2026-87001 - Nueva fecha: 2026-02-11 12:00:00', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 17:46:07'),
+(361, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-98645', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 17:56:57'),
+(362, 14, 'reservation_cancel', 'Reservación cancelada: RES-2026-87001', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 17:57:08'),
+(363, 14, 'reservation_cancel', 'Reservación cancelada: RES-2026-93548', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 17:57:43'),
+(364, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-93545', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:00:39'),
+(365, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-72015', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:09:27'),
+(366, 14, 'reservation_complete', 'Reservación completada: RES-2026-72015', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:37:19'),
+(367, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-72013', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:37:28'),
+(368, 14, 'reservation_no_show', 'Cliente no asistió: RES-2026-72013', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:37:31'),
+(369, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-86999', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:27'),
+(370, 14, 'reservation_complete', 'Reservación completada: RES-2026-86999', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:31'),
+(371, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-87000', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:38'),
+(372, 14, 'reservation_complete', 'Reservación completada: RES-2026-87000', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:43'),
+(373, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-87005', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:46'),
+(374, 14, 'reservation_no_show', 'Cliente no asistió: RES-2026-87005', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:39:49'),
+(375, 14, 'logout', 'Cierre de sesión', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:50:44'),
+(376, 5, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-02-10 18:50:52'),
+(377, 5, 'logout', 'Cierre de sesión', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:51:23'),
+(378, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-10 18:51:29'),
+(379, 14, 'specialist_service_created', 'Servicio personal creado: EjemploServicio', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:52:53'),
+(380, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:53:02'),
+(381, 14, 'specialist_service_created', 'Servicio personal creado: EjemploServicio2', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:54:06'),
+(382, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 18:54:22'),
+(383, 14, 'specialist_service_edited', 'Servicio editado: Consulta rápidaa', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:42:51'),
+(384, 14, 'specialist_service_edited', 'Servicio editado: Consulta rápida', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:43:00'),
+(385, 14, 'specialist_service_removed', 'Servicio eliminado de sucursal: EjemploServicio2 - Hospital Angeles Centro Sur', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:43:08'),
+(386, 14, 'specialist_service_removed', 'Servicio eliminado de sucursal: EjemploServicio - Hospital Angeles Centro Sur', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:43:11'),
+(387, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:43:25'),
+(388, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 19:43:29'),
+(389, 14, 'login', 'Inicio de sesión exitoso', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-10 20:13:00'),
+(390, 14, 'specialist_adelanto_updated', 'Porcentaje de adelanto activado con 10%', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 20:13:44'),
+(391, 14, 'specialist_adelanto_updated', 'Porcentaje de adelanto activado con 5%', '189.180.252.218', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 20:23:08'),
+(392, 14, 'login', 'Inicio de sesión exitoso', '189.180.25.200', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-10 22:37:57'),
+(393, 14, 'specialist_service_assigned', 'Servicio asignado al especialista', '189.180.25.200', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-10 22:51:43'),
+(394, 14, 'login', 'Inicio de sesión exitoso', '189.201.10.217', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-11 16:33:11'),
+(395, 14, 'login', 'Inicio de sesión exitoso', '189.201.10.217', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-11 19:15:43'),
+(396, 14, 'login', 'Inicio de sesión exitoso', '189.180.25.200', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-11 19:17:28'),
+(397, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-11 23:04:16'),
+(398, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-02367', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-11 23:04:41'),
+(399, 14, 'reservation_complete', 'Reservación completada: RES-2026-02367', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-11 23:04:48'),
+(400, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 01:41:22'),
+(401, 14, 'login', 'Inicio de sesión exitoso', '38.65.136.94', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 15:13:31'),
+(402, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 15:38:54'),
+(403, 14, 'payment_update', 'Pago actualizado: ID 4', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 15:54:22'),
+(404, 14, 'payment_update', 'Pago actualizado: ID 3', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 15:54:27'),
+(405, 14, 'payment_update', 'Pago actualizado: ID 2', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 15:54:34'),
+(406, 14, 'payment_update', 'Pago actualizado: ID 1', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 15:54:39'),
+(407, 14, 'payment_update', 'Pago actualizado: ID 2', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 15:54:49'),
+(408, 14, 'login', 'Inicio de sesión exitoso', '189.180.25.200', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 18:33:41'),
+(409, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-2369', '189.180.25.200', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', NULL, '2026-02-12 18:34:27'),
+(410, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 18:35:57'),
+(411, 14, 'payment_update', 'Pago actualizado: ID 4', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-12 18:36:41'),
+(412, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 18:45:45'),
+(413, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 18:49:34'),
+(414, 14, 'logout', 'Cierre de sesión', '189.203.103.139', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', NULL, '2026-02-12 18:50:02'),
+(415, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-12 21:11:09'),
+(416, 14, 'login', 'Inicio de sesión exitoso', '187.145.63.240', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-16 18:35:16'),
+(417, 14, 'logout', 'Cierre de sesión', '189.128.159.147', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-02-16 18:56:48'),
+(418, 14, 'login', 'Inicio de sesión exitoso', '189.128.159.147', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-16 18:57:00'),
+(419, 14, 'reservation_create', 'Reservación creada: RES-2026-29251', '189.128.159.147', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-16 19:00:21'),
+(420, 14, 'login', 'Inicio de sesión exitoso', '189.128.159.147', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-16 19:03:13'),
+(421, 14, 'reservation_create', 'Reservación creada: RES-2026-15213', '189.128.159.147', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-16 19:03:50'),
+(422, 14, 'reservation_complete', 'Reservación completada: RES-2026-72014', '189.128.159.147', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-16 19:07:07'),
+(423, 14, 'payment_update', 'Pago actualizado: ID 5', '189.128.159.147', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-16 19:07:29');
+INSERT INTO `logs_seguridad` (`id`, `usuario_id`, `accion`, `descripcion`, `ip_address`, `user_agent`, `datos_adicionales`, `created_at`) VALUES
+(424, 14, 'login', 'Inicio de sesión exitoso', '189.128.159.147', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-16 20:04:05'),
+(425, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.201.11.152', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-17 17:55:43'),
+(426, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.201.11.152', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-17 17:55:54'),
+(427, 14, 'login', 'Inicio de sesión exitoso', '189.201.11.152', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-17 17:56:51'),
+(428, 14, 'login', 'Inicio de sesión exitoso', '189.141.84.163', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-17 20:28:02'),
+(429, 14, 'login', 'Inicio de sesión exitoso', '189.141.84.163', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-17 21:17:08'),
+(430, 20, 'login', 'Inicio de sesión exitoso', '186.96.26.8', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-02-18 18:42:22'),
+(431, 20, 'login', 'Inicio de sesión exitoso', '186.96.26.8', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-02-18 20:14:25'),
+(432, 20, 'login', 'Inicio de sesión exitoso', '202.5.99.165', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-02-19 00:35:12'),
+(433, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-19 16:45:28'),
+(434, 14, 'logout', 'Cierre de sesión', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 16:46:13'),
+(435, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-19 16:49:38'),
+(436, 14, 'logout', 'Cierre de sesión', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 18:02:03'),
+(437, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-19 18:02:18'),
+(438, 14, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-19 18:45:29'),
+(439, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-87004', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 18:55:50'),
+(440, 14, 'reservation_complete', 'Reservación completada: RES-2026-87004', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 18:55:59'),
+(441, 14, 'reservation_complete', 'Reservación completada: RES-2026-87006 - Método de pago: efectivo', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 19:13:54'),
+(442, 14, 'payment_update', 'Pago actualizado: ID 6', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-19 19:14:27'),
+(443, 14, 'login', 'Inicio de sesión exitoso', '189.201.10.211', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-20 17:54:47'),
+(444, 14, 'login', 'Inicio de sesión exitoso', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-23 22:07:25'),
+(445, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-15213', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:12:40'),
+(446, 14, 'reservation_complete', 'Reservación completada: RES-2026-15213 - Método de pago: tarjeta', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:13:09'),
+(447, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-93547', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:13:20'),
+(448, 14, 'reservation_complete', 'Reservación completada: RES-2026-93545 - Método de pago: tarjeta', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:13:43'),
+(449, 14, 'reservation_complete', 'Reservación completada: RES-2026-93547 - Método de pago: efectivo', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:13:53'),
+(450, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-2368', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:14:00'),
+(451, 14, 'reservation_complete', 'Reservación completada: RES-2026-2368 - Método de pago: transferencia', '189.141.53.6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-23 22:14:13'),
+(452, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-25 05:34:27'),
+(453, 14, 'login', 'Inicio de sesión exitoso', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-25 20:21:10'),
+(454, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.227.164', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-25 20:22:11'),
+(455, 14, 'login', 'Inicio de sesión exitoso', '189.180.227.164', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-25 20:22:25'),
+(456, 14, 'reservation_create', 'Reservación creada: RES-2026-84237', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 20:55:28'),
+(457, 14, 'reservation_reschedule', 'Reservación reagendada: RES-2026-84237 - Nueva fecha: 2026-02-27 18:00:00', '189.180.227.164', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', NULL, '2026-02-25 20:58:05'),
+(458, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-15217', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 20:59:38'),
+(459, 14, 'reservation_complete', 'Reservación completada: RES-2026-15217 - Método de pago: efectivo', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 20:59:52'),
+(460, 14, 'reservation_create', 'Reservación creada: RES-2026-16389', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 21:02:43'),
+(461, 14, 'reservation_create', 'Reservación creada: RES-2026-06054', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 21:09:29'),
+(462, 14, 'reservation_create', 'Reservación creada: RES-2026-34382', '189.180.227.164', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-02-25 21:09:46'),
+(463, 14, 'login', 'Inicio de sesión exitoso', '189.180.227.164', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/136.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-25 21:15:32'),
+(464, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-27 17:19:20'),
+(465, 14, 'login', 'Inicio de sesión exitoso', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-27 18:25:53'),
+(466, 14, 'reservation_create', 'Reservación creada: RES-2026-06894', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 18:28:13'),
+(467, 14, 'reservation_confirm', 'Reservación confirmada: RES-2026-34382', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 18:30:44'),
+(468, 14, 'reservation_complete', 'Reservación completada: RES-2026-34382 - Método de pago: tarjeta', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 18:30:56'),
+(469, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 18:34:54'),
+(470, 14, 'logout', 'Cierre de sesión', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 18:45:40'),
+(471, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"adnin@reserbot.com\"}', '2026-02-27 18:46:38'),
+(472, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:47:08'),
+(473, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-27 18:47:38'),
+(474, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:48:06'),
+(475, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"admin@reserbot.con\"}', '2026-02-27 18:50:55'),
+(476, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 18:52:23'),
+(477, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:52:31'),
+(478, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 18:54:30'),
+(479, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:54:42'),
+(480, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:54:58'),
+(481, 1, 'login', 'Inicio de sesión exitoso', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:55:46'),
+(482, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 18:58:19'),
+(483, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 18:58:33'),
+(484, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 18:59:21'),
+(485, 1, 'service_create', 'Servicio creado vía API: Consulta Familiar P/P', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:00:01'),
+(486, 1, 'specialist_create', 'Especialista creado: Rodrigo Luengas Capetillo en 1 sucursal(es)', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:00:11'),
+(487, 1, 'logout', 'Cierre de sesión', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:01:12'),
+(488, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"rodrigocnsul120@gmail.com\"}', '2026-02-27 19:01:37'),
+(489, 21, 'login', 'Inicio de sesión exitoso', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-02-27 19:02:02'),
+(490, 21, 'reservation_create', 'Reservación creada: RES-2026-35487', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:06:34'),
+(491, 21, 'reservation_confirm', 'Reservación confirmada: RES-2026-35487', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:07:30'),
+(492, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-02-27 19:08:14'),
+(493, 21, 'specialist_service_edited', 'Servicio editado: Consulta General', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:08:17'),
+(494, 21, 'logout', 'Cierre de sesión', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:08:20'),
+(495, 1, 'login', 'Inicio de sesión exitoso', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 19:09:12'),
+(496, 1, 'service_update', 'Servicio actualizado: Consulta General', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:09:45'),
+(497, 1, 'logout', 'Cierre de sesión', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:09:50'),
+(498, 21, 'login', 'Inicio de sesión exitoso', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-02-27 19:09:53'),
+(499, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:10:09'),
+(500, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:10:22'),
+(501, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:10:26'),
+(502, 21, 'specialist_service_created', 'Servicio personal creado: Revision para sucursal: Hospital Angeles Centro Sur', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:12:04'),
+(503, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:13:33'),
+(504, 21, 'reservation_cancel', 'Reservación cancelada: RES-2026-35487', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:13:50'),
+(505, 21, 'reservation_create', 'Reservación creada: RES-2026-92899', '189.180.202.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', NULL, '2026-02-27 19:14:15'),
+(506, 20, 'login', 'Inicio de sesión exitoso', '38.65.174.204', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-02-27 19:23:16'),
+(507, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 19:39:44'),
+(508, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-02-27 19:40:21'),
+(509, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-02-27 19:40:50'),
+(510, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-02-27 19:41:15'),
+(511, 21, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-02-27 19:41:30'),
+(512, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-01 05:12:34'),
+(513, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 05:17:35'),
+(514, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-01 05:17:41'),
+(515, 14, 'reservation_create', 'Reservación creada: RES-2026-08781', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 05:34:11'),
+(516, 14, 'reservation_cancel', 'Reservación cancelada: RES-2026-08781', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 05:34:31'),
+(517, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:08:59'),
+(518, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-01 06:09:08'),
+(519, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:09:18'),
+(520, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-01 06:09:25'),
+(521, 14, 'branch_color_update', 'Color actualizado para sucursal: Hospital Angeles Centro Sur a #ff00c8', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:13:15'),
+(522, 14, 'branch_color_update', 'Color actualizado para sucursal: Hospital angeles Ensueño  a #44ff00', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:13:20'),
+(523, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:29:44'),
+(524, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:31:35'),
+(525, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-01 06:31:40'),
+(526, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 06:32:41'),
+(527, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-01 06:32:51'),
+(528, 14, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-59151', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 07:43:23'),
+(529, 14, 'reservation_cancel', 'Reservación cancelada: RES-2026-59151', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 07:43:36'),
+(530, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 08:28:21'),
+(531, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-01 08:28:26'),
+(532, 1, 'branch_update', 'Sucursal actualizada: Hospital Angeles Centro Sur', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 08:29:55'),
+(533, 1, 'branch_update', 'Sucursal actualizada: Hospital angeles Ensueño', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 08:30:31'),
+(534, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-01 19:44:43'),
+(535, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 19:44:53'),
+(536, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:07:50'),
+(537, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-01 20:07:56'),
+(538, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:08:10'),
+(539, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-01 20:08:17'),
+(540, 14, 'specialist_adelanto_updated', 'Porcentaje de adelanto activado con 5%', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:15:30'),
+(541, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:15:34'),
+(542, 14, 'reservation_cancel', 'Reservación cancelada: RES-2026-59154', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:17:55'),
+(543, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:52:56'),
+(544, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-01 20:57:39'),
+(545, 14, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-02 21:08:38'),
+(546, 21, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-02 21:25:53'),
+(547, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail-com\"}', '2026-03-02 21:25:58'),
+(548, 21, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-02 21:27:04'),
+(549, 21, 'specialist_service_created', 'Servicio personal creado: tamizado auditivo para sucursal: Hospital Angeles Centro Sur', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:37:25'),
+(550, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:37:46'),
+(551, 21, 'reservation_create', 'Reservación creada: RES-2026-77670', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:42:19'),
+(552, 21, 'reservation_create', 'Reservación creada: RES-2026-48375', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:42:43'),
+(553, 21, 'reservation_create', 'Reservación creada: RES-2026-06507', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:44:50'),
+(554, 21, 'reservation_cancel', 'Reservación cancelada: RES-2026-92899', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:51:03'),
+(555, 21, 'reservation_cancel', 'Reservación cancelada: RES-2026-77670', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:51:12'),
+(556, 21, 'reservation_cancel', 'Reservación cancelada: RES-2026-48375', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:51:18'),
+(557, 21, 'reservation_cancel', 'Reservación cancelada: RES-2026-06507', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-02 21:51:26'),
+(558, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"direccion@i45grados.com\"}', '2026-03-02 22:53:04'),
+(559, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"direccion@i45grados.com\"}', '2026-03-02 22:54:30'),
+(560, 1, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-02 22:55:12'),
+(561, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 16:00:16'),
+(562, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"direccion@i45grados.com\"}', '2026-03-03 16:24:52'),
+(563, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"direcion@i45grados.com\"}', '2026-03-03 16:25:06'),
+(564, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:21:49'),
+(565, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 17:21:54'),
+(566, 1, 'category_create', 'Categoría creada: Extraordinario', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:22:16'),
+(567, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:22:23'),
+(568, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 17:22:29'),
+(569, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:29:49'),
+(570, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 17:29:54'),
+(571, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:35:12'),
+(572, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 17:35:18'),
+(573, 14, 'specialist_service_created', 'Servicio personal creado: Consulta Extraordinaria para sucursal: Hospital Angeles Centro Sur', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:38:09'),
+(574, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:41:08'),
+(575, 14, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:41:22'),
+(576, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:43:06'),
+(577, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 17:43:13'),
+(578, 1, 'specialist_update', 'Especialista actualizado: Rodrigo Aide en 2 sucursal(es)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:45:12'),
+(579, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:45:56'),
+(580, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 17:46:03'),
+(581, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:57:25'),
+(582, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 17:57:33'),
+(583, 1, 'specialist_update', 'Especialista actualizado: Rodrigo Luengas Capetillo en 2 sucursal(es)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:57:44'),
+(584, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 17:57:47'),
+(585, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 17:57:53'),
+(586, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:11:32'),
+(587, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 18:11:37'),
+(588, 1, 'specialist_update', 'Especialista actualizado: Rodrigo Aide en 2 sucursal(es)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:11:59'),
+(589, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:31:34'),
+(590, 14, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 18:31:44'),
+(591, 14, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:32:01'),
+(592, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-03 18:32:06'),
+(593, 5, 'specialist_adelanto_updated', 'Porcentaje de adelanto activado con 5%', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:32:36'),
+(594, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:32:51'),
+(595, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-03 18:32:56'),
+(596, 1, 'specialist_update', 'Especialista actualizado: Ana García Ramírez en 8 sucursal(es)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:45:18'),
+(597, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:45:20'),
+(598, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-03 18:45:25'),
+(599, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-03 18:59:04'),
+(600, 14, 'login', 'Inicio de sesión exitoso', '104.28.50.21', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 19:00:46'),
+(601, 14, 'login', 'Inicio de sesión exitoso', '104.28.50.21', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15', '{\"email\": \"rodrigo@aide.com\"}', '2026-03-03 19:04:04'),
+(602, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-06 17:12:36'),
+(603, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigoconsul123@gmail.com\"}', '2026-03-06 17:12:54'),
+(604, 21, 'login', 'Inicio de sesión exitoso', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-06 17:13:21'),
+(605, 21, 'specialist_service_removed', 'Servicio eliminado de sucursal: Revision - Hospital Angeles Centro Sur', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-03-06 17:16:56'),
+(606, 21, 'specialist_service_removed', 'Servicio eliminado de sucursal: tamizado auditivo - Hospital Angeles Centro Sur', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-03-06 17:17:02'),
+(607, 21, 'specialist_service_created', 'Servicio personal creado: Revision de cirugia para sucursal: Hospital Angeles Centro Sur', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-03-06 17:17:25'),
+(608, 21, 'specialist_service_created', 'Servicio personal creado: Tamiz auditivo para sucursal: Hospital Angeles Centro Sur', '187.190.205.39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', NULL, '2026-03-06 17:17:38'),
+(609, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-06 17:39:07'),
+(610, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 17:39:13'),
+(611, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-06 17:39:16'),
+(612, 1, 'specialist_update', 'Especialista actualizado: Ana García Ramírez en 2 sucursal(es)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 17:39:37'),
+(613, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 17:39:40'),
+(614, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-06 17:39:44'),
+(615, 5, 'specialist_service_created', 'Servicio personal creado: Consulta Extraordinaria para sucursal: ReserBot El Marqués', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:05:28'),
+(616, 5, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:05:40'),
+(617, 5, 'specialist_service_moved', 'Servicio movido: Consulta Extraordinaria a sucursal: ReserBot Juriquilla', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:06'),
+(618, 5, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:14'),
+(619, 5, 'specialist_service_moved', 'Servicio movido: Consulta Extraordinaria a sucursal: ReserBot El Marqués', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:21'),
+(620, 5, 'specialist_service_created', 'Servicio personal creado: Consulta Extraordinaria para sucursal: ReserBot Juriquilla', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:33'),
+(621, 5, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:40'),
+(622, 5, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:06:43'),
+(623, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-07477', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 18:43:50'),
+(624, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-56409', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 19:05:41'),
+(625, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 19:05:51'),
+(626, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-06 19:11:29'),
+(627, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 19:11:57');
+INSERT INTO `logs_seguridad` (`id`, `usuario_id`, `accion`, `descripcion`, `ip_address`, `user_agent`, `datos_adicionales`, `created_at`) VALUES
+(628, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-06 19:12:00'),
+(629, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-06 19:12:16'),
+(630, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-09 16:30:31'),
+(631, 21, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-09 20:37:25'),
+(632, 21, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-09 20:38:37'),
+(633, 1, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-09 22:31:01'),
+(634, 1, 'branch_create', 'Sucursal creada vía API: Consultorio Alma', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:36:09'),
+(635, 1, 'service_create', 'Servicio creado vía API: Sesion de Terapia (fisio)', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:39:21'),
+(636, 1, 'service_create', 'Servicio creado vía API: Descarga Muscularn', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:39:43'),
+(637, 1, 'service_create', 'Servicio creado vía API: Descarga Muscular ', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:40:12'),
+(638, 1, 'service_create', 'Servicio creado vía API: Descarga Muscular ', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:40:15'),
+(639, 1, 'specialist_create', 'Especialista creado: Alma Kyristal Valero Fuentes en 1 sucursal(es)', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:40:41'),
+(640, 1, 'logout', 'Cierre de sesión', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:41:12'),
+(641, 22, 'login', 'Inicio de sesión exitoso', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"avalero@aidereservaciones.com\"}', '2026-03-09 22:41:46'),
+(642, 22, 'profile_update', 'Perfil actualizado', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:47:13'),
+(643, 22, 'profile_update', 'Perfil actualizado', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:47:19'),
+(644, 22, 'specialist_service_removed', 'Servicio eliminado de sucursal: Descarga Muscular  - Consultorio Alma', '189.128.185.117', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-09 22:55:14'),
+(645, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-10 18:40:19'),
+(646, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 18:40:57'),
+(647, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-10 19:31:33'),
+(648, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 19:31:46'),
+(649, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-10 19:31:56'),
+(650, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 19:38:34'),
+(651, 5, 'login', 'Inicio de sesión exitoso', '189.180.6.120', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-10 20:55:21'),
+(652, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-10 20:56:04'),
+(653, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 20:58:30'),
+(654, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-10 20:58:36'),
+(655, 5, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 21:00:51'),
+(656, 5, 'specialist_adelanto_updated', 'Porcentaje de adelanto activado con 3%', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', NULL, '2026-03-10 21:01:59'),
+(657, 22, 'login', 'Inicio de sesión exitoso', '38.65.136.94', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '{\"email\": \"avalero@aidereservaciones.com\"}', '2026-03-11 15:51:11'),
+(658, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-11 16:36:33'),
+(659, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-11 17:13:54'),
+(660, 22, 'login', 'Inicio de sesión exitoso', '189.141.126.93', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '{\"email\": \"avalero@aidereservaciones.com\"}', '2026-03-11 18:23:42'),
+(661, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-11 18:52:00'),
+(662, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-11 20:14:26'),
+(663, 22, 'login', 'Inicio de sesión exitoso', '38.65.136.94', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '{\"email\": \"avalero@aidereservaciones.com\"}', '2026-03-12 14:47:52'),
+(664, 22, 'profile_update', 'Perfil actualizado', '38.65.136.94', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', NULL, '2026-03-12 14:49:25'),
+(665, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-12 15:55:34'),
+(666, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-17 16:31:53'),
+(667, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 16:38:45'),
+(668, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 19:08:24'),
+(669, 25, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 21:25:12'),
+(670, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-17 21:25:22'),
+(671, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 21:25:24'),
+(672, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-17 21:25:42'),
+(673, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-17 21:36:41'),
+(674, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 21:37:04'),
+(675, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-17 21:39:25'),
+(676, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-17 22:22:10'),
+(677, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-18 16:46:18'),
+(678, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-18 16:47:31'),
+(679, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-18 16:56:38'),
+(680, 1, 'settings_update', 'Configuraciones generales actualizadas', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-18 16:57:02'),
+(681, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-18 17:01:09'),
+(682, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-18 17:22:53'),
+(683, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-18 17:27:19'),
+(684, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-18 17:27:29'),
+(685, 1, 'settings_styles', 'Estilos actualizados', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-18 17:32:28'),
+(686, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-18 18:46:29'),
+(687, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-19 22:51:35'),
+(688, 21, 'login', 'Inicio de sesión exitoso', '187.154.220.228', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-19 22:51:37'),
+(689, 21, 'login', 'Inicio de sesión exitoso', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-19 22:52:00'),
+(690, 21, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-92122', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-19 22:52:55'),
+(691, 21, 'reservation_create', 'Reservación creada: RES-2026-26543', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-19 22:53:42'),
+(692, 21, 'specialist_adelanto_updated', 'Porcentaje de adelanto desactivado', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-19 22:56:25'),
+(693, 21, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-19 22:56:31'),
+(694, 21, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-86328', '187.154.220.228', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-03-19 22:58:53'),
+(695, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-21 02:03:56'),
+(696, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-21 02:09:09'),
+(697, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-23 01:31:38'),
+(698, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-24 17:02:41'),
+(699, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-24 18:55:56'),
+(700, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.253.240', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoluengasconsul120@gmsil.com\"}', '2026-03-25 21:35:55'),
+(701, 21, 'login', 'Inicio de sesión exitoso', '187.145.39.85', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-25 21:38:01'),
+(702, 21, 'login', 'Inicio de sesión exitoso', '189.180.253.240', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-03-25 21:39:18'),
+(703, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-26 19:23:19'),
+(704, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-26 20:13:11'),
+(705, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-27 02:17:11'),
+(706, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-27 02:24:52'),
+(707, 5, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-27 02:24:57'),
+(708, 5, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-27 02:26:59'),
+(709, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-27 02:27:03'),
+(710, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-03-27 20:01:19'),
+(711, 1, 'logout', 'Cierre de sesión', '187.190.202.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-27 20:29:37'),
+(712, 5, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-03-30 22:16:18'),
+(713, 1, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-04-01 17:25:25'),
+(714, 1, 'logout', 'Cierre de sesión', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 17:25:27'),
+(715, 5, 'login', 'Inicio de sesión exitoso', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-04-01 17:25:31'),
+(716, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86333', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 18:04:46'),
+(717, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86337', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 18:27:11'),
+(718, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86341', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 18:54:01'),
+(719, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86347', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 19:36:57'),
+(720, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86349', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 19:50:29'),
+(721, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86352', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 20:07:17'),
+(722, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86353', '189.203.103.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-01 20:32:42'),
+(723, 1, 'login', 'Inicio de sesión exitoso', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-04-06 20:12:02'),
+(724, 1, 'logout', 'Cierre de sesión', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-06 20:12:51'),
+(725, 1, 'login', 'Inicio de sesión exitoso', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-04-06 21:39:26'),
+(726, 1, 'specialist_update', 'Especialista actualizado: Ejemplo Aide en 2 sucursal(es)', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-06 21:40:02'),
+(727, 1, 'logout', 'Cierre de sesión', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-06 21:49:09'),
+(728, 21, 'login', 'Inicio de sesión exitoso', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-04-06 21:49:18'),
+(729, 21, 'logout', 'Cierre de sesión', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-04-06 21:50:44'),
+(730, 1, 'login', 'Inicio de sesión exitoso', '187.190.179.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-04-06 21:50:48'),
+(731, 20, 'login', 'Inicio de sesión exitoso', '186.96.24.8', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '{\"email\": \"trinidad@reserbot.com\"}', '2026-04-20 23:17:20'),
+(732, 5, 'login', 'Inicio de sesión exitoso', '187.191.8.139', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-04-29 16:49:45'),
+(733, 1, 'login', 'Inicio de sesión exitoso', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"admin@reserbot.com\"}', '2026-05-13 20:05:50'),
+(734, 1, 'branch_create', 'Sucursal creada: Medstichs Qro', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:08:10'),
+(735, 1, 'branch_create', 'Sucursal creada: Medstethcis SLP', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:10:02'),
+(736, 1, 'specialist_create', 'Especialista creado: Med qro en 2 sucursal(es)', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:13:22'),
+(737, 1, 'logout', 'Cierre de sesión', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:13:40'),
+(738, 23, 'login', 'Inicio de sesión exitoso', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '{\"email\": \"medqro@aidereservaciones.com\"}', '2026-05-13 20:13:58'),
+(739, 23, 'specialist_service_created', 'Servicio personal creado: injerto capilar para sucursal: Medstichs Qro', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:14:49'),
+(740, 23, 'specialist_service_created', 'Servicio personal creado: Plasma para sucursal: Medstichs Qro', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:15:13'),
+(741, 23, 'specialist_service_created', 'Servicio personal creado: Injerto de pelo para sucursal: Medstethcis SLP', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:15:31'),
+(742, 23, 'specialist_service_created', 'Servicio personal creado: plasma para sucursal: Medstethcis SLP', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:15:49'),
+(743, 23, 'specialist_services_update', 'Servicios actualizados (precios, duración y estado)', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:16:06'),
+(744, 23, 'reservation_confirm', 'Reservación confirmada: RES-2026-86357', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:24:21'),
+(745, 23, 'logout', 'Cierre de sesión', '189.180.249.202', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', NULL, '2026-05-13 20:33:24'),
+(746, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-05-25 17:38:28'),
+(747, 1, 'password_change', 'Contraseña cambiada', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-25 17:39:48'),
+(748, 1, 'logout', 'Cierre de sesión', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-25 17:39:58'),
+(749, 5, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-05-26 19:34:54'),
+(750, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-86354', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-26 19:36:28'),
+(751, 5, 'reservation_create', 'Reservación creada: RES-2026-55290', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-26 19:37:04'),
+(752, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-55290', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-26 19:37:18'),
+(753, 5, 'reservation_create', 'Reservación creada: RES-2026-20764', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-26 19:38:37'),
+(754, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-20764', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-26 19:38:52'),
+(755, 5, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-05-27 17:09:29'),
+(756, 5, 'logout', 'Cierre de sesión', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:48:01'),
+(757, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-05-27 17:48:05'),
+(758, 1, 'reminder_config_update', 'Recordatorios actualizados para especialista #22 (enabled=1, hours=3)', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:48:27'),
+(759, 1, 'logout', 'Cierre de sesión', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:53:36'),
+(760, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-05-27 17:53:50'),
+(761, 1, 'reminder_config_update', 'Recordatorios actualizados para especialista #5 (enabled=1, hours=3)', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:53:59'),
+(762, 1, 'reminder_config_update', 'Recordatorios actualizados para especialista #5 (enabled=1, hours=2)', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:54:03'),
+(763, 1, 'logout', 'Cierre de sesión', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 17:54:06'),
+(764, 5, 'login', 'Inicio de sesión exitoso', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-05-27 17:54:09'),
+(765, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:26:34'),
+(766, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:27:02'),
+(767, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:27:16'),
+(768, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:27:22'),
+(769, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:27:28'),
+(770, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:32:44'),
+(771, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:32:54'),
+(772, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:33:12'),
+(773, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:35:35'),
+(774, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:35:40'),
+(775, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:43:31'),
+(776, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #112 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:44:41'),
+(777, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:46:51'),
+(778, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:50:42'),
+(779, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:50:43'),
+(780, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:50:47'),
+(781, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:51:03'),
+(782, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 18:51:05'),
+(783, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:01:38'),
+(784, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:12:20'),
+(785, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:24:23'),
+(786, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:24:27'),
+(787, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:40:43'),
+(788, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:35'),
+(789, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:39'),
+(790, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:40'),
+(791, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:40'),
+(792, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #112 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:40'),
+(793, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:41'),
+(794, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:42'),
+(795, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:42'),
+(796, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:46'),
+(797, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 19:54:47'),
+(798, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 20:07:39'),
+(799, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #104 -> FAIL: Error HTTP 500', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 20:07:43'),
+(800, 5, 'reminder_test', 'Prueba manual de recordatorio reserva #111 -> OK', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 20:34:05'),
+(801, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-64221', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 20:51:44'),
+(802, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-64221', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 20:51:54'),
+(803, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-23157', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 21:54:22'),
+(804, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-23157', '187.191.8.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-27 21:54:32'),
+(805, 5, 'login', 'Inicio de sesión exitoso', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-05-28 17:19:09'),
+(806, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-23113', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 17:20:18'),
+(807, 5, 'reservation_cancel', 'Reservación cancelada: RES-2026-23113', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 17:36:13'),
+(808, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-24952', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 17:36:32'),
+(809, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-15347', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 18:39:24'),
+(810, 5, 'reservation_create', 'Reservación creada: EXTRAORDINARIA - RES-2026-48675', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 19:45:08'),
+(811, 5, 'reservation_confirm', 'Reservación confirmada: RES-2026-48675', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 19:45:50'),
+(812, 5, 'reservation_create', 'Reservación creada: RES-2026-49491', '189.203.103.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-05-28 22:06:29'),
+(813, 5, 'login', 'Inicio de sesión exitoso', '189.128.171.244', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-06-01 18:52:01'),
+(814, 5, 'logout', 'Cierre de sesión', '189.128.171.244', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', NULL, '2026-06-01 18:55:31'),
+(815, 5, 'login', 'Inicio de sesión exitoso', '189.203.100.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-06-05 18:47:11'),
+(816, 5, 'logout', 'Cierre de sesión', '189.203.100.29', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-05 18:52:11'),
+(817, 5, 'login', 'Inicio de sesión exitoso', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-06-10 17:39:23'),
+(818, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:53:20'),
+(819, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:53:23'),
+(820, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=0)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:53:38'),
+(821, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:53:47'),
+(822, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:53:49'),
+(823, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:58:08'),
+(824, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 17:58:49'),
+(825, 5, 'logout', 'Cierre de sesión', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 18:05:42'),
+(826, 1, 'login', 'Inicio de sesión exitoso', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-10 18:05:48'),
+(827, 1, 'logout', 'Cierre de sesión', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 18:06:40'),
+(828, 5, 'login', 'Inicio de sesión exitoso', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-06-10 21:07:11'),
+(829, 5, 'ai_config_update', 'Configuración de IA actualizada para usuario #5 (enabled=1)', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 21:08:07'),
+(830, 5, 'logout', 'Cierre de sesión', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-10 21:15:12'),
+(831, 1, 'login', 'Inicio de sesión exitoso', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-10 21:15:16'),
+(832, 5, 'login', 'Inicio de sesión exitoso', '187.190.197.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"ana.garcia@reserbot.com\"}', '2026-06-11 17:26:37'),
+(833, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-16 21:24:56'),
+(834, 1, 'logout', 'Cierre de sesión', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:26:30'),
+(835, 21, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-06-16 21:26:43');
+INSERT INTO `logs_seguridad` (`id`, `usuario_id`, `accion`, `descripcion`, `ip_address`, `user_agent`, `datos_adicionales`, `created_at`) VALUES
+(836, 21, 'logout', 'Cierre de sesión', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:26:59'),
+(837, 21, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"rodrigoconsul120@gmail.com\"}', '2026-06-16 21:27:11'),
+(838, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-16 21:27:15'),
+(839, 21, 'reminder_config_update', 'Recordatorios actualizados para especialista #21 (enabled=1, hours=3)', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:31:32'),
+(840, 1, 'specialist_create', 'Especialista creado: Dr Juan Pérez Carter en 1 sucursal(es)', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:34:31'),
+(841, 1, 'logout', 'Cierre de sesión', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:34:38'),
+(842, 24, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"juanperez@aidepro.com\"}', '2026-06-16 21:34:42'),
+(843, 24, 'reminder_config_update', 'Recordatorios actualizados para especialista #24 (enabled=1, hours=2)', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:35:36'),
+(844, 21, 'reminder_config_update', 'Recordatorios actualizados para especialista #21 (enabled=1, hours=2)', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:35:40'),
+(845, 24, 'logout', 'Cierre de sesión', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:45:54'),
+(846, 1, 'login', 'Inicio de sesión exitoso', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-16 21:45:57'),
+(847, 21, 'logout', 'Cierre de sesión', '187.191.8.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-16 21:52:14'),
+(848, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.180.78.71', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-18 16:32:54'),
+(849, 14, 'login', 'Inicio de sesión exitoso', '189.180.78.71', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"rodrigo@aide.com\"}', '2026-06-18 16:35:18'),
+(850, 14, 'logout', 'Cierre de sesión', '189.180.78.71', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-18 16:35:34'),
+(851, 24, 'login', 'Inicio de sesión exitoso', '189.203.106.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"juanperez@aidepro.com\"}', '2026-06-23 23:55:35'),
+(852, 24, 'login', 'Inicio de sesión exitoso', '189.203.106.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"juanperez@aidepro.com\"}', '2026-06-24 01:50:30'),
+(853, 24, 'logout', 'Cierre de sesión', '189.203.106.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-24 01:50:35'),
+(854, NULL, 'login_failed', 'Intento de inicio de sesión fallido', '189.128.173.23', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-24 16:45:56'),
+(855, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-24 18:52:07'),
+(856, 1, 'logout', 'Cierre de sesión', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-24 18:52:20'),
+(857, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-24 18:52:58'),
+(858, 1, 'logout', 'Cierre de sesión', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-24 18:53:16'),
+(859, 1, 'login', 'Inicio de sesión exitoso', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"admin@reserbot.com\"}', '2026-06-24 18:54:12'),
+(860, 1, 'logout', 'Cierre de sesión', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', NULL, '2026-06-24 18:54:25'),
+(861, 23, 'login', 'Inicio de sesión exitoso', '187.190.202.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', '{\"email\": \"medqro@aidereservaciones.com\"}', '2026-06-24 18:56:34');
 
 -- --------------------------------------------------------
 
@@ -712,6 +1294,83 @@ CREATE TABLE `plantillas_notificaciones` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `registros_interesados`
+--
+
+CREATE TABLE `registros_interesados` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre completo del interesado',
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `telefono` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Número de WhatsApp del interesado',
+  `estado` enum('pendiente','contactado','rechazado','contratado') COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente' COMMENT 'Estado del seguimiento',
+  `notas` text COLLATE utf8mb4_unicode_ci COMMENT 'Notas del seguimiento',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Registro de personas interesadas en el sistema AIDE';
+
+--
+-- Volcado de datos para la tabla `registros_interesados`
+--
+
+INSERT INTO `registros_interesados` (`id`, `nombre`, `email`, `telefono`, `estado`, `notas`, `created_at`, `updated_at`) VALUES
+(10, 'Roberto Ejemplo', 'correoejemplo@gmail.com', '5214427869806', 'pendiente', NULL, '2026-03-20 19:01:21', '2026-03-20 19:01:21');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `reminder_configs`
+--
+
+CREATE TABLE `reminder_configs` (
+  `id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL COMMENT 'FK -> usuarios.id (rol especialista)',
+  `enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '1 = activo, 0 = desactivado',
+  `hours_before` int(11) NOT NULL DEFAULT '3' COMMENT 'Horas de anticipación (1-24)',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `reminder_configs`
+--
+
+INSERT INTO `reminder_configs` (`id`, `especialista_id`, `enabled`, `hours_before`, `created_at`, `updated_at`) VALUES
+(1, 22, 1, 3, '2026-05-27 17:48:27', '2026-05-27 17:48:27'),
+(2, 5, 1, 2, '2026-05-27 17:53:59', '2026-05-27 17:54:03'),
+(4, 21, 1, 2, '2026-06-16 21:31:32', '2026-06-16 21:35:40'),
+(5, 24, 1, 2, '2026-06-16 21:35:36', '2026-06-16 21:35:36');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `reminder_logs`
+--
+
+CREATE TABLE `reminder_logs` (
+  `id` int(11) NOT NULL,
+  `especialista_id` int(11) NOT NULL,
+  `target_date` date NOT NULL COMMENT 'Fecha de las citas a las que se envió recordatorio',
+  `sent_count` int(11) NOT NULL DEFAULT '0' COMMENT 'Cuántos recordatorios se enviaron con éxito',
+  `total_count` int(11) NOT NULL DEFAULT '0' COMMENT 'Cuántas citas se intentaron',
+  `error_message` text COLLATE utf8mb4_unicode_ci,
+  `sent_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `reminder_logs`
+--
+
+INSERT INTO `reminder_logs` (`id`, `especialista_id`, `target_date`, `sent_count`, `total_count`, `error_message`, `sent_at`) VALUES
+(1, 5, '2026-05-28', 4, 4, NULL, '2026-05-28 22:15:04'),
+(4, 5, '2026-05-29', 1, 1, NULL, '2026-05-30 00:00:07'),
+(5, 5, '2026-06-03', 2, 2, NULL, '2026-06-03 16:30:04'),
+(7, 5, '2026-06-05', 2, 2, NULL, '2026-06-06 00:00:08'),
+(9, 5, '2026-06-06', 2, 2, NULL, '2026-06-07 00:15:04'),
+(11, 5, '2026-06-08', 1, 1, NULL, '2026-06-08 14:00:05');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `reservaciones`
 --
 
@@ -720,6 +1379,8 @@ CREATE TABLE `reservaciones` (
   `codigo` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Código único de reservación',
   `cliente_id` int(11) DEFAULT NULL COMMENT 'ID del cliente en la tabla usuarios (NULL para reservas de chatbot)',
   `nombre_cliente` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre completo del cliente',
+  `telefono` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `correo` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `especialista_id` int(11) NOT NULL,
   `servicio_id` int(11) NOT NULL,
   `sucursal_id` int(11) NOT NULL,
@@ -729,6 +1390,8 @@ CREATE TABLE `reservaciones` (
   `duracion_minutos` int(11) NOT NULL,
   `precio_total` decimal(10,2) NOT NULL,
   `estado` enum('pendiente','confirmada','en_progreso','completada','cancelada','no_asistio') COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente',
+  `es_extraordinaria` tinyint(1) DEFAULT '0',
+  `primera_consulta` tinyint(1) DEFAULT '0' COMMENT 'Indica si es la primera consulta del paciente (0=No, 1=Sí)',
   `notas_cliente` text COLLATE utf8mb4_unicode_ci,
   `notas_especialista` text COLLATE utf8mb4_unicode_ci,
   `calificacion` tinyint(4) DEFAULT NULL COMMENT '1-5 estrellas',
@@ -739,29 +1402,76 @@ CREATE TABLE `reservaciones` (
   `motivo_cancelacion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fecha_cancelacion` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `source` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Origen de la reserva: liga1, liga2, liga3, web, chatbot, manual, etc.',
+  `attendance_confirmed` tinyint(1) DEFAULT NULL,
+  `attendance_confirmed_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `reservaciones`
 --
 
-INSERT INTO `reservaciones` (`id`, `codigo`, `cliente_id`, `nombre_cliente`, `especialista_id`, `servicio_id`, `sucursal_id`, `fecha_cita`, `hora_inicio`, `hora_fin`, `duracion_minutos`, `precio_total`, `estado`, `notas_cliente`, `notas_especialista`, `calificacion`, `comentario_resena`, `recordatorio_enviado`, `creado_por`, `cancelado_por`, `motivo_cancelacion`, `fecha_cancelacion`, `created_at`, `updated_at`) VALUES
-(15, 'RES-2026-003', NULL, 'Javier diaz', 18, 24, 16, '2026-01-31', '11:00:00', '11:30:00', 30, 0.00, 'cancelada', NULL, NULL, NULL, 'Quiero.informes u donde es', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:44', '2026-01-28 18:45:49', '2026-01-28 21:09:44'),
-(16, 'RES-2026-004', NULL, 'Roberto Pérez', 18, 24, 16, '2026-01-31', '12:00:00', '12:30:00', 30, 0.00, 'cancelada', NULL, NULL, NULL, 'Vendas', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:46', '2026-01-28 18:53:28', '2026-01-28 21:09:46'),
-(17, 'RES-2026-005', NULL, 'Juan Ejemplo', 18, 24, 16, '2026-01-31', '10:00:00', '10:30:00', 30, 0.00, 'cancelada', NULL, NULL, NULL, 'No', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:40', '2026-01-28 18:53:51', '2026-01-28 21:09:40'),
-(18, 'RES-2026-006', NULL, 'Claro Obscuro', 18, 24, 16, '2026-01-31', '09:00:00', '10:00:00', 60, 0.00, 'pendiente', NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:08:34', '2026-01-28 21:08:34'),
-(19, 'RES-2026-007', NULL, 'Roberto Ejemplo', 18, 24, 16, '2026-01-30', '11:00:00', '12:00:00', 60, 0.00, 'pendiente', NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:10:45', '2026-01-28 21:10:45'),
-(20, 'RES-2026-008', NULL, 'Ejemplo Dos', 18, 24, 16, '2026-02-01', '10:00:00', '11:00:00', 60, 0.00, 'pendiente', NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:27:38', '2026-01-28 21:27:38'),
-(22, 'RES-2026-010', NULL, 'Javier diaz', 18, 24, 16, '2026-02-01', '12:00:00', '13:00:00', 60, 0.00, 'pendiente', NULL, NULL, NULL, 'Prueba', 0, NULL, NULL, NULL, NULL, '2026-01-31 00:09:46', '2026-01-31 00:09:46'),
-(25, 'RES-2026-013', NULL, 'Sis non', 31, 10, 11, '2026-10-10', '11:00:00', '11:30:00', 30, 800.00, 'pendiente', NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-02-03 15:56:00', '2026-02-03 15:56:00'),
-(26, 'RES-2026-014', NULL, 'Sis non3', 26, 10, 11, '2026-02-22', '14:30:00', '15:00:00', 30, 800.00, 'pendiente', NULL, NULL, NULL, 'Non', 0, NULL, NULL, NULL, NULL, '2026-02-03 16:27:12', '2026-02-03 16:27:12'),
-(27, 'RES-2026-86998', NULL, 'Sis NonEjemplo', 26, 10, 11, '2026-02-08', '13:30:00', '14:00:00', 30, 800.00, 'pendiente', 'Nada', NULL, NULL, NULL, 0, 5, NULL, NULL, NULL, '2026-02-03 17:24:17', '2026-02-03 17:24:17'),
-(29, 'RES-2026-86999', NULL, 'Javier diaz', 34, 1, 6, '2026-02-04', '10:00:00', '10:30:00', 30, 1000.00, 'pendiente', NULL, NULL, NULL, 'No', 0, NULL, NULL, NULL, NULL, '2026-02-03 20:07:29', '2026-02-03 20:07:29'),
-(30, 'RES-2026-87000', NULL, 'Robeto Ejemplo', 35, 25, 17, '2026-02-05', '17:00:00', '17:30:00', 30, 1200.00, 'pendiente', NULL, NULL, NULL, 'nada', 0, NULL, NULL, NULL, NULL, '2026-02-03 20:08:42', '2026-02-03 20:08:42'),
-(31, 'RES-2026-87001', NULL, 'Javier diaz', 34, 1, 6, '2026-02-11', '10:30:00', '11:00:00', 30, 1000.00, 'pendiente', NULL, NULL, NULL, 'Ngjg', 0, NULL, NULL, NULL, NULL, '2026-02-03 23:47:12', '2026-02-03 23:47:12'),
-(32, 'RES-2026-87002', NULL, 'Javier diaz', 18, 24, 16, '2026-02-10', '15:00:00', '16:00:00', 60, 0.00, 'pendiente', NULL, NULL, NULL, 'Prueba de maj', 0, NULL, NULL, NULL, NULL, '2026-02-05 17:39:33', '2026-02-05 17:39:33'),
-(33, 'RES-2026-87003', NULL, 'Ejemplo Prueba', 18, 24, 16, '2026-02-10', '14:00:00', '15:00:00', 60, 0.00, 'cancelada', NULL, NULL, NULL, 'Nada', 0, NULL, 20, 'Cancelada por el usuario', '2026-02-05 16:53:13', '2026-02-05 22:51:27', '2026-02-05 22:53:13');
+INSERT INTO `reservaciones` (`id`, `codigo`, `cliente_id`, `nombre_cliente`, `telefono`, `correo`, `especialista_id`, `servicio_id`, `sucursal_id`, `fecha_cita`, `hora_inicio`, `hora_fin`, `duracion_minutos`, `precio_total`, `estado`, `es_extraordinaria`, `primera_consulta`, `notas_cliente`, `notas_especialista`, `calificacion`, `comentario_resena`, `recordatorio_enviado`, `creado_por`, `cancelado_por`, `motivo_cancelacion`, `fecha_cancelacion`, `created_at`, `updated_at`, `source`, `attendance_confirmed`, `attendance_confirmed_at`) VALUES
+(15, 'RES-2026-003', NULL, 'Javier diaz', NULL, NULL, 18, 24, 16, '2026-01-31', '11:00:00', '11:30:00', 30, 0.00, 'cancelada', 0, 0, NULL, NULL, NULL, 'Quiero.informes u donde es', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:44', '2026-01-28 18:45:49', '2026-01-28 21:09:44', NULL, NULL, NULL),
+(16, 'RES-2026-004', NULL, 'Roberto Pérez', NULL, NULL, 18, 24, 16, '2026-01-31', '12:00:00', '12:30:00', 30, 0.00, 'cancelada', 0, 0, NULL, NULL, NULL, 'Vendas', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:46', '2026-01-28 18:53:28', '2026-01-28 21:09:46', NULL, NULL, NULL),
+(17, 'RES-2026-005', NULL, 'Juan Ejemplo', NULL, NULL, 18, 24, 16, '2026-01-31', '10:00:00', '10:30:00', 30, 0.00, 'cancelada', 0, 0, NULL, NULL, NULL, 'No', 0, NULL, 20, 'Cancelada por el usuario', '2026-01-28 15:09:40', '2026-01-28 18:53:51', '2026-01-28 21:09:40', NULL, NULL, NULL),
+(18, 'RES-2026-006', NULL, 'Claro Obscuro', NULL, NULL, 18, 24, 16, '2026-01-31', '09:00:00', '10:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:08:34', '2026-01-28 21:08:34', NULL, NULL, NULL),
+(19, 'RES-2026-007', NULL, 'Roberto Ejemplo', NULL, NULL, 18, 24, 16, '2026-01-30', '11:00:00', '12:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:10:45', '2026-01-28 21:10:45', NULL, NULL, NULL),
+(20, 'RES-2026-008', NULL, 'Ejemplo Dos', NULL, NULL, 18, 24, 16, '2026-02-01', '10:00:00', '11:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-01-28 21:27:38', '2026-01-28 21:27:38', NULL, NULL, NULL),
+(22, 'RES-2026-010', NULL, 'Javier diaz', NULL, NULL, 18, 24, 16, '2026-02-01', '12:00:00', '13:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Prueba', 0, NULL, NULL, NULL, NULL, '2026-01-31 00:09:46', '2026-01-31 00:09:46', NULL, NULL, NULL),
+(32, 'RES-2026-87002', NULL, 'Javier diaz', NULL, NULL, 18, 24, 16, '2026-02-10', '15:00:00', '16:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Prueba de maj', 0, NULL, NULL, NULL, NULL, '2026-02-05 17:39:33', '2026-02-05 17:39:33', NULL, NULL, NULL),
+(33, 'RES-2026-87003', NULL, 'Ejemplo Prueba', NULL, NULL, 18, 24, 16, '2026-02-10', '14:00:00', '15:00:00', 60, 0.00, 'cancelada', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, 20, 'Cancelada por el usuario', '2026-02-05 16:53:13', '2026-02-05 22:51:27', '2026-02-05 22:53:13', NULL, NULL, NULL),
+(41, 'RES-2026-72017', NULL, 'Pavel Rodriguez', NULL, NULL, 18, 24, 16, '2026-02-14', '11:00:00', '12:00:00', 60, 0.00, 'pendiente', 0, 0, NULL, NULL, NULL, '', 0, NULL, NULL, NULL, NULL, '2026-02-09 18:49:13', '2026-02-09 18:49:13', NULL, NULL, NULL),
+(64, 'RES-2026-35487', NULL, 'Marisol Hernández acosta', NULL, NULL, 36, 1, 6, '2026-03-02', '10:00:00', '10:30:00', 30, 500.00, 'cancelada', 0, 0, '', NULL, NULL, NULL, 0, 21, 21, 'Cancelada por el usuario', '2026-02-27 13:13:50', '2026-02-27 19:06:34', '2026-02-27 19:13:50', NULL, NULL, NULL),
+(65, 'RES-2026-92899', NULL, 'marisol hernandez Acosta', NULL, NULL, 36, 1, 6, '2026-03-02', '10:00:00', '10:45:00', 45, 1200.00, 'cancelada', 0, 0, '', NULL, NULL, NULL, 0, 21, 21, 'prueba +', '2026-03-02 15:51:03', '2026-02-27 19:14:15', '2026-03-02 21:51:03', NULL, NULL, NULL),
+(72, 'RES-2026-77670', NULL, 'Roberto castañon', NULL, NULL, 36, 29, 6, '2026-03-03', '16:00:00', '16:15:00', 15, 10.00, 'cancelada', 0, 0, '', NULL, NULL, NULL, 0, 21, 21, 'prueba', '2026-03-02 15:51:12', '2026-03-02 21:42:19', '2026-03-02 21:51:12', NULL, NULL, NULL),
+(73, 'RES-2026-48375', NULL, 'arturo Lopez', NULL, NULL, 36, 30, 6, '2026-03-03', '16:15:00', '16:45:00', 30, 1000.00, 'cancelada', 0, 0, '', NULL, NULL, NULL, 0, 21, 21, 'Cancelada por el usuario', '2026-03-02 15:51:18', '2026-03-02 21:42:43', '2026-03-02 21:51:18', NULL, NULL, NULL),
+(74, 'RES-2026-06507', NULL, 'sofis botbolls', NULL, NULL, 36, 1, 6, '2026-03-03', '17:30:00', '18:15:00', 45, 1200.00, 'cancelada', 0, 0, '', NULL, NULL, NULL, 0, 21, 21, 'Cancelada por el usuario', '2026-03-02 15:51:26', '2026-03-02 21:44:50', '2026-03-02 21:51:26', NULL, NULL, NULL),
+(75, 'RES-2026-07477', NULL, 'Ejemplo Reserva Bloqueo', NULL, NULL, 30, 10, 2, '2026-03-07', '12:00:00', '12:30:00', 30, 800.00, 'pendiente', 1, 0, 'Nada', NULL, NULL, NULL, 0, 5, NULL, NULL, NULL, '2026-03-06 18:43:50', '2026-03-06 18:43:50', NULL, NULL, NULL),
+(76, 'RES-2026-56409', NULL, 'Ejemplo Extra', '4427869807', NULL, 29, 34, 3, '2026-03-08', '19:15:00', '19:45:00', 30, 0.00, 'pendiente', 1, 0, '', NULL, NULL, NULL, 0, 5, NULL, NULL, NULL, '2026-03-06 19:05:41', '2026-03-06 19:05:41', NULL, NULL, NULL),
+(78, 'RES-2026-92122', NULL, 'javier diaz', '4422474539', NULL, 36, 32, 6, '2026-03-19', '17:00:00', '17:15:00', 15, 0.00, 'pendiente', 1, 1, '', NULL, NULL, NULL, 0, 21, NULL, NULL, NULL, '2026-03-19 22:52:55', '2026-03-19 22:52:55', NULL, NULL, NULL),
+(79, 'RES-2026-26543', NULL, 'roberto', '4422334455', NULL, 36, 28, 6, '2026-03-19', '17:30:00', '18:15:00', 45, 1200.00, 'pendiente', 0, 0, '', NULL, NULL, NULL, 0, 21, NULL, NULL, NULL, '2026-03-19 22:53:42', '2026-03-19 22:53:42', NULL, NULL, NULL),
+(80, 'RES-2026-26544', NULL, 'javier diaz prueba', '5214422474539', NULL, 36, 1, 6, '2026-03-20', '10:00:00', '10:45:00', 45, 1200.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'mo', 0, NULL, NULL, NULL, NULL, '2026-03-19 22:58:06', '2026-03-19 22:58:06', NULL, NULL, NULL),
+(81, 'RES-2026-86328', NULL, 'sofia jusn', '4422334466', NULL, 36, 33, 6, '2026-03-20', '11:15:00', '11:45:00', 30, 1000.00, 'pendiente', 1, 0, '', NULL, NULL, NULL, 0, 21, NULL, NULL, NULL, '2026-03-19 22:58:53', '2026-03-19 22:58:53', NULL, NULL, NULL),
+(82, 'RES-2026-86329', NULL, 'Ejemplo Nombre', '5214427869806', NULL, 29, 10, 3, '2026-04-08', '10:30:00', '10:45:00', 15, 900.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-03-24 18:24:35', '2026-03-24 18:24:35', NULL, NULL, NULL),
+(83, 'RES-2026-86330', NULL, 'Sis Ejemplo', '5214427869806', NULL, 29, 11, 3, '2026-03-31', '09:30:00', '10:30:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-03-30 22:17:13', '2026-03-30 22:17:13', 'liga1', NULL, NULL),
+(84, 'RES-2026-86331', NULL, 'Ejemplo Alarma', '5214427869806', NULL, 29, 11, 3, '2026-05-06', '10:00:00', '11:00:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'nada', 0, NULL, NULL, NULL, NULL, '2026-04-01 17:32:14', '2026-04-01 17:32:14', 'liga1', NULL, NULL),
+(85, 'RES-2026-86332', NULL, 'Sis non', '5214427869806', NULL, 29, 11, 3, '2026-05-05', '09:15:00', '10:15:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'l', 0, NULL, NULL, NULL, NULL, '2026-04-01 17:46:45', '2026-04-01 17:46:45', 'liga2', NULL, NULL),
+(86, 'RES-2026-86333', NULL, 'Alarma Sirve', '5214427869806', NULL, 29, 10, 3, '2026-04-06', '09:15:00', '09:30:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'pooo', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:04:33', '2026-04-01 18:04:46', 'liga2', NULL, NULL),
+(87, 'RES-2026-86334', NULL, 'Sos Non', '5214427869806', NULL, 30, 10, 2, '2026-06-05', '18:45:00', '19:15:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 1, NULL, NULL, NULL, NULL, '2026-04-01 18:12:58', '2026-06-05 22:45:06', 'liga2', NULL, NULL),
+(88, 'RES-2026-86335', NULL, 'Nada Alarma', '5214427869806', NULL, 30, 10, 2, '2026-05-02', '18:15:00', '18:45:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:19:21', '2026-04-01 18:19:21', NULL, NULL, NULL),
+(89, 'RES-2026-86336', NULL, 'ppp ooo', '5214427869806', NULL, 30, 10, 2, '2026-05-02', '20:00:00', '20:30:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'nada', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:23:28', '2026-04-01 18:23:28', 'liga2', NULL, NULL),
+(90, 'RES-2026-86337', NULL, 'Alarma Ejemplo', '5214427869806', NULL, 29, 10, 3, '2026-05-05', '10:30:00', '10:45:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'ko', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:26:58', '2026-04-01 18:27:11', 'liga2', NULL, NULL),
+(91, 'RES-2026-86338', NULL, 'Alarma 3jemplo', '5214427869806', NULL, 30, 11, 2, '2026-04-11', '18:15:00', '19:15:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:32:12', '2026-04-01 18:32:12', 'liga2', NULL, NULL),
+(92, 'RES-2026-86339', NULL, 'Ojala sirva', '5214427869806', NULL, 30, 11, 2, '2026-04-03', '18:30:00', '19:30:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:37:15', '2026-04-01 18:37:15', 'liga2', NULL, NULL),
+(93, 'RES-2026-86340', NULL, 'Que sirva', '5214427869806', NULL, 30, 11, 2, '2026-04-11', '20:00:00', '21:00:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:50:47', '2026-04-01 18:50:47', 'liga2', NULL, NULL),
+(94, 'RES-2026-86341', NULL, 'ko ko', '5214427869806', NULL, 29, 10, 3, '2026-05-06', '09:15:00', '09:30:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 18:53:53', '2026-04-01 18:54:01', 'liga2', NULL, NULL),
+(95, 'RES-2026-86342', NULL, 'yo yo', '5214427869806', NULL, 30, 10, 2, '2026-06-05', '20:00:00', '20:30:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 1, NULL, NULL, NULL, NULL, '2026-04-01 18:56:40', '2026-06-06 00:00:08', 'liga2', NULL, NULL),
+(96, 'RES-2026-86343', NULL, 'Sis non', '5214427869806', NULL, 30, 11, 2, '2026-05-15', '18:15:00', '19:15:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:02:30', '2026-04-01 19:02:30', 'liga2', NULL, NULL),
+(97, 'RES-2026-86344', NULL, 'Alarma sis', '5214427869806', NULL, 30, 11, 2, '2026-05-21', '18:15:00', '19:15:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'Nada', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:10:02', '2026-04-01 19:10:02', 'liga2', NULL, NULL),
+(98, 'RES-2026-86345', NULL, 'no no', '5214427869806', NULL, 30, 11, 2, '2026-05-08', '18:30:00', '19:30:00', 60, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:19:36', '2026-04-01 19:19:36', 'liga2', NULL, NULL),
+(99, 'RES-2026-86346', NULL, 'Sis non', '5214427869806', NULL, 30, 10, 2, '2026-06-06', '20:15:00', '20:45:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 1, NULL, NULL, NULL, NULL, '2026-04-01 19:26:48', '2026-06-07 00:15:04', 'liga2', NULL, NULL),
+(100, 'RES-2026-86347', NULL, 'Ya que', '5214427869806', NULL, 29, 10, 3, '2026-07-06', '10:00:00', '10:15:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:36:55', '2026-04-01 19:36:57', 'liga2', NULL, NULL),
+(101, 'RES-2026-86348', NULL, 'sis de', '5214427869806', NULL, 30, 10, 2, '2026-06-13', '18:30:00', '19:00:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:41:33', '2026-04-01 19:41:33', 'liga2', NULL, NULL),
+(102, 'RES-2026-86349', NULL, 'Que yaaaa', '5214427869806', NULL, 29, 10, 3, '2026-05-19', '09:45:00', '10:00:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 19:50:16', '2026-04-01 19:50:29', 'liga2', NULL, NULL),
+(103, 'RES-2026-86350', NULL, 'Sis ejemplo1', '5214427869806', NULL, 30, 10, 2, '2026-06-06', '18:30:00', '19:00:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 1, NULL, NULL, NULL, NULL, '2026-04-01 20:02:05', '2026-06-06 22:30:04', 'liga2', NULL, NULL),
+(104, 'RES-2026-86351', NULL, 'Nada NAda', '5214427869806', NULL, 30, 10, 2, '2026-05-29', '20:00:00', '20:30:00', 30, 800.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'no', 1, NULL, NULL, NULL, NULL, '2026-04-01 20:04:22', '2026-05-30 00:00:07', 'liga2', NULL, NULL),
+(105, 'RES-2026-86352', NULL, 'Nada AY', '5214427869806', NULL, 29, 10, 3, '2026-06-08', '10:00:00', '10:15:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 1, NULL, NULL, NULL, NULL, '2026-04-01 20:07:12', '2026-06-08 14:00:05', 'liga2', NULL, NULL),
+(106, 'RES-2026-86353', NULL, 'sis ejemplo', '5214427869806', NULL, 29, 10, 3, '2026-06-15', '09:30:00', '09:45:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 20:32:42', '2026-04-01 20:32:42', 'liga2', NULL, NULL),
+(107, 'RES-2026-86354', NULL, 'Boton ejemplo', '5214427869806', NULL, 29, 10, 3, '2026-07-07', '10:15:00', '10:30:00', 15, 900.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'no', 0, NULL, NULL, NULL, NULL, '2026-04-01 20:43:16', '2026-05-26 19:36:28', 'liga2', NULL, NULL),
+(108, 'RES-2026-86355', NULL, 'Javier diaz', '5214422474539', NULL, 45, 41, 19, '2026-06-15', '09:45:00', '10:25:00', 40, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'No', 0, NULL, NULL, NULL, NULL, '2026-05-13 20:20:17', '2026-05-13 20:20:17', 'liga1', NULL, NULL),
+(109, 'RES-2026-86356', NULL, 'Roberto Pérez', '5214422474539', NULL, 45, 41, 19, '2026-05-15', '10:15:00', '10:55:00', 40, 1500.00, 'pendiente', 0, 0, NULL, NULL, NULL, 'No', 0, NULL, NULL, NULL, NULL, '2026-05-13 20:21:42', '2026-05-13 20:21:42', 'liga1', NULL, NULL),
+(110, 'RES-2026-86357', NULL, 'Adrián Pérez', '5214422474539', NULL, 44, 43, 20, '2026-05-14', '09:15:00', '09:55:00', 40, 1500.00, 'confirmada', 0, 0, NULL, NULL, NULL, 'No', 0, NULL, NULL, NULL, NULL, '2026-05-13 20:23:56', '2026-05-13 20:24:21', 'liga1', NULL, NULL),
+(111, 'RES-2026-55290', NULL, 'Ejemeplo Calendario', '4427869806', NULL, 29, 10, 3, '2026-06-03', '11:30:00', '11:45:00', 15, 900.00, 'confirmada', 0, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-26 19:37:04', '2026-06-03 15:30:06', NULL, NULL, NULL),
+(112, 'RES-2026-20764', NULL, 'Ejemplo Recorda', '4427869806', NULL, 29, 10, 3, '2026-06-03', '12:30:00', '12:45:00', 15, 900.00, 'confirmada', 0, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-26 19:38:37', '2026-06-03 16:30:04', NULL, NULL, NULL),
+(113, 'RES-2026-64221', NULL, 'Ejemplo Recorda2', '4427869806', 'roberto101003@gmail.com', 29, 10, 3, '2026-05-27', '17:00:00', '17:15:00', 15, 900.00, 'confirmada', 1, 0, 'Nada', NULL, NULL, NULL, 0, 5, NULL, NULL, NULL, '2026-05-27 20:51:44', '2026-05-27 20:51:54', NULL, NULL, NULL),
+(114, 'RES-2026-23157', NULL, 'Ejemeplo Recordatorio3', '4427869806', NULL, 29, 11, 3, '2026-05-27', '19:00:00', '20:00:00', 60, 1500.00, 'confirmada', 1, 0, '', NULL, NULL, NULL, 0, 5, NULL, NULL, NULL, '2026-05-27 21:54:22', '2026-05-27 21:54:32', NULL, NULL, NULL),
+(115, 'RES-2026-23113', NULL, 'Ejemplo VuelveRecor', '4427869806', NULL, 30, 10, 2, '2026-05-28', '13:30:00', '14:00:00', 30, 800.00, 'cancelada', 1, 0, '', NULL, NULL, NULL, 0, 5, 5, 'Cancelada por el usuario', '2026-05-28 12:36:13', '2026-05-28 17:20:17', '2026-05-28 17:36:13', NULL, NULL, NULL),
+(116, 'RES-2026-24952', NULL, 'Ejemeplo RecoAuto', '4427869806', NULL, 30, 10, 2, '2026-05-28', '13:45:00', '14:15:00', 30, 800.00, 'pendiente', 1, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-28 17:36:32', '2026-05-28 19:37:50', NULL, NULL, NULL),
+(117, 'RES-2026-15347', NULL, 'Prueba Reco', '4427869806', NULL, 30, 10, 2, '2026-05-28', '14:45:00', '15:15:00', 30, 800.00, 'pendiente', 1, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-28 18:39:24', '2026-05-28 19:37:50', NULL, NULL, NULL),
+(118, 'RES-2026-48675', NULL, 'Ejemplo Yafunciona', '4427869806', NULL, 30, 10, 2, '2026-05-28', '16:00:00', '16:30:00', 30, 800.00, 'confirmada', 1, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-28 19:45:08', '2026-05-28 20:21:59', NULL, NULL, NULL),
+(119, 'RES-2026-49491', NULL, 'Ejemeplo AutoBien', '4427869806', NULL, 30, 10, 2, '2026-05-28', '18:15:00', '18:45:00', 30, 800.00, 'pendiente', 0, 0, '', NULL, NULL, NULL, 1, 5, NULL, NULL, NULL, '2026-05-28 22:06:29', '2026-05-28 22:15:04', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -788,30 +1498,48 @@ CREATE TABLE `servicios` (
 --
 
 INSERT INTO `servicios` (`id`, `categoria_id`, `nombre`, `descripcion`, `duracion_minutos`, `precio`, `precio_oferta`, `imagen`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Consulta General', 'Consulta médica general con diagnóstico', 30, 500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(1, 1, 'Consulta General', 'Consulta médica general con diagnóstico', 45, 500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2026-02-27 19:09:45'),
 (2, 1, 'Chequeo Completo', 'Examen médico completo con análisis básicos', 60, 1500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (3, 1, 'Consulta Pediatría', 'Atención médica para niños y adolescentes', 30, 600.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (4, 2, 'Facial Hidratante', 'Tratamiento facial de hidratación profunda', 45, 450.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (5, 2, 'Manicure Completo', 'Manicure con esmaltado y tratamiento de cutículas', 30, 200.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (6, 2, 'Masaje Relajante', 'Masaje corporal completo de relajación', 60, 600.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (7, 3, 'Corte de Cabello', 'Corte de cabello clásico o moderno', 30, 150.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(8, 3, 'Arreglo de Barba', 'Recorte y diseño de barba', 20, 100.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(8, 3, 'Arreglo de Barba', 'Recorte y diseño de barba', 30, 100.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2026-03-01 19:45:56'),
 (9, 3, 'Corte + Barba', 'Servicio completo de corte y arreglo de barba', 45, 220.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (10, 4, 'Consulta Legal Básica', 'Asesoría legal general de 30 minutos', 30, 800.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (11, 4, 'Revisión de Contratos', 'Análisis y revisión de contratos', 60, 1500.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (12, 5, 'Asesoría de Inversiones', 'Consultoría en inversiones y portafolios', 45, 1000.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (13, 5, 'Planificación Financiera', 'Desarrollo de plan financiero personal', 60, 1200.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(14, 6, 'Sesión Individual', 'Sesión de terapia psicológica individual', 50, 700.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
+(14, 6, 'Sesión Individual', 'Sesión de terapia psicológica individual', 45, 700.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2026-03-01 19:46:33'),
 (15, 6, 'Terapia de Pareja', 'Sesión de terapia para parejas', 60, 900.00, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
 (16, 4, 'Asesoria ejemplo', 'Descripción de ejemplo', 30, 300.00, NULL, NULL, 1, '2025-12-02 17:38:33', '2025-12-02 17:38:46'),
 (17, 7, 'Servicio ejemplo', 'Descripción de ejemplo', 30, 500.00, NULL, NULL, 1, '2025-12-04 16:34:14', '2025-12-04 16:34:14'),
 (18, 1, 'Consulta Otorrino', 'Consulta Otorrino', 30, 0.00, NULL, NULL, 1, '2025-12-12 18:28:28', '2025-12-12 18:28:28'),
 (19, 3, 'Corte ejemplo1', 'Descripción de corte ejemplo 1', 45, 350.00, NULL, NULL, 1, '2025-12-16 05:16:28', '2025-12-16 05:16:28'),
-(20, 1, 'Consulta rápida', 'Consulta rapida', 40, 800.00, NULL, NULL, 1, '2026-01-21 19:52:56', '2026-01-21 19:52:56'),
+(20, 1, 'Consulta rápida', 'Consulta rapida', 15, 800.00, NULL, NULL, 1, '2026-01-21 19:52:56', '2026-03-01 20:51:27'),
 (21, 7, 'Consultoria de negocios con IA', 'Integramos las mejores herramientas de IA y sus agentes para incrementar ventas en tu modelo de negocio', 45, 1300.00, 1000.00, NULL, 1, '2026-01-23 18:09:55', '2026-01-23 18:11:55'),
-(23, 8, 'Evento de ejemlo 1', 'Descripción ejemplo 1', 35, 12000.00, NULL, NULL, 1, '2026-01-27 16:28:00', '2026-01-27 16:28:00'),
+(23, 8, 'Evento de ejemlo 1', 'Descripción ejemplo 1', 30, 12000.00, NULL, NULL, 1, '2026-01-27 16:28:00', '2026-03-01 19:46:43'),
 (24, 8, 'Ventas-Informes', '', 30, 0.00, NULL, NULL, 1, '2026-01-28 18:41:36', '2026-01-28 18:41:36'),
-(25, 1, 'Consulta de emergencia ', 'consulta fuera del horario habitual para emergencias ', 30, 1200.00, NULL, NULL, 1, '2026-02-03 19:59:46', '2026-02-03 19:59:46');
+(25, 1, 'Consulta de emergencia ', 'consulta fuera del horario habitual para emergencias ', 30, 1200.00, NULL, NULL, 1, '2026-02-03 19:59:46', '2026-02-03 19:59:46'),
+(26, 8, 'EjemploServicio', 'NadaEjemplo', 45, 1050.00, NULL, NULL, 1, '2026-02-10 18:52:53', '2026-03-01 19:46:12'),
+(27, 8, 'EjemploServicio2', 'NadaEjemplo2', 45, 1060.00, NULL, NULL, 1, '2026-02-10 18:54:06', '2026-02-10 18:54:06'),
+(28, 1, 'Consulta Familiar P/P', 'Se cobra por cada paciente', 45, 1200.00, NULL, NULL, 1, '2026-02-27 19:00:01', '2026-02-27 19:00:01'),
+(29, 8, 'Revision', 'revison de cirugia', 15, 10.00, NULL, NULL, 1, '2026-02-27 19:12:04', '2026-02-27 19:12:04'),
+(30, 8, 'tamizado auditivo', 'tamizado', 30, 1000.00, NULL, NULL, 1, '2026-03-02 21:37:25', '2026-03-02 21:37:25'),
+(31, 9, 'Consulta Extraordinaria', '', 15, 0.00, NULL, NULL, 1, '2026-03-03 17:38:09', '2026-03-03 17:41:37'),
+(32, 9, 'Revision de cirugia', '', 15, 0.00, NULL, NULL, 1, '2026-03-06 17:17:25', '2026-03-06 17:17:25'),
+(33, 9, 'Tamiz auditivo', '', 30, 1000.00, NULL, NULL, 1, '2026-03-06 17:17:38', '2026-03-06 17:17:38'),
+(34, 9, 'Consulta Extraordinaria', '', 30, 0.00, NULL, NULL, 1, '2026-03-06 18:05:28', '2026-03-06 18:05:28'),
+(35, 9, 'Consulta Extraordinaria', '', 30, 0.00, NULL, NULL, 1, '2026-03-06 18:06:33', '2026-03-06 18:06:33'),
+(36, 1, 'Sesion de Terapia (fisio)', '', 60, 500.00, NULL, NULL, 1, '2026-03-09 22:39:21', '2026-03-09 22:39:21'),
+(37, 1, 'Descarga Muscularn', '', 60, 600.00, NULL, NULL, 1, '2026-03-09 22:39:43', '2026-03-09 22:39:43'),
+(38, 1, 'Descarga Muscular ', '', 60, 600.00, NULL, NULL, 1, '2026-03-09 22:40:12', '2026-03-09 22:40:12'),
+(39, 1, 'Descarga Muscular ', '', 60, 600.00, NULL, NULL, 1, '2026-03-09 22:40:15', '2026-03-09 22:40:15'),
+(40, 8, 'injerto capilar', 'te ponen cabello', 165, 14000.00, NULL, NULL, 1, '2026-05-13 20:14:49', '2026-05-13 20:14:49'),
+(41, 8, 'Plasma', 'plaza rico en plaquetas', 40, 1500.00, NULL, NULL, 1, '2026-05-13 20:15:13', '2026-05-13 20:15:13'),
+(42, 8, 'Injerto de pelo', 'injerto', 170, 14000.00, NULL, NULL, 1, '2026-05-13 20:15:31', '2026-05-13 20:15:31'),
+(43, 8, 'plasma', 'plasma de paquetas', 40, 1500.00, NULL, NULL, 1, '2026-05-13 20:15:49', '2026-05-13 20:15:49');
 
 -- --------------------------------------------------------
 
@@ -837,31 +1565,58 @@ CREATE TABLE `sucursales` (
   `imagen` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `activo` tinyint(1) DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT '#3B82F6'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `sucursales`
 --
 
-INSERT INTO `sucursales` (`id`, `nombre`, `direccion`, `ciudad`, `estado`, `codigo_postal`, `telefono`, `email`, `zona_horaria`, `horario_apertura`, `horario_cierre`, `dias_laborales`, `latitud`, `longitud`, `imagen`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 'ReserBot Centro', 'Av. Constituyentes 200, Centro Histórico', 'Santiago de Querétaro', 'Querétaro', '76000', '5244221234', 'centro@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.59300000, -100.39290000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:32:38'),
-(2, 'ReserBot Juriquilla', 'Blvd. Juriquilla 1000, Juriquilla', 'Santiago de Querétaro', 'Querétaro', '76226', '4422345678', 'juriquilla@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.71130000, -100.44970000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 18:04:53'),
-(3, 'ReserBot El Marqués', 'Av. Paseo Constituyentes 500, Zona Industrial', 'El Marqués', 'Querétaro', '76240', '5244225678', 'marques@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.54650000, -100.26570000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:33:07'),
-(4, 'ReserBot Ejemplo', 'Calle ejemplo #1000', 'Queretaro', 'Querétaro', '70000', '1234567890', 'ejemplo@ejemplo.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 17:10:01', '2025-12-02 17:10:01'),
-(5, 'Consultorio Elsa Molina', 'Avenida Constitución #30', 'Querétaro', 'Querétaro', '76087', '4421623671', 'elsamolina@gmail.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 21:47:51', '2025-12-04 18:04:32'),
-(6, 'Hospital Angeles Centro Sur', 'Calle ejemplo', 'Qro', 'Querétaro', '76001', '2345678903', 'aide@aide.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-12 18:24:12', '2025-12-12 18:24:12'),
-(7, 'Consultorio Roberto  Ejemplo1', 'Calle ejemplo1', 'Ciudad ejemplo1', 'Querétaro', '76000', '4427869807', 'robertoejemplo1@gmail.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-16 05:15:08', '2025-12-16 05:15:08'),
-(8, 'Consultorio Mario Hernnandez', 'Calle ejemplo Mario', 'QUETETARO', 'Querétaro', '76096', '4423223423', 'docMario@gmail.com', 'America/Mexico_City', '09:00:00', '18:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-21 19:51:47', '2026-01-21 19:51:47'),
-(9, 'Agencia Experiencia', 'PASEO DE LA CONSTITUCION 100, 3', 'Querétaro', 'Querétaro', '76140', '4422956843', 'contacto@agenciaexperiencia.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-23 18:15:07', '2026-01-23 18:15:07'),
-(10, 'Barberia de Javi ', 'Hacienda el tintero 370 ', 'Queretaro ', 'Querétaro', '76230 ', '4422474539', 'sucursal@aide.com', 'America/Mexico_City', '13:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-26 19:41:06', '2026-01-26 19:41:06'),
-(11, 'A  Domicilio', '', 'Queretaro', 'Querétaro', '', '', '', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-26 19:45:18', '2026-01-26 19:45:18'),
-(12, 'Sucursal Ejemplo Varias1', 'Dirección Sucursal Ejemplo Varias1', 'Querétaro', 'Querétaro', '76087', '4427869809', 'SucursalEjemploVarias1@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-27 17:11:28', '2026-01-27 17:11:28'),
-(13, 'Sucursal Ejemplo Varias2', 'Dirección Sucursal Ejemplo Varias2', 'Querétaro', 'Querétaro', '76083', '4427869800', 'SucursalEjemploVarias2@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-27 18:26:42', '2026-01-27 18:26:42'),
-(14, 'Hacienda el Tintero', '370', 'Querétaro', 'Querétaro', '76230', '', 'hacienda@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:11:08', '2026-01-28 18:11:08'),
-(15, 'Hacienda Chichimequillas', '118', 'Querétaro', 'Querétaro', '76178', '4427869805', 'chchimequillas@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:11:52', '2026-01-28 18:11:52'),
-(16, 'La Trinidad Fraccionamiento Campestre, 20°11&#039;53.0&quot;N 100°13&#039;30.8&quot;W, 61015 michoacan, Mich.', '123', 'Querétaro', 'Querétaro', '76088', '4427869800', 'trinidad@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:40:40', '2026-01-28 21:24:54'),
-(17, 'Hospital angeles Ensueño ', 'bernardino del raso 27', 'queretaro ', 'Querétaro', '76178', '1122334455', '', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-02-03 19:58:31', '2026-02-03 19:58:31');
+INSERT INTO `sucursales` (`id`, `nombre`, `direccion`, `ciudad`, `estado`, `codigo_postal`, `telefono`, `email`, `zona_horaria`, `horario_apertura`, `horario_cierre`, `dias_laborales`, `latitud`, `longitud`, `imagen`, `activo`, `created_at`, `updated_at`, `color`) VALUES
+(1, 'ReserBot Centro', 'Av. Constituyentes 200, Centro Histórico', 'Santiago de Querétaro', 'Querétaro', '76000', '5244221234', 'centro@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.59300000, -100.39290000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:32:38', '#3B82F6'),
+(2, 'ReserBot Juriquilla', 'Blvd. Juriquilla 1000, Juriquilla', 'Santiago de Querétaro', 'Querétaro', '76226', '4422345678', 'juriquilla@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.71130000, -100.44970000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 18:04:53', '#3B82F6'),
+(3, 'ReserBot El Marqués', 'Av. Paseo Constituyentes 500, Zona Industrial', 'El Marqués', 'Querétaro', '76240', '5244225678', 'marques@reserbot.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', 20.54650000, -100.26570000, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:33:07', '#3B82F6'),
+(4, 'ReserBot Ejemplo', 'Calle ejemplo #1000', 'Queretaro', 'Querétaro', '70000', '1234567890', 'ejemplo@ejemplo.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 17:10:01', '2025-12-02 17:10:01', '#3B82F6'),
+(5, 'Consultorio Elsa Molina', 'Avenida Constitución #30', 'Querétaro', 'Querétaro', '76087', '4421623671', 'elsamolina@gmail.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-02 21:47:51', '2025-12-04 18:04:32', '#3B82F6'),
+(6, 'Hospital Angeles Centro Sur', 'BOULEVARD BERNARDO QUINTANA ARRIOJA 9670, Blvd. Centro Sur 9800, Centro Sur, 76090 Santiago de Querétaro, Qro.', 'Qro', 'Querétaro', '76001', '2345678903', 'aide@aide.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-12 18:24:12', '2026-03-01 08:29:55', '#ff00c8'),
+(7, 'Consultorio Roberto  Ejemplo1', 'Calle ejemplo1', 'Ciudad ejemplo1', 'Querétaro', '76000', '4427869807', 'robertoejemplo1@gmail.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2025-12-16 05:15:08', '2025-12-16 05:15:08', '#3B82F6'),
+(8, 'Consultorio Mario Hernnandez', 'Calle ejemplo Mario', 'QUETETARO', 'Querétaro', '76096', '4423223423', 'docMario@gmail.com', 'America/Mexico_City', '09:00:00', '18:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-21 19:51:47', '2026-01-21 19:51:47', '#3B82F6'),
+(9, 'Agencia Experiencia', 'PASEO DE LA CONSTITUCION 100, 3', 'Querétaro', 'Querétaro', '76140', '4422956843', 'contacto@agenciaexperiencia.com', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-23 18:15:07', '2026-01-23 18:15:07', '#3B82F6'),
+(10, 'Barberia de Javi ', 'Hacienda el tintero 370 ', 'Queretaro ', 'Querétaro', '76230 ', '4422474539', 'sucursal@aide.com', 'America/Mexico_City', '13:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-26 19:41:06', '2026-01-26 19:41:06', '#3B82F6'),
+(11, 'A  Domicilio', '', 'Queretaro', 'Querétaro', '', '', '', 'America/Mexico_City', '08:00:00', '20:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-26 19:45:18', '2026-01-26 19:45:18', '#3B82F6'),
+(12, 'Sucursal Ejemplo Varias1', 'Dirección Sucursal Ejemplo Varias1', 'Querétaro', 'Querétaro', '76087', '4427869809', 'SucursalEjemploVarias1@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-27 17:11:28', '2026-01-27 17:11:28', '#3B82F6'),
+(13, 'Sucursal Ejemplo Varias2', 'Dirección Sucursal Ejemplo Varias2', 'Querétaro', 'Querétaro', '76083', '4427869800', 'SucursalEjemploVarias2@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-27 18:26:42', '2026-01-27 18:26:42', '#3B82F6'),
+(14, 'Hacienda el Tintero', '370', 'Querétaro', 'Querétaro', '76230', '', 'hacienda@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:11:08', '2026-01-28 18:11:08', '#3B82F6'),
+(15, 'Hacienda Chichimequillas', '118', 'Querétaro', 'Querétaro', '76178', '4427869805', 'chchimequillas@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:11:52', '2026-01-28 18:11:52', '#3B82F6'),
+(16, 'La Trinidad Fraccionamiento Campestre, 20°11&#039;53.0&quot;N 100°13&#039;30.8&quot;W, 61015 michoacan, Mich.', '123', 'Querétaro', 'Querétaro', '76088', '4427869800', 'trinidad@gmail.com', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-01-28 18:40:40', '2026-01-28 21:24:54', '#3B82F6'),
+(17, 'Hospital angeles Ensueño', 'C. Bernardino del Razo 21, Ensueño, 76178 Santiago de Querétaro, Qro.', 'queretaro', 'Querétaro', '76178', '1122334455', '', 'America/Mexico_City', '00:00:00', '00:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-02-03 19:58:31', '2026-03-01 08:30:31', '#44ff00'),
+(18, 'Consultorio Alma', 'Fernando Espinoza #8 Col. Guadalupe Victoria ', 'Querétaro', 'Querétaro', '76178', '4423051830', 'avalero@aiderservaciones.com', 'America/Mexico_City', '08:00:00', '07:30:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-03-09 22:36:09', '2026-03-09 22:36:09', '#3B82F6'),
+(19, 'Medstichs Qro', 'World Trade Center Querétaro P.º de la República Km 13020, 76230 Juriquilla, Qro.', 'queretaro', 'Querétaro', '6230', '4424677661', 'med@aidereservaciones.com', 'America/Mexico_City', '13:00:00', '19:30:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-05-13 20:08:10', '2026-05-13 20:08:10', '#3b82f6'),
+(20, 'Medstethcis SLP', 'calle san luis no 34 col potosi', 'San luis potosi', 'Querétaro', '76456', '4422474539', '', 'America/Mexico_City', '13:00:00', '17:00:00', '1,2,3,4,5,6', NULL, NULL, NULL, 1, '2026-05-13 20:10:02', '2026-05-13 20:10:02', '#7b219f');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `user_drafts`
+--
+
+CREATE TABLE `user_drafts` (
+  `phone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Número de teléfono del usuario (clave primaria)',
+  `step` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Paso actual del flujo (ej: askClientName, chooseDay)',
+  `flow_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'RESERVACION' COMMENT 'Tipo de flujo: RESERVACION o AIDE_REGISTRO',
+  `draft` json NOT NULL COMMENT 'Estado completo del usuario en formato JSON',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Estado persistente de conversaciones del chatbot';
+
+--
+-- Volcado de datos para la tabla `user_drafts`
+--
+
+INSERT INTO `user_drafts` (`phone`, `step`, `flow_type`, `draft`, `created_at`, `updated_at`) VALUES
+('5215529534033', 'chooseDay', 'RESERVACION', '{\"mes\": 6, \"anio\": 2026, \"precio\": \"0.00\", \"aiEnabled\": false, \"profesion\": \"Fraccionamiento\", \"usuarioId\": 20, \"aiContexto\": null, \"servicioId\": 24, \"sucursalId\": 16, \"sucursalIds\": \"16\", \"esEmergencia\": false, \"esLaTrinidad\": true, \"especialidad\": \"\", \"availableDays\": [{\"day\": 23, \"dayName\": \"Martes\"}, {\"day\": 24, \"dayName\": \"Miércoles\"}, {\"day\": 25, \"dayName\": \"Jueves\"}, {\"day\": 26, \"dayName\": \"Viernes\"}, {\"day\": 27, \"dayName\": \"Sábado\"}, {\"day\": 28, \"dayName\": \"Domingo\"}, {\"day\": 30, \"dayName\": \"Martes\"}], \"clienteNombre\": \"Raquel\", \"especialistaId\": 18, \"servicioNombre\": \"Ventas-Informes\", \"sucursalNombre\": \"La Trinidad Fraccionamiento Campestre\", \"clienteTelefono\": \"5529534033\", \"duracionMinutos\": 60, \"especialistaIds\": \"18\", \"sucursalNombres\": \"La Trinidad Fraccionamiento Campestre, 20°11&#039;53.0&quot;N 100°13&#039;30.8&quot;W, 61015 michoacan, Mich.\", \"clienteApellidos\": \"Peralta\", \"requiereAdelanto\": false, \"cantidadSucursales\": 1, \"especialistaNombre\": \"La Trinidad Fraccionamiento Campestre\", \"porcentajeAdelanto\": 0}', '2026-06-23 01:31:14', '2026-06-23 01:37:43'),
+('5215570518309', 'aide_askName', 'AIDE_REGISTRO', '{}', '2026-03-17 22:44:55', '2026-03-17 22:44:55');
 
 -- --------------------------------------------------------
 
@@ -885,26 +1640,34 @@ CREATE TABLE `usuarios` (
   `token_expira` datetime DEFAULT NULL,
   `ultimo_acceso` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT '1',
+  `requiere_adelanto` tinyint(1) DEFAULT '0' COMMENT '0=desactivado, 1=activado',
+  `porcentaje_adelanto` int(11) DEFAULT '0' COMMENT 'Porcentaje de adelanto requerido (0-100)',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `ai_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '1 = activa la capa de IA para este profesional',
+  `ai_contexto` text COLLATE utf8mb4_unicode_ci COMMENT 'Contexto personalizado del profesional para la IA (precios, servicios, horarios, etc.)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `nombre`, `apellidos`, `email`, `telefono`, `password`, `rol_id`, `sucursal_id`, `avatar`, `email_verificado`, `token_verificacion`, `token_recuperacion`, `token_expira`, `ultimo_acceso`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 'Administrador', 'Sistema', 'admin@reserbot.com', '+52 442 100 0001', '$2y$10$XDSI5Te7YJzHwYyPgS4syua0RHEjBen7/MYsu7st5asjxR/tKjxkO', 1, NULL, NULL, 1, NULL, NULL, NULL, '2026-02-06 10:08:29', 1, '2025-11-29 03:20:01', '2026-02-06 16:08:29'),
-(2, 'Carlos', 'Hernández García', 'carlos.hernandez@reserbot.com', '+52 442 111 1111', '$2y$10$uj.seCFdr.4Qf82BM8mcreO2nnyjsBZTNbWtvhLrYoZgFfNY08CuW', 2, 1, NULL, 1, NULL, NULL, NULL, '2026-01-27 08:54:48', 1, '2025-11-29 03:20:01', '2026-01-27 14:54:48'),
-(3, 'María', 'López Sánchez', 'maria.lopez@reserbot.com', '+52 442 222 2222', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2, 2, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(5, 'Lic. Ana', 'García Ramírez', 'ana.garcia@reserbot.com', '5244244444', '$2y$10$SbxjtuYU2wXo6Por31PXhusS21dqyzel2vt7CKQVb0TjkSZyA1bS6', 3, 11, NULL, 1, NULL, NULL, NULL, '2026-02-05 22:01:45', 1, '2025-11-29 03:20:01', '2026-02-06 04:01:45'),
-(7, 'Laura', 'Sánchez Mendoza', 'laura.sanchez@reserbot.com', '+52 442 666 6666', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 5, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-11-29 03:20:01'),
-(8, 'Pedro', 'González Vega', 'pedro.gonzalez@email.com', '5244277777', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:37:20'),
-(9, 'Sofía', 'Ramírez Luna', 'sofia.ramirez@email.com', '5244288888', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:37:34'),
-(10, 'Miguel', 'Torres Castillo', 'miguel.torres@email.com', '5244299999', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, '2025-11-29 03:20:01', '2025-12-04 16:36:54'),
-(13, 'Claro', 'Obscuro', '', '4427869806', '', 4, NULL, NULL, 0, NULL, NULL, NULL, NULL, 1, '2025-12-04 19:30:15', '2025-12-04 21:38:03'),
-(14, 'Rodrigo', 'Luengas Capetillo', 'rodrigo@aide.com', '1234567899', '$2y$10$.c8YqjlDZoLLrZmoDS8Lq.yB4ESrdtMxZXgw/.gqI30ea5SIg3P0.', 3, 6, NULL, 1, NULL, NULL, NULL, '2026-02-06 10:12:57', 1, '2025-12-12 18:28:47', '2026-02-06 16:12:57'),
-(20, 'La Trinidad', 'Fraccionamiento Campestre', 'trinidad@reserbot.com', '4427869807', '$2y$10$DMx6EImI3afm4YUe5s9CNOXf5x.98WC/FFk5ECCYULg9wqK23UvGm', 3, 16, NULL, 1, NULL, NULL, NULL, '2026-02-05 16:52:31', 1, '2026-01-28 18:41:39', '2026-02-05 22:52:31');
+INSERT INTO `usuarios` (`id`, `nombre`, `apellidos`, `email`, `telefono`, `password`, `rol_id`, `sucursal_id`, `avatar`, `email_verificado`, `token_verificacion`, `token_recuperacion`, `token_expira`, `ultimo_acceso`, `activo`, `requiere_adelanto`, `porcentaje_adelanto`, `created_at`, `updated_at`, `ai_enabled`, `ai_contexto`) VALUES
+(1, 'Administrador', 'Sistema', 'admin@reserbot.com', '+52 442 100 0001', '$2y$10$5spv4LZAOCFzDXL8m2vQEuQKWxAsWqYlqBOV/W3cFRYku6WjG6oaO', 1, NULL, NULL, 1, NULL, NULL, NULL, '2026-06-24 12:54:12', 1, 0, 0, '2025-11-29 03:20:01', '2026-06-24 18:54:12', 0, NULL),
+(2, 'Carlos', 'Hernández García', 'carlos.hernandez@reserbot.com', '+52 442 111 1111', '$2y$10$uj.seCFdr.4Qf82BM8mcreO2nnyjsBZTNbWtvhLrYoZgFfNY08CuW', 2, 1, NULL, 1, NULL, NULL, NULL, '2026-01-27 08:54:48', 1, 0, 0, '2025-11-29 03:20:01', '2026-01-27 14:54:48', 0, NULL),
+(3, 'María', 'López Sánchez', 'maria.lopez@reserbot.com', '+52 442 222 2222', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2, 2, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-11-29 03:20:01', '2025-11-29 03:20:01', 0, NULL),
+(5, 'Ana', 'García Ramírez', 'ana.garcia@reserbot.com', '5244244444', '$2y$10$SbxjtuYU2wXo6Por31PXhusS21dqyzel2vt7CKQVb0TjkSZyA1bS6', 3, 3, NULL, 1, NULL, NULL, NULL, '2026-06-11 11:26:37', 1, 1, 3, '2025-11-29 03:20:01', '2026-06-11 17:26:37', 1, 'La Dra. Ana García Ramírez es abogada especialista en Derecho Civil y Mercantil.\r\nOfrezce consultas presenciales en dos sucursales ReserBot El Marqués y en ReserBot Juriquilla, ambos con horarios diferentes.'),
+(7, 'Laura', 'Sánchez Mendoza', 'laura.sanchez@reserbot.com', '+52 442 666 6666', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 5, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-11-29 03:20:01', '2025-11-29 03:20:01', 0, NULL),
+(8, 'Pedro', 'González Vega', 'pedro.gonzalez@email.com', '5244277777', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-11-29 03:20:01', '2025-12-04 16:37:20', 0, NULL),
+(9, 'Sofía', 'Ramírez Luna', 'sofia.ramirez@email.com', '5244288888', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-11-29 03:20:01', '2025-12-04 16:37:34', 0, NULL),
+(10, 'Miguel', 'Torres Castillo', 'miguel.torres@email.com', '5244299999', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 4, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-11-29 03:20:01', '2025-12-04 16:36:54', 0, NULL),
+(13, 'Claro', 'Obscuro', '', '4427869806', '', 4, NULL, NULL, 0, NULL, NULL, NULL, NULL, 1, 0, 0, '2025-12-04 19:30:15', '2025-12-04 21:38:03', 0, NULL),
+(14, 'Ejemplo', 'Aide', 'rodrigo@aide.com', '1234567899', '$2y$10$.c8YqjlDZoLLrZmoDS8Lq.yB4ESrdtMxZXgw/.gqI30ea5SIg3P0.', 3, 6, NULL, 1, NULL, NULL, NULL, '2026-06-18 10:35:18', 1, 1, 5, '2025-12-12 18:28:47', '2026-06-18 16:35:18', 0, NULL),
+(20, 'La Trinidad', 'Fraccionamiento Campestre', 'trinidad@reserbot.com', '4427869807', '$2y$10$DMx6EImI3afm4YUe5s9CNOXf5x.98WC/FFk5ECCYULg9wqK23UvGm', 3, 16, NULL, 1, NULL, NULL, NULL, '2026-04-20 18:17:20', 1, 0, 0, '2026-01-28 18:41:39', '2026-04-20 23:17:20', 0, NULL),
+(21, 'Rodrigo', 'Luengas Capetillo', 'rodrigoconsul120@gmail.com', '4422291905', '$2y$10$76BxlRu2MSGeYLrk0PS0nuTvbGn0wmpE0gghVfECEgV5wPhGWujbK', 3, 6, NULL, 1, NULL, NULL, NULL, '2026-06-16 15:27:11', 1, 0, 0, '2026-02-27 19:00:11', '2026-06-16 21:27:11', 0, NULL),
+(22, 'Alma Krystal', 'Valero Fuentes', 'avalero@aidereservaciones.com', '4423051850', '$2y$10$kRdWAEmu5g0eKmyrMXpA4ec959Aukj20ZhcVCwP0D5RFvTuhBDiFu', 3, 18, '/images/avatars/avatar_22_1773096433.png', 1, NULL, NULL, NULL, '2026-03-12 09:47:52', 1, 0, 0, '2026-03-09 22:40:41', '2026-03-12 14:49:25', 0, NULL),
+(23, 'Med', 'qro', 'medqro@aidereservaciones.com', '4424677661', '$2y$10$QdONd7wmOKzzhKOaTLbUwOoLv4Ag7B.3T/caGzRQXifNBugClu5Em', 3, 20, NULL, 1, NULL, NULL, NULL, '2026-06-24 12:56:34', 1, 0, 0, '2026-05-13 20:13:22', '2026-06-24 18:56:34', 0, NULL),
+(24, 'Dr Juan', 'Pérez Carter', 'juanperez@aidepro.com', '4400000000', '$2y$10$cdQWU7hxRej7p7Qdb7rdYuqmXKLJxFgEcdN6ssRptI1ZBKgmQRSwi', 3, 6, NULL, 1, NULL, NULL, NULL, '2026-06-23 19:50:30', 1, 0, 0, '2026-06-16 21:34:31', '2026-06-24 01:50:30', 0, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -916,7 +1679,8 @@ INSERT INTO `usuarios` (`id`, `nombre`, `apellidos`, `email`, `telefono`, `passw
 ALTER TABLE `bloqueos_horario`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_especialista` (`especialista_id`),
-  ADD KEY `idx_fechas` (`fecha_inicio`,`fecha_fin`);
+  ADD KEY `idx_fechas` (`fecha_inicio`,`fecha_fin`),
+  ADD KEY `idx_sucursal` (`sucursal_id`);
 
 --
 -- Indices de la tabla `categorias_servicios`
@@ -930,6 +1694,13 @@ ALTER TABLE `categorias_servicios`
 ALTER TABLE `configuraciones`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `clave` (`clave`);
+
+--
+-- Indices de la tabla `configuracion_bot`
+--
+ALTER TABLE `configuracion_bot`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_clave` (`clave`);
 
 --
 -- Indices de la tabla `dias_feriados`
@@ -954,7 +1725,8 @@ ALTER TABLE `especialistas`
 ALTER TABLE `especialistas_servicios`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_especialista_servicio` (`especialista_id`,`servicio_id`),
-  ADD KEY `servicio_id` (`servicio_id`);
+  ADD KEY `servicio_id` (`servicio_id`),
+  ADD KEY `idx_es_emergencia` (`es_emergencia`);
 
 --
 -- Indices de la tabla `horarios_especialistas`
@@ -1011,6 +1783,30 @@ ALTER TABLE `plantillas_notificaciones`
   ADD KEY `idx_sucursal` (`sucursal_id`);
 
 --
+-- Indices de la tabla `registros_interesados`
+--
+ALTER TABLE `registros_interesados`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_telefono` (`telefono`),
+  ADD KEY `idx_estado` (`estado`),
+  ADD KEY `idx_created_at` (`created_at`);
+
+--
+-- Indices de la tabla `reminder_configs`
+--
+ALTER TABLE `reminder_configs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_especialista` (`especialista_id`);
+
+--
+-- Indices de la tabla `reminder_logs`
+--
+ALTER TABLE `reminder_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_esp_fecha` (`especialista_id`,`target_date`),
+  ADD KEY `idx_sent_at` (`sent_at`);
+
+--
 -- Indices de la tabla `reservaciones`
 --
 ALTER TABLE `reservaciones`
@@ -1041,6 +1837,14 @@ ALTER TABLE `sucursales`
   ADD KEY `idx_activo` (`activo`);
 
 --
+-- Indices de la tabla `user_drafts`
+--
+ALTER TABLE `user_drafts`
+  ADD PRIMARY KEY (`phone`),
+  ADD KEY `idx_step` (`step`),
+  ADD KEY `idx_updated_at` (`updated_at`);
+
+--
 -- Indices de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
@@ -1048,7 +1852,8 @@ ALTER TABLE `usuarios`
   ADD UNIQUE KEY `email` (`email`),
   ADD KEY `idx_email` (`email`),
   ADD KEY `idx_rol` (`rol_id`),
-  ADD KEY `idx_sucursal` (`sucursal_id`);
+  ADD KEY `idx_sucursal` (`sucursal_id`),
+  ADD KEY `idx_adelanto` (`requiere_adelanto`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -1058,19 +1863,25 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `bloqueos_horario`
 --
 ALTER TABLE `bloqueos_horario`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `categorias_servicios`
 --
 ALTER TABLE `categorias_servicios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `configuraciones`
 --
 ALTER TABLE `configuraciones`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT de la tabla `configuracion_bot`
+--
+ALTER TABLE `configuracion_bot`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `dias_feriados`
@@ -1082,25 +1893,25 @@ ALTER TABLE `dias_feriados`
 -- AUTO_INCREMENT de la tabla `especialistas`
 --
 ALTER TABLE `especialistas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT de la tabla `especialistas_servicios`
 --
 ALTER TABLE `especialistas_servicios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=98;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=168;
 
 --
 -- AUTO_INCREMENT de la tabla `horarios_especialistas`
 --
 ALTER TABLE `horarios_especialistas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=155;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=236;
 
 --
 -- AUTO_INCREMENT de la tabla `logs_seguridad`
 --
 ALTER TABLE `logs_seguridad`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=328;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=862;
 
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
@@ -1112,7 +1923,7 @@ ALTER TABLE `notificaciones`
 -- AUTO_INCREMENT de la tabla `pagos`
 --
 ALTER TABLE `pagos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `paquetes_servicios`
@@ -1133,28 +1944,46 @@ ALTER TABLE `plantillas_notificaciones`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `registros_interesados`
+--
+ALTER TABLE `registros_interesados`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT de la tabla `reminder_configs`
+--
+ALTER TABLE `reminder_configs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `reminder_logs`
+--
+ALTER TABLE `reminder_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
 -- AUTO_INCREMENT de la tabla `reservaciones`
 --
 ALTER TABLE `reservaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=120;
 
 --
 -- AUTO_INCREMENT de la tabla `servicios`
 --
 ALTER TABLE `servicios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT de la tabla `sucursales`
 --
 ALTER TABLE `sucursales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Restricciones para tablas volcadas
@@ -1164,7 +1993,8 @@ ALTER TABLE `usuarios`
 -- Filtros para la tabla `bloqueos_horario`
 --
 ALTER TABLE `bloqueos_horario`
-  ADD CONSTRAINT `bloqueos_horario_ibfk_1` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `bloqueos_horario_ibfk_1` FOREIGN KEY (`especialista_id`) REFERENCES `especialistas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `bloqueos_horario_ibfk_2` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `dias_feriados`
