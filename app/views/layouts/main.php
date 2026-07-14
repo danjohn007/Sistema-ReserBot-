@@ -103,9 +103,9 @@
             <nav class="p-4 overflow-y-auto flex-1" style="max-height: calc(100vh - 80px);">
                 <ul class="space-y-2">
                     <li>
-                        <a href="<?= url('/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '' ?>">
-                            <i class="fas fa-tachometer-alt w-5"></i>
-                            <span>Dashboard</span>
+                        <a href="<?= url(hasRole(ROLE_REGISTRATION) ? '/solicitudes-registro' : '/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= hasRole(ROLE_REGISTRATION) ? (strpos($_SERVER['REQUEST_URI'], '/solicitudes-registro') !== false && strpos($_SERVER['REQUEST_URI'], '/crear') === false ? 'active' : '') : (strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '') ?>">
+                            <i class="fas <?= hasRole(ROLE_REGISTRATION) ? 'fa-clipboard-list' : 'fa-tachometer-alt' ?> w-5"></i>
+                            <span><?= hasRole(ROLE_REGISTRATION) ? 'Solicitudes' : 'Dashboard' ?></span>
                         </a>
                     </li>
                     
@@ -135,6 +135,18 @@
                         <a href="<?= url('/reservaciones/nueva') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700">
                             <i class="fas fa-plus-circle w-5"></i>
                             <span>Nueva Cita</span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+
+                    <?php if (hasRole(ROLE_REGISTRATION)): ?>
+                    <li class="pt-4">
+                        <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Captura</span>
+                    </li>
+                    <li>
+                        <a href="<?= url('/solicitudes-registro/crear') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/solicitudes-registro/crear') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-file-circle-plus w-5"></i>
+                            <span>Nueva solicitud</span>
                         </a>
                     </li>
                     <?php endif; ?>
@@ -170,8 +182,8 @@
                     </li>
                     <li>
                         <a href="<?= url('/clientes') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/clientes') !== false ? 'active' : '' ?>">
-                            <i class="fas fa-users w-5"></i>
-                            <span>Clientes</span>
+                            <i class="fas <?= hasRole(ROLE_SUPERADMIN) ? 'fa-clipboard-check' : 'fa-users' ?> w-5"></i>
+                            <span><?= hasRole(ROLE_SUPERADMIN) ? 'Solicitudes' : 'Clientes' ?></span>
                         </a>
                     </li>
                     <?php endif; ?>
@@ -258,6 +270,7 @@
                     </div>
                     
                     <div class="flex items-center space-x-4">
+                        <?php if (!hasRole(ROLE_REGISTRATION)): ?>
                         <!-- Notifications -->
                         <a href="<?= url('/notificaciones') ?>" class="relative text-gray-600 hover:text-primary">
                             <i class="fas fa-bell text-xl"></i>
@@ -278,6 +291,7 @@
                             </span>
                             <?php endif; ?>
                         </a>
+                        <?php endif; ?>
                         
                         <!-- User Menu -->
                         <div class="relative" x-data="{ open: false }">
@@ -295,12 +309,14 @@
                                     <p class="text-sm font-semibold text-gray-700"><?= e(($user['nombre'] ?? '') . ' ' . ($user['apellidos'] ?? '')) ?></p>
                                     <p class="text-xs text-gray-500"><?= e(getRoleName($user['rol_id'] ?? 0)) ?></p>
                                 </div>
+                                <?php if (!hasRole(ROLE_REGISTRATION)): ?>
                                 <a href="<?= url('/perfil') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-user mr-2"></i> Mi Perfil
                                 </a>
                                 <a href="<?= url('/perfil/cambiar-password') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-key mr-2"></i> Cambiar Contrase&ntilde;a
                                 </a>
+                                <?php endif; ?>
                                 <hr class="my-2">
                                 <a href="<?= url('/logout') ?>" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesi&oacute;n
@@ -349,9 +365,9 @@
         <nav class="p-4 overflow-y-auto flex-1" style="max-height: calc(100vh - 80px);">
             <ul class="space-y-2">
                 <li>
-                    <a href="<?= url('/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '' ?>">
-                        <i class="fas fa-tachometer-alt w-5"></i>
-                        <span>Dashboard</span>
+                    <a href="<?= url(hasRole(ROLE_REGISTRATION) ? '/solicitudes-registro' : '/dashboard') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= hasRole(ROLE_REGISTRATION) ? (strpos($_SERVER['REQUEST_URI'], '/solicitudes-registro') !== false && strpos($_SERVER['REQUEST_URI'], '/crear') === false ? 'active' : '') : (strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false ? 'active' : '') ?>">
+                        <i class="fas <?= hasRole(ROLE_REGISTRATION) ? 'fa-clipboard-list' : 'fa-tachometer-alt' ?> w-5"></i>
+                        <span><?= hasRole(ROLE_REGISTRATION) ? 'Solicitudes' : 'Dashboard' ?></span>
                     </a>
                 </li>
                 
@@ -381,6 +397,18 @@
                     <a href="<?= url('/reservaciones/nueva') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700">
                         <i class="fas fa-plus-circle w-5"></i>
                         <span>Nueva Cita</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php if (hasRole(ROLE_REGISTRATION)): ?>
+                <li class="pt-4">
+                    <span class="px-4 text-xs font-semibold text-gray-400 uppercase">Captura</span>
+                </li>
+                <li>
+                    <a href="<?= url('/solicitudes-registro/crear') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/solicitudes-registro/crear') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-file-circle-plus w-5"></i>
+                        <span>Nueva solicitud</span>
                     </a>
                 </li>
                 <?php endif; ?>
@@ -416,8 +444,8 @@
                 </li>
                 <li>
                     <a href="<?= url('/clientes') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/clientes') !== false ? 'active' : '' ?>">
-                        <i class="fas fa-users w-5"></i>
-                        <span>Clientes</span>
+                        <i class="fas <?= hasRole(ROLE_SUPERADMIN) ? 'fa-clipboard-check' : 'fa-users' ?> w-5"></i>
+                        <span><?= hasRole(ROLE_SUPERADMIN) ? 'Solicitudes' : 'Clientes' ?></span>
                     </a>
                 </li>
                 <?php endif; ?>

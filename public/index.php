@@ -61,12 +61,18 @@ $routes = [
     // Dashboard
     '/dashboard' => ['controller' => 'DashboardController', 'action' => 'index'],
     '/dashboard/guardar-nombres-ligas' => ['controller' => 'DashboardController', 'action' => 'guardarNombresLigas'],
+
+    // Captura de solicitudes de registro
+    '/solicitudes-registro' => ['controller' => 'RegistrationController', 'action' => 'index'],
+    '/solicitudes-registro/crear' => ['controller' => 'RegistrationController', 'action' => 'create'],
+    '/solicitudes-registro/ver' => ['controller' => 'RegistrationController', 'action' => 'view'],
     
     // Sucursales
     '/sucursales' => ['controller' => 'BranchController', 'action' => 'index'],
     '/sucursales/crear' => ['controller' => 'BranchController', 'action' => 'create'],
     '/sucursales/editar' => ['controller' => 'BranchController', 'action' => 'edit'],
     '/sucursales/eliminar' => ['controller' => 'BranchController', 'action' => 'delete'],
+    '/sucursales/visibilidad' => ['controller' => 'BranchController', 'action' => 'toggleVisibility'],
     '/sucursales/actualizar-color' => ['controller' => 'BranchController', 'action' => 'updateColor'],
     
     // Especialistas
@@ -118,6 +124,9 @@ $routes = [
     '/clientes' => ['controller' => 'ClientController', 'action' => 'index'],
     '/clientes/ver' => ['controller' => 'ClientController', 'action' => 'view'],
     '/clientes/editar' => ['controller' => 'ClientController', 'action' => 'edit'],
+    '/clientes/solicitud' => ['controller' => 'ClientController', 'action' => 'requestView'],
+    '/clientes/solicitud/aprobar' => ['controller' => 'ClientController', 'action' => 'approveRequest'],
+    '/clientes/solicitud/rechazar' => ['controller' => 'ClientController', 'action' => 'rejectRequest'],
     
     // Métricas
     '/metricas/origen-reservas' => ['controller' => 'MetricasController', 'action' => 'origenReservas'],
@@ -174,6 +183,21 @@ $routes = [
     '/api/sucursales/crear' => ['controller' => 'ApiController', 'action' => 'createBranch'],
     '/api/check-new-reservations' => ['controller' => 'ApiController', 'action' => 'checkNewReservations'],
 ];
+
+// El acceso compartido de Registro solo puede capturar y consultar solicitudes.
+if (isLoggedIn() && currentUser()['rol_id'] == ROLE_REGISTRATION) {
+    $registrationRoutes = [
+        '/dashboard',
+        '/logout',
+        '/solicitudes-registro',
+        '/solicitudes-registro/crear',
+        '/solicitudes-registro/ver'
+    ];
+
+    if (!in_array($route, $registrationRoutes, true)) {
+        redirect('/solicitudes-registro');
+    }
+}
 
 // Buscar la ruta
 if (isset($routes[$route])) {

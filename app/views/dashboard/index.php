@@ -34,11 +34,11 @@ $rolId = $user['rol_id'];
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-gray-500">Clientes</p>
-                <p class="text-3xl font-bold text-gray-800"><?= $totalClients ?? 0 ?></p>
+                <p class="text-sm text-gray-500">Solicitudes Pendientes</p>
+                <p class="text-3xl font-bold text-gray-800"><?= $pendingRegistrationRequests ?? 0 ?></p>
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <i class="fas fa-users text-green-500 text-xl"></i>
+                <i class="fas fa-clipboard-check text-green-500 text-xl"></i>
             </div>
         </div>
     </div>

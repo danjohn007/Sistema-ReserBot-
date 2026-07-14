@@ -30,8 +30,26 @@ class AuthController extends BaseController {
                     "SELECT * FROM usuarios WHERE email = ? AND activo = 1",
                     [$email]
                 );
+
+                $passwordValido = $user && password_verify($password, $user['password']);
+                $actualizarHashRegistro = false;
+
+                // La migracion crea el acceso compartido sin depender de PHP CLI.
+                // En su primer acceso se reemplaza el SHA-256 por password_hash().
+                if (!$passwordValido && $user && (int) $user['rol_id'] === ROLE_REGISTRATION
+                    && preg_match('/^[a-f0-9]{64}$/i', $user['password'])) {
+                    $passwordValido = hash_equals(strtolower($user['password']), hash('sha256', $password));
+                    $actualizarHashRegistro = $passwordValido;
+                }
                 
-                if ($user && password_verify($password, $user['password'])) {
+                if ($user && $passwordValido) {
+                    if ($actualizarHashRegistro) {
+                        $this->db->update(
+                            "UPDATE usuarios SET password = ? WHERE id = ?",
+                            [password_hash($password, PASSWORD_DEFAULT), $user['id']]
+                        );
+                    }
+
                     // Login exitoso
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user'] = [

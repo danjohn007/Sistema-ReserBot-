@@ -22,7 +22,7 @@ class SpecialistController extends BaseController {
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
                  JOIN sucursales s ON e.sucursal_id = s.id
-                 WHERE e.activo = 1
+                 WHERE e.activo = 1 AND e.autorizado = 1 AND s.autorizado = 1
                  GROUP BY u.id
                  ORDER BY u.nombre, u.apellidos"
             );
@@ -33,7 +33,7 @@ class SpecialistController extends BaseController {
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
                  JOIN sucursales s ON e.sucursal_id = s.id
-                 WHERE e.sucursal_id = ? AND e.activo = 1
+                 WHERE e.sucursal_id = ? AND e.activo = 1 AND e.autorizado = 1 AND s.autorizado = 1
                  GROUP BY u.id
                  ORDER BY u.nombre, u.apellidos",
                 [$user['sucursal_id']]

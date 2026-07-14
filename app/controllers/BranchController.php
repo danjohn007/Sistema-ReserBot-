@@ -14,9 +14,30 @@ class BranchController extends BaseController {
         $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
         
         $user = currentUser();
+        $view = 'visibles';
+        $visibilityCounts = ['visibles' => 0, 'ocultas' => 0];
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
-            $branches = $this->db->fetchAll("SELECT * FROM sucursales ORDER BY nombre");
+            $view = $this->get('vista') === 'ocultas' ? 'ocultas' : 'visibles';
+            $hidden = $view === 'ocultas' ? 1 : 0;
+            $branches = $this->db->fetchAll(
+                "SELECT *
+                 FROM sucursales
+                 WHERE autorizado = 1 AND oculta_superadmin = ?
+                 ORDER BY nombre",
+                [$hidden]
+            );
+            $counts = $this->db->fetch(
+                "SELECT
+                    SUM(CASE WHEN oculta_superadmin = 0 THEN 1 ELSE 0 END) AS visibles,
+                    SUM(CASE WHEN oculta_superadmin = 1 THEN 1 ELSE 0 END) AS ocultas
+                 FROM sucursales
+                 WHERE autorizado = 1"
+            );
+            $visibilityCounts = [
+                'visibles' => (int) ($counts['visibles'] ?? 0),
+                'ocultas' => (int) ($counts['ocultas'] ?? 0)
+            ];
         } else {
             $branches = $this->db->fetchAll(
                 "SELECT * FROM sucursales WHERE id = ?",
@@ -26,8 +47,49 @@ class BranchController extends BaseController {
         
         $this->render('branches/index', [
             'title' => 'Sucursales',
-            'branches' => $branches
+            'branches' => $branches,
+            'view' => $view,
+            'visibilityCounts' => $visibilityCounts
         ]);
+    }
+
+    /**
+     * Oculta o muestra una sucursal solo dentro del listado del Superadmin.
+     */
+    public function toggleVisibility() {
+        $this->requireRole(ROLE_SUPERADMIN);
+
+        if (!$this->isPost()) {
+            redirect('/sucursales');
+        }
+
+        $id = (int) $this->post('id');
+        $hidden = (int) $this->post('oculta') === 1 ? 1 : 0;
+        $returnView = $this->post('vista') === 'ocultas' ? 'ocultas' : 'visibles';
+        $branch = $this->db->fetch(
+            "SELECT id, nombre FROM sucursales WHERE id = ? AND autorizado = 1",
+            [$id]
+        );
+
+        if (!$branch) {
+            setFlashMessage('error', 'Sucursal no encontrada.');
+            redirect('/sucursales?vista=' . $returnView);
+        }
+
+        $this->db->update(
+            "UPDATE sucursales SET oculta_superadmin = ? WHERE id = ?",
+            [$hidden, $id]
+        );
+
+        $action = $hidden ? 'ocultada' : 'mostrada';
+        logAction('branch_visibility_update', 'Sucursal ' . $action . ': ' . $branch['nombre']);
+        setFlashMessage(
+            'success',
+            $hidden
+                ? 'Sucursal ocultada del listado. Puedes recuperarla desde la vista de ocultas.'
+                : 'Sucursal mostrada nuevamente en el listado.'
+        );
+        redirect('/sucursales?vista=' . $returnView);
     }
     
     /**

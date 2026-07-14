@@ -14,6 +14,11 @@ class DashboardController extends BaseController {
         $this->requireAuth();
         
         $user = currentUser();
+
+        if ($user['rol_id'] == ROLE_REGISTRATION) {
+            redirect('/solicitudes-registro');
+        }
+
         $data = [
             'title' => 'Dashboard',
             'user' => $user
@@ -51,8 +56,10 @@ class DashboardController extends BaseController {
         // Total de especialistas
         $totalSpecialists = $this->db->fetch("SELECT COUNT(*) as total FROM especialistas WHERE activo = 1")['total'];
         
-        // Total de clientes
-        $totalClients = $this->db->fetch("SELECT COUNT(*) as total FROM usuarios WHERE rol_id = ? AND activo = 1", [ROLE_CLIENT])['total'];
+        // Solicitudes de registro pendientes
+        $pendingRegistrationRequests = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM solicitudes_registro WHERE estado = 'pendiente'"
+        )['total'];
         
         // Citas de hoy
         $todayAppointments = $this->db->fetch(
@@ -102,7 +109,7 @@ class DashboardController extends BaseController {
         return [
             'totalBranches' => $totalBranches,
             'totalSpecialists' => $totalSpecialists,
-            'totalClients' => $totalClients,
+            'pendingRegistrationRequests' => $pendingRegistrationRequests,
             'todayAppointments' => $todayAppointments,
             'pendingAppointments' => $pendingAppointments,
             'monthlyIncome' => $monthlyIncome,

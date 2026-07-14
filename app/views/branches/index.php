@@ -1,32 +1,56 @@
-<div class="flex justify-between items-center mb-6">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-2xl font-bold text-gray-800">Sucursales</h2>
-        <p class="text-gray-500 text-sm">Gestiona las sucursales del sistema</p>
+        <p class="text-sm text-gray-500">Gestiona las sucursales del sistema</p>
     </div>
     <?php if (hasRole(ROLE_SUPERADMIN)): ?>
-    <a href="<?= url('/sucursales/crear') ?>" 
-       class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition">
+    <a href="<?= url('/sucursales/crear') ?>"
+       class="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:bg-secondary">
         <i class="fas fa-plus mr-2"></i>Nueva Sucursal
     </a>
     <?php endif; ?>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<?php if (hasRole(ROLE_SUPERADMIN)): ?>
+<div class="mb-6 flex flex-col gap-3 border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <p class="text-sm font-semibold text-gray-800">Visibilidad del listado</p>
+        <p class="text-xs text-gray-500">Ocultar una sucursal aqui no la desactiva ni afecta sus reservaciones.</p>
+    </div>
+    <div class="inline-flex w-full rounded-lg border border-gray-300 bg-gray-50 p-1 sm:w-auto" role="tablist" aria-label="Visibilidad de sucursales">
+        <a href="<?= url('/sucursales?vista=visibles') ?>"
+           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $view === 'visibles' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
+           aria-current="<?= $view === 'visibles' ? 'page' : 'false' ?>">
+            <i class="fas fa-eye mr-2"></i>Visibles
+            <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700"><?= (int) $visibilityCounts['visibles'] ?></span>
+        </a>
+        <a href="<?= url('/sucursales?vista=ocultas') ?>"
+           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $view === 'ocultas' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
+           aria-current="<?= $view === 'ocultas' ? 'page' : 'false' ?>">
+            <i class="fas fa-eye-slash mr-2"></i>Ocultas
+            <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700"><?= (int) $visibilityCounts['ocultas'] ?></span>
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($branches)): ?>
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
     <?php foreach ($branches as $branch): ?>
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <article class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <div class="p-6">
-            <div class="flex items-start justify-between">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800"><?= e($branch['nombre']) ?></h3>
-                    <p class="text-sm text-gray-500 mt-1">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h3 class="break-words text-lg font-semibold text-gray-800"><?= e($branch['nombre']) ?></h3>
+                    <p class="mt-1 text-sm text-gray-500">
                         <i class="fas fa-map-marker-alt mr-1"></i><?= e($branch['ciudad']) ?>, <?= e($branch['estado']) ?>
                     </p>
                 </div>
-                <span class="px-2 py-1 text-xs rounded-full <?= $branch['activo'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                <span class="flex-shrink-0 rounded-full px-2 py-1 text-xs <?= $branch['activo'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
                     <?= $branch['activo'] ? 'Activa' : 'Inactiva' ?>
                 </span>
             </div>
-            
+
             <div class="mt-4 space-y-2 text-sm text-gray-600">
                 <?php if ($branch['direccion']): ?>
                 <p><i class="fas fa-location-dot w-5"></i><?= e($branch['direccion']) ?></p>
@@ -35,37 +59,52 @@
                 <p><i class="fas fa-phone w-5"></i><?= e($branch['telefono']) ?></p>
                 <?php endif; ?>
                 <?php if ($branch['email']): ?>
-                <p><i class="fas fa-envelope w-5"></i><?= e($branch['email']) ?></p>
+                <p class="break-all"><i class="fas fa-envelope w-5"></i><?= e($branch['email']) ?></p>
                 <?php endif; ?>
                 <p><i class="fas fa-clock w-5"></i><?= formatTime($branch['horario_apertura']) ?> - <?= formatTime($branch['horario_cierre']) ?></p>
             </div>
         </div>
-        
-        <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-2">
-            <a href="<?= url('/sucursales/editar?id=' . $branch['id']) ?>" 
-               class="text-blue-600 hover:text-blue-800 text-sm">
-                <i class="fas fa-edit"></i> Editar
+
+        <div class="flex flex-wrap justify-end gap-3 bg-gray-50 px-6 py-3">
+            <a href="<?= url('/sucursales/editar?id=' . $branch['id']) ?>"
+               class="inline-flex h-9 items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                <i class="fas fa-edit mr-1.5"></i>Editar
             </a>
             <?php if (hasRole(ROLE_SUPERADMIN)): ?>
-            <a href="<?= url('/sucursales/eliminar?id=' . $branch['id']) ?>" 
-               class="text-red-600 hover:text-red-800 text-sm"
-               onclick="return confirm('¿Está seguro de desactivar esta sucursal?')">
-                <i class="fas fa-trash"></i> Eliminar
+            <form method="POST" action="<?= url('/sucursales/visibilidad') ?>"
+                  onsubmit="return confirm('<?= $view === 'ocultas' ? 'La sucursal volvera a aparecer en el listado. Continuar?' : 'La sucursal se movera a la vista de ocultas sin desactivarse. Continuar?' ?>');">
+                <input type="hidden" name="id" value="<?= (int) $branch['id'] ?>">
+                <input type="hidden" name="oculta" value="<?= $view === 'ocultas' ? 0 : 1 ?>">
+                <input type="hidden" name="vista" value="<?= e($view) ?>">
+                <button type="submit"
+                        class="inline-flex h-9 items-center text-sm font-medium <?= $view === 'ocultas' ? 'text-green-700 hover:text-green-900' : 'text-gray-600 hover:text-gray-900' ?>">
+                    <i class="fas <?= $view === 'ocultas' ? 'fa-eye' : 'fa-eye-slash' ?> mr-1.5"></i><?= $view === 'ocultas' ? 'Mostrar' : 'Ocultar' ?>
+                </button>
+            </form>
+            <a href="<?= url('/sucursales/eliminar?id=' . $branch['id']) ?>"
+               class="inline-flex h-9 items-center text-sm font-medium text-red-600 hover:text-red-800"
+               onclick="return confirm('Esta accion desactivara la sucursal. Continuar?')">
+                <i class="fas fa-trash mr-1.5"></i>Eliminar
             </a>
             <?php endif; ?>
         </div>
-    </div>
+    </article>
     <?php endforeach; ?>
 </div>
-
-<?php if (empty($branches)): ?>
-<div class="bg-white rounded-xl shadow-sm p-12 text-center">
-    <i class="fas fa-building text-6xl text-gray-300 mb-4"></i>
-    <h3 class="text-xl font-semibold text-gray-700">No hay sucursales</h3>
-    <p class="text-gray-500 mt-2">Comienza agregando la primera sucursal</p>
-    <?php if (hasRole(ROLE_SUPERADMIN)): ?>
-    <a href="<?= url('/sucursales/crear') ?>" 
-       class="inline-block mt-4 bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition">
+<?php else: ?>
+<div class="border border-dashed border-gray-300 bg-white p-12 text-center">
+    <i class="fas <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas' ? 'fa-eye-slash' : 'fa-building' ?> mb-4 text-6xl text-gray-300"></i>
+    <h3 class="text-xl font-semibold text-gray-700">
+        <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas' ? 'No hay sucursales ocultas' : 'No hay sucursales visibles' ?>
+    </h3>
+    <p class="mt-2 text-gray-500">
+        <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas'
+            ? 'Las sucursales que ocultes apareceran en esta seccion.'
+            : 'Puedes agregar una sucursal nueva o mostrar alguna que este oculta.' ?>
+    </p>
+    <?php if (hasRole(ROLE_SUPERADMIN) && $view !== 'ocultas'): ?>
+    <a href="<?= url('/sucursales/crear') ?>"
+       class="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-6 text-sm font-semibold text-white transition hover:bg-secondary">
         <i class="fas fa-plus mr-2"></i>Agregar Sucursal
     </a>
     <?php endif; ?>

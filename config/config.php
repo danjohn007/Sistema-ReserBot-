@@ -89,6 +89,7 @@ define('ROLE_BRANCH_ADMIN', 2);
 define('ROLE_SPECIALIST', 3);
 define('ROLE_CLIENT', 4);
 define('ROLE_RECEPTIONIST', 5);
+define('ROLE_REGISTRATION', 6);
 
 // Nombres de roles
 $GLOBALS['ROLE_NAMES'] = [
@@ -96,7 +97,8 @@ $GLOBALS['ROLE_NAMES'] = [
     ROLE_BRANCH_ADMIN => 'Administrador de Sucursal',
     ROLE_SPECIALIST => 'Especialista',
     ROLE_CLIENT => 'Cliente',
-    ROLE_RECEPTIONIST => 'Recepcionista'
+    ROLE_RECEPTIONIST => 'Recepcionista',
+    ROLE_REGISTRATION => 'Registro'
 ];
 
 // =====================================================================
