@@ -710,7 +710,7 @@
 
 <!-- Event Modal -->
 <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl max-h-[calc(100vh-2rem)] overflow-y-auto w-full transform transition-all">
         <div class="p-6 bg-gradient-to-r from-primary to-secondary rounded-t-2xl">
             <div class="flex justify-between items-center">
                 <h3 class="text-xl font-bold text-white flex items-center" id="modal-title">
@@ -734,7 +734,7 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Haz clic en "Ver Detalle" para m&aacute;s informaci&oacute;n
                 </p>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <!-- Confirmar: solo si está pendiente -->
                     <button onclick="confirmReservation()" id="modal-confirm-btn" class="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md hover:shadow-lg flex items-center justify-center" style="display:none;">
                         <i class="fas fa-check-circle mr-2"></i>Confirmar
@@ -1286,8 +1286,8 @@ function showEventModal(event) {
     }
     
     document.getElementById('modal-content').innerHTML = `
-        <div class="space-y-4">
-            <div class="flex items-start p-3 bg-blue-50 rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="flex items-start p-3 bg-blue-50 rounded-lg md:col-span-2 lg:col-span-3">
                 <i class="fas fa-calendar text-blue-600 mt-1 mr-3"></i>
                 <div>
                     <p class="text-sm font-medium text-gray-700">Fecha y Hora</p>
@@ -1297,7 +1297,7 @@ function showEventModal(event) {
             </div>
             
             ${props.es_extraordinaria ? `
-            <div class="p-3 bg-orange-100 border-2 border-orange-400 rounded-lg">
+            <div class="p-3 bg-orange-100 border-2 border-orange-400 rounded-lg md:col-span-2 lg:col-span-3">
                 <div class="flex items-center">
                     <i class="fas fa-user-clock text-orange-600 mr-2"></i>
                     <div>
@@ -1308,7 +1308,7 @@ function showEventModal(event) {
             </div>
             ` : ''}
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="contents">
                 <div class="p-3 bg-gray-50 rounded-lg">
                     <p class="text-xs text-gray-500 mb-1"><i class="fas fa-barcode mr-1"></i>Código</p>
                     <p class="text-sm font-semibold text-gray-900">${props.codigo}</p>
@@ -1332,7 +1332,7 @@ function showEventModal(event) {
                 <p class="text-sm font-semibold text-gray-900">${props.especialista}</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="contents">
                 <div class="p-3 bg-indigo-50 rounded-lg">
                     <p class="text-xs text-gray-500 mb-1"><i class="fas fa-concierge-bell mr-1"></i>Servicio</p>
                     <p class="text-sm font-semibold text-gray-900">${props.servicio}</p>
@@ -1344,7 +1344,7 @@ function showEventModal(event) {
             </div>
             
             ${props.estado === 'confirmada' ? `
-            <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+            <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg md:col-span-2 lg:col-span-3">
                 <p class="text-sm text-gray-700 mb-2">
                     <i class="fas fa-credit-card mr-2"></i><strong>M&eacute;todo de Pago *</strong>
                 </p>
@@ -1358,6 +1358,7 @@ function showEventModal(event) {
                     <option value="tarjeta">Tarjeta</option>
                     <option value="transferencia">Transferencia</option>
                     <option value="paypal">PayPal</option>
+                    <option value="cortesia">Cortes&iacute;a</option>
                 </select>
             </div>
             ` : ''}
@@ -1783,7 +1784,8 @@ async function quickCompleteWithPayment() {
         'efectivo': 'Efectivo',
         'tarjeta': 'Tarjeta',
         'transferencia': 'Transferencia',
-        'paypal': 'PayPal'
+        'paypal': 'PayPal',
+        'cortesia': 'Cortesía'
     };
     
     if (!confirm(`¿Completar cita con pago en ${paymentNames[paymentMethod]}?`)) {

@@ -520,6 +520,16 @@ class ReservationController extends BaseController {
         
         $id = $this->isPost() ? $this->post('id') : $this->get('id');
         $metodo_pago = $this->post('metodo_pago'); // Nuevo: obtener método de pago opcional
+
+        $metodosPermitidos = ['efectivo', 'tarjeta', 'transferencia', 'paypal', 'cortesia'];
+        if ($metodo_pago && !in_array($metodo_pago, $metodosPermitidos, true)) {
+            if ($this->isPost()) {
+                $this->json(['success' => false, 'message' => 'Método de pago no válido'], 422);
+                return;
+            }
+            setFlashMessage('error', 'Método de pago no válido.');
+            redirect('/reservaciones/ver?id=' . $id);
+        }
         
         $reservation = $this->db->fetch("SELECT * FROM reservaciones WHERE id = ?", [$id]);
         

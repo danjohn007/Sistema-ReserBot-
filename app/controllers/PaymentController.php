@@ -121,6 +121,7 @@ class PaymentController extends BaseController {
             'tarjeta' => 0,
             'transferencia' => 0,
             'paypal' => 0,
+            'cortesia' => 0,
             'sin_definir' => 0
         ];
         
@@ -172,6 +173,12 @@ class PaymentController extends BaseController {
         $metodo_pago = $this->post('metodo_pago');
         $referencia_pago = $this->post('referencia_pago');
         $notas = $this->post('notas');
+
+        $metodosPermitidos = ['efectivo', 'tarjeta', 'transferencia', 'paypal', 'cortesia'];
+        if (!in_array($metodo_pago, $metodosPermitidos, true)) {
+            $this->json(['success' => false, 'message' => 'Método de pago no válido']);
+            return;
+        }
         
         if (!$pago_id) {
             $this->json(['success' => false, 'message' => 'ID de pago no proporcionado']);

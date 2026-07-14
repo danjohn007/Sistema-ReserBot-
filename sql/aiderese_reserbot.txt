@@ -927,7 +927,7 @@ CREATE TABLE `pagos` (
   `id` int(11) NOT NULL,
   `reservacion_id` int(11) NOT NULL,
   `monto` decimal(10,2) NOT NULL,
-  `metodo_pago` enum('paypal','efectivo','tarjeta','transferencia') COLLATE utf8mb4_unicode_ci DEFAULT 'efectivo',
+  `metodo_pago` enum('paypal','efectivo','tarjeta','transferencia','cortesia') COLLATE utf8mb4_unicode_ci DEFAULT 'efectivo',
   `estado` enum('pendiente','completado','fallido','reembolsado') COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente',
   `referencia_pago` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID de transacción PayPal u otro',
   `comprobante` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

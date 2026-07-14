@@ -93,6 +93,7 @@
                         <option value="tarjeta" <?= $filters['metodo_pago'] == 'tarjeta' ? 'selected' : '' ?>>💳 Tarjeta</option>
                         <option value="transferencia" <?= $filters['metodo_pago'] == 'transferencia' ? 'selected' : '' ?>>🏦 Transferencia</option>
                         <option value="paypal" <?= $filters['metodo_pago'] == 'paypal' ? 'selected' : '' ?>>🅿️ PayPal</option>
+                        <option value="cortesia" <?= $filters['metodo_pago'] == 'cortesia' ? 'selected' : '' ?>>&#127873; Cortes&iacute;a</option>
                     </select>
                 </div>
             </div>
@@ -115,7 +116,7 @@
     </div>
 
     <!-- Resumen por método de pago -->
-    <div id="paymentMethodMetrics" class="grid grid-cols-2 md:grid-cols-5 gap-4" style="display: none;">
+    <div id="paymentMethodMetrics" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4" style="display: none;">
         <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div>
@@ -145,6 +146,14 @@
                 <div>
                     <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">🅿️ </span><span class="metodo-pago-label" data-full="PayPal" data-abbr="PYL">PYL</span></p>
                     <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['paypal']) ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-pink-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium"><span class="metodo-pago-icon" style="display: none;">&#127873; </span><span class="metodo-pago-label" data-full="Cortes&iacute;a" data-abbr="CTR">CTR</span></p>
+                    <p class="text-lg font-bold text-gray-900"><?= formatMoney($totalPorMetodo['cortesia']) ?></p>
                 </div>
             </div>
         </div>
@@ -238,19 +247,22 @@
                                         'efectivo' => '💵',
                                         'tarjeta' => '💳',
                                         'transferencia' => '🏦',
-                                        'paypal' => '🅿️'
+                                        'paypal' => '🅿️',
+                                        'cortesia' => '&#127873;'
                                     ];
                                     $metodoLabels = [
                                         'efectivo' => 'Efectivo',
                                         'tarjeta' => 'Tarjeta',
                                         'transferencia' => 'Transferencia',
-                                        'paypal' => 'PayPal'
+                                        'paypal' => 'PayPal',
+                                        'cortesia' => 'Cortes&iacute;a'
                                     ];
                                     $metodoAbbr = [
                                         'efectivo' => 'ECV',
                                         'tarjeta' => 'TTA',
                                         'transferencia' => 'TFA',
-                                        'paypal' => 'PYL'
+                                        'paypal' => 'PYL',
+                                        'cortesia' => 'CTR'
                                     ];
                                     ?>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -310,6 +322,7 @@
                     <option value="tarjeta">💳 Tarjeta</option>
                     <option value="transferencia">🏦 Transferencia</option>
                     <option value="paypal">🅿️ PayPal</option>
+                    <option value="cortesia">&#127873; Cortes&iacute;a</option>
                 </select>
             </div>
             

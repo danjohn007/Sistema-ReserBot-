@@ -247,7 +247,7 @@ CREATE TABLE IF NOT EXISTS `pagos` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `reservacion_id` INT NOT NULL,
     `monto` DECIMAL(10, 2) NOT NULL,
-    `metodo_pago` ENUM('paypal', 'efectivo', 'tarjeta', 'transferencia') DEFAULT 'efectivo',
+    `metodo_pago` ENUM('paypal', 'efectivo', 'tarjeta', 'transferencia', 'cortesia') DEFAULT 'efectivo',
     `estado` ENUM('pendiente', 'completado', 'fallido', 'reembolsado') DEFAULT 'pendiente',
     `referencia_pago` VARCHAR(100) DEFAULT NULL COMMENT 'ID de transacción PayPal u otro',
     `comprobante` VARCHAR(255) DEFAULT NULL,
