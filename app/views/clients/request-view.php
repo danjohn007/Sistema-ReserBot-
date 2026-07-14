@@ -79,9 +79,12 @@ $statusLabels = ['pendiente' => 'Pendiente', 'aprobada' => 'Aprobada', 'rechazad
                     </span>
                 </div>
                 <dl class="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                    <?php if (!empty($branch['email'])): ?>
                     <div><dt class="text-gray-500">Correo</dt><dd class="mt-1 text-gray-800"><?= e($branch['email']) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if (!empty($branch['telefono'])): ?>
                     <div><dt class="text-gray-500">Telefono</dt><dd class="mt-1 text-gray-800"><?= e($branch['telefono']) ?></dd></div>
-                    <div><dt class="text-gray-500">Horario</dt><dd class="mt-1 text-gray-800"><?= formatTime($branch['horario_apertura']) ?> - <?= formatTime($branch['horario_cierre']) ?></dd></div>
+                    <?php endif; ?>
                     <div class="sm:col-span-2"><dt class="text-gray-500">Direccion</dt><dd class="mt-1 text-gray-800"><?= e($branch['direccion']) ?></dd></div>
                     <div><dt class="text-gray-500">Ubicacion</dt><dd class="mt-1 text-gray-800"><?= e(trim($branch['ciudad'] . ', ' . $branch['estado'] . ' ' . $branch['codigo_postal'])) ?></dd></div>
                 </dl>
@@ -112,9 +115,13 @@ $statusLabels = ['pendiente' => 'Pendiente', 'aprobada' => 'Aprobada', 'rechazad
                 <div class="space-y-2 text-sm text-gray-600">
                     <p><i class="fas fa-building mr-2 w-4 text-gray-400"></i><?= e(str_replace('|||', ', ', $professional['sucursales_nombres'])) ?></p>
                     <p><i class="fas fa-envelope mr-2 w-4 text-gray-400"></i><?= e($professional['email']) ?></p>
+                    <?php if (!empty($professional['telefono'])): ?>
                     <p><i class="fas fa-phone mr-2 w-4 text-gray-400"></i><?= e($professional['telefono']) ?></p>
+                    <?php endif; ?>
                     <p><i class="fas fa-briefcase mr-2 w-4 text-gray-400"></i><?= (int) $professional['experiencia_anos'] ?> anos de experiencia</p>
+                    <?php if ($professional['tarifa_base'] !== null): ?>
                     <p><i class="fas fa-dollar-sign mr-2 w-4 text-gray-400"></i><?= formatMoney($professional['tarifa_base']) ?></p>
+                    <?php endif; ?>
                 </div>
                 <?php if (!empty($professional['descripcion'])): ?>
                 <p class="mt-4 border-t border-gray-100 pt-4 text-sm text-gray-600"><?= nl2br(e($professional['descripcion'])) ?></p>

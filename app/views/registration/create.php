@@ -70,8 +70,7 @@
     $index = '__BRANCH_INDEX__';
     $branch = [
         'nombre' => '', 'direccion' => '', 'ciudad' => '', 'estado' => 'Queretaro',
-        'codigo_postal' => '', 'telefono' => '', 'email' => '',
-        'horario_apertura' => '08:00', 'horario_cierre' => '20:00'
+        'codigo_postal' => '', 'telefono' => '', 'email' => ''
     ];
     include __DIR__ . '/branch-fields.php';
     ?>
@@ -83,7 +82,7 @@
     $professional = [
         'nombre' => '', 'apellidos' => '', 'email' => '', 'telefono' => '',
         'profesion' => '', 'especialidad' => '', 'descripcion' => '',
-        'experiencia_anos' => 0, 'tarifa_base' => 0, 'sucursales' => []
+        'experiencia_anos' => 0, 'tarifa_base' => null, 'sucursales' => []
     ];
     include __DIR__ . '/professional-fields.php';
     ?>

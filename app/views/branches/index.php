@@ -19,14 +19,14 @@
     </div>
     <div class="inline-flex w-full rounded-lg border border-gray-300 bg-gray-50 p-1 sm:w-auto" role="tablist" aria-label="Visibilidad de sucursales">
         <a href="<?= url('/sucursales?vista=visibles') ?>"
-           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $view === 'visibles' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
-           aria-current="<?= $view === 'visibles' ? 'page' : 'false' ?>">
+           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $visibilityView === 'visibles' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
+           aria-current="<?= $visibilityView === 'visibles' ? 'page' : 'false' ?>">
             <i class="fas fa-eye mr-2"></i>Visibles
             <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700"><?= (int) $visibilityCounts['visibles'] ?></span>
         </a>
         <a href="<?= url('/sucursales?vista=ocultas') ?>"
-           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $view === 'ocultas' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
-           aria-current="<?= $view === 'ocultas' ? 'page' : 'false' ?>">
+           class="inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold transition sm:flex-none <?= $visibilityView === 'ocultas' ? 'bg-white text-primary shadow-sm' : 'text-gray-600 hover:text-gray-900' ?>"
+           aria-current="<?= $visibilityView === 'ocultas' ? 'page' : 'false' ?>">
             <i class="fas fa-eye-slash mr-2"></i>Ocultas
             <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700"><?= (int) $visibilityCounts['ocultas'] ?></span>
         </a>
@@ -61,7 +61,9 @@
                 <?php if ($branch['email']): ?>
                 <p class="break-all"><i class="fas fa-envelope w-5"></i><?= e($branch['email']) ?></p>
                 <?php endif; ?>
+                <?php if (!empty($branch['horario_apertura']) || !empty($branch['horario_cierre'])): ?>
                 <p><i class="fas fa-clock w-5"></i><?= formatTime($branch['horario_apertura']) ?> - <?= formatTime($branch['horario_cierre']) ?></p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -72,13 +74,13 @@
             </a>
             <?php if (hasRole(ROLE_SUPERADMIN)): ?>
             <form method="POST" action="<?= url('/sucursales/visibilidad') ?>"
-                  onsubmit="return confirm('<?= $view === 'ocultas' ? 'La sucursal volvera a aparecer en el listado. Continuar?' : 'La sucursal se movera a la vista de ocultas sin desactivarse. Continuar?' ?>');">
+                  onsubmit="return confirm('<?= $visibilityView === 'ocultas' ? 'La sucursal volvera a aparecer en el listado. Continuar?' : 'La sucursal se movera a la vista de ocultas sin desactivarse. Continuar?' ?>');">
                 <input type="hidden" name="id" value="<?= (int) $branch['id'] ?>">
-                <input type="hidden" name="oculta" value="<?= $view === 'ocultas' ? 0 : 1 ?>">
-                <input type="hidden" name="vista" value="<?= e($view) ?>">
+                <input type="hidden" name="oculta" value="<?= $visibilityView === 'ocultas' ? 0 : 1 ?>">
+                <input type="hidden" name="vista" value="<?= e($visibilityView) ?>">
                 <button type="submit"
-                        class="inline-flex h-9 items-center text-sm font-medium <?= $view === 'ocultas' ? 'text-green-700 hover:text-green-900' : 'text-gray-600 hover:text-gray-900' ?>">
-                    <i class="fas <?= $view === 'ocultas' ? 'fa-eye' : 'fa-eye-slash' ?> mr-1.5"></i><?= $view === 'ocultas' ? 'Mostrar' : 'Ocultar' ?>
+                        class="inline-flex h-9 items-center text-sm font-medium <?= $visibilityView === 'ocultas' ? 'text-green-700 hover:text-green-900' : 'text-gray-600 hover:text-gray-900' ?>">
+                    <i class="fas <?= $visibilityView === 'ocultas' ? 'fa-eye' : 'fa-eye-slash' ?> mr-1.5"></i><?= $visibilityView === 'ocultas' ? 'Mostrar' : 'Ocultar' ?>
                 </button>
             </form>
             <a href="<?= url('/sucursales/eliminar?id=' . $branch['id']) ?>"
@@ -93,16 +95,16 @@
 </div>
 <?php else: ?>
 <div class="border border-dashed border-gray-300 bg-white p-12 text-center">
-    <i class="fas <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas' ? 'fa-eye-slash' : 'fa-building' ?> mb-4 text-6xl text-gray-300"></i>
+    <i class="fas <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas' ? 'fa-eye-slash' : 'fa-building' ?> mb-4 text-6xl text-gray-300"></i>
     <h3 class="text-xl font-semibold text-gray-700">
-        <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas' ? 'No hay sucursales ocultas' : 'No hay sucursales visibles' ?>
+        <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas' ? 'No hay sucursales ocultas' : 'No hay sucursales visibles' ?>
     </h3>
     <p class="mt-2 text-gray-500">
-        <?= hasRole(ROLE_SUPERADMIN) && $view === 'ocultas'
+        <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas'
             ? 'Las sucursales que ocultes apareceran en esta seccion.'
             : 'Puedes agregar una sucursal nueva o mostrar alguna que este oculta.' ?>
     </p>
-    <?php if (hasRole(ROLE_SUPERADMIN) && $view !== 'ocultas'): ?>
+    <?php if (hasRole(ROLE_SUPERADMIN) && $visibilityView !== 'ocultas'): ?>
     <a href="<?= url('/sucursales/crear') ?>"
        class="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-6 text-sm font-semibold text-white transition hover:bg-secondary">
         <i class="fas fa-plus mr-2"></i>Agregar Sucursal

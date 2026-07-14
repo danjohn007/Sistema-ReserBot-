@@ -21,8 +21,8 @@
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Correo *</label>
-            <input type="email" name="sucursales[<?= $index ?>][email]" required maxlength="150" value="<?= e($branch['email']) ?>"
+            <label class="mb-1 block text-sm font-medium text-gray-700">Correo (opcional)</label>
+            <input type="email" name="sucursales[<?= $index ?>][email]" maxlength="150" value="<?= e($branch['email']) ?>"
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
         <div class="md:col-span-2">
@@ -48,19 +48,9 @@
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Telefono *</label>
-            <input type="tel" name="sucursales[<?= $index ?>][telefono]" required maxlength="20" value="<?= e($branch['telefono']) ?>"
+            <label class="mb-1 block text-sm font-medium text-gray-700">Telefono (opcional)</label>
+            <input type="tel" name="sucursales[<?= $index ?>][telefono]" maxlength="20" value="<?= e($branch['telefono']) ?>"
                    inputmode="tel"
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
-        </div>
-        <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Horario de apertura</label>
-            <input type="time" name="sucursales[<?= $index ?>][horario_apertura]" value="<?= e($branch['horario_apertura']) ?>"
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
-        </div>
-        <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Horario de cierre</label>
-            <input type="time" name="sucursales[<?= $index ?>][horario_cierre]" value="<?= e($branch['horario_cierre']) ?>"
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
     </div>

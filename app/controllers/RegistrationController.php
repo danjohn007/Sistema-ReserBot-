@@ -62,9 +62,7 @@ class RegistrationController extends BaseController {
                     'estado' => $this->text($rawBranch['estado'] ?? '', 100),
                     'codigo_postal' => $this->text($rawBranch['codigo_postal'] ?? '', 10),
                     'telefono' => $this->text($rawBranch['telefono'] ?? '', 20),
-                    'email' => strtolower($this->text($rawBranch['email'] ?? '', 150)),
-                    'horario_apertura' => $this->text($rawBranch['horario_apertura'] ?? '', 5),
-                    'horario_cierre' => $this->text($rawBranch['horario_cierre'] ?? '', 5)
+                    'email' => strtolower($this->text($rawBranch['email'] ?? '', 150))
                 ];
             }
 
@@ -81,6 +79,7 @@ class RegistrationController extends BaseController {
                 $selectedBranches = isset($rawProfessional['sucursales']) && is_array($rawProfessional['sucursales'])
                     ? array_values(array_unique(array_map('strval', $rawProfessional['sucursales'])))
                     : [];
+                $rawBaseRate = trim((string) ($rawProfessional['tarifa_base'] ?? ''));
                 $professionals[] = [
                     'nombre' => $this->text($rawProfessional['nombre'] ?? '', 100),
                     'apellidos' => $this->text($rawProfessional['apellidos'] ?? '', 100),
@@ -90,9 +89,9 @@ class RegistrationController extends BaseController {
                     'especialidad' => $this->text($rawProfessional['especialidad'] ?? '', 150),
                     'descripcion' => $this->text($rawProfessional['descripcion'] ?? '', 1000),
                     'experiencia_anos' => (int) ($rawProfessional['experiencia_anos'] ?? 0),
-                    'tarifa_base' => is_numeric($rawProfessional['tarifa_base'] ?? null)
-                        ? max(0, (float) $rawProfessional['tarifa_base'])
-                        : 0,
+                    'tarifa_base' => $rawBaseRate !== '' && is_numeric($rawBaseRate)
+                        ? max(0, (float) $rawBaseRate)
+                        : null,
                     'sucursales' => $selectedBranches
                 ];
                 $passwords[] = (string) ($rawProfessional['password'] ?? '');
@@ -111,12 +110,11 @@ class RegistrationController extends BaseController {
                             "INSERT INTO sucursales
                              (nombre, direccion, ciudad, estado, codigo_postal, telefono, email,
                               horario_apertura, horario_cierre, color, activo, autorizado)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '#3B82F6', 0, 0)",
+                             VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, '#3B82F6', 0, 0)",
                             [
                                 $branch['nombre'], $branch['direccion'], $branch['ciudad'],
                                 $branch['estado'], $branch['codigo_postal'], $branch['telefono'],
-                                $branch['email'], $branch['horario_apertura'] ?: '08:00',
-                                $branch['horario_cierre'] ?: '20:00'
+                                $branch['email']
                             ]
                         );
                     }
@@ -229,17 +227,12 @@ class RegistrationController extends BaseController {
         foreach ($branches as $index => $branch) {
             $number = array_search($index, array_keys($branches), true) + 1;
             if ($branch['nombre'] === '' || $branch['direccion'] === '' || $branch['ciudad'] === ''
-                || $branch['estado'] === '' || $branch['telefono'] === '' || $branch['email'] === '') {
+                || $branch['estado'] === '') {
                 return 'Completa todos los campos obligatorios de la sucursal ' . $number . '.';
             }
 
-            if (!validateEmail($branch['email'])) {
+            if ($branch['email'] !== '' && !validateEmail($branch['email'])) {
                 return 'El correo de la sucursal ' . $number . ' no es valido.';
-            }
-
-            if ($branch['horario_apertura'] && $branch['horario_cierre']
-                && $branch['horario_apertura'] >= $branch['horario_cierre']) {
-                return 'El horario de cierre de la sucursal ' . $number . ' debe ser posterior al de apertura.';
             }
         }
 
@@ -252,8 +245,7 @@ class RegistrationController extends BaseController {
         foreach ($professionals as $index => $professional) {
             $number = $index + 1;
             if ($professional['nombre'] === '' || $professional['apellidos'] === ''
-                || $professional['email'] === '' || $professional['telefono'] === ''
-                || $professional['profesion'] === '') {
+                || $professional['email'] === '' || $professional['profesion'] === '') {
                 return 'Completa los campos obligatorios del profesionista ' . $number . '.';
             }
 
@@ -262,7 +254,7 @@ class RegistrationController extends BaseController {
             }
 
             if (strlen($passwords[$index] ?? '') < 8) {
-                return 'La contrasena del profesionista ' . $number . ' debe tener al menos 8 caracteres.';
+                return 'La contraseña del profesionista ' . $number . ' debe tener al menos 8 caracteres.';
             }
 
             if ($professional['experiencia_anos'] < 0 || $professional['experiencia_anos'] > 80) {
@@ -342,9 +334,7 @@ class RegistrationController extends BaseController {
             'estado' => 'Queretaro',
             'codigo_postal' => '',
             'telefono' => '',
-            'email' => '',
-            'horario_apertura' => '08:00',
-            'horario_cierre' => '20:00'
+            'email' => ''
         ];
     }
 
@@ -358,7 +348,7 @@ class RegistrationController extends BaseController {
             'especialidad' => '',
             'descripcion' => '',
             'experiencia_anos' => 0,
-            'tarifa_base' => 0,
+            'tarifa_base' => null,
             'sucursales' => array_map('strval', $branches)
         ];
     }

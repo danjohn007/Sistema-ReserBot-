@@ -38,13 +38,13 @@
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Telefono *</label>
-            <input type="tel" name="profesionistas[<?= $index ?>][telefono]" required maxlength="20" value="<?= e($professional['telefono']) ?>"
+            <label class="mb-1 block text-sm font-medium text-gray-700">Telefono (opcional)</label>
+            <input type="tel" name="profesionistas[<?= $index ?>][telefono]" maxlength="20" value="<?= e($professional['telefono']) ?>"
                    inputmode="tel"
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Contrasena inicial *</label>
+            <label class="mb-1 block text-sm font-medium text-gray-700">Contraseña inicial *</label>
             <input type="password" name="profesionistas[<?= $index ?>][password]" required minlength="8" autocomplete="new-password"
                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
             <p class="mt-1 text-xs text-gray-500">El acceso se habilitara solo despues de aprobar la solicitud.</p>
@@ -67,7 +67,7 @@
                        class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
             </div>
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">Tarifa base</label>
+                <label class="mb-1 block text-sm font-medium text-gray-700">Tarifa base (opcional)</label>
                 <input type="number" name="profesionistas[<?= $index ?>][tarifa_base]" min="0" step="0.01" value="<?= e($professional['tarifa_base']) ?>"
                        class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-primary focus:ring-2 focus:ring-blue-100">
             </div>

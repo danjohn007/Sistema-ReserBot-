@@ -14,12 +14,12 @@ class BranchController extends BaseController {
         $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
         
         $user = currentUser();
-        $view = 'visibles';
+        $visibilityView = 'visibles';
         $visibilityCounts = ['visibles' => 0, 'ocultas' => 0];
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
-            $view = $this->get('vista') === 'ocultas' ? 'ocultas' : 'visibles';
-            $hidden = $view === 'ocultas' ? 1 : 0;
+            $visibilityView = $this->get('vista') === 'ocultas' ? 'ocultas' : 'visibles';
+            $hidden = $visibilityView === 'ocultas' ? 1 : 0;
             $branches = $this->db->fetchAll(
                 "SELECT *
                  FROM sucursales
@@ -48,7 +48,7 @@ class BranchController extends BaseController {
         $this->render('branches/index', [
             'title' => 'Sucursales',
             'branches' => $branches,
-            'view' => $view,
+            'visibilityView' => $visibilityView,
             'visibilityCounts' => $visibilityCounts
         ]);
     }
