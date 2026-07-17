@@ -6,7 +6,10 @@
     </div>
     
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-6">Nueva Sucursal</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">Nueva sucursal</h2>
+        <?php if (hasRole(ROLE_SPECIALIST)): ?>
+        <p class="mb-6 text-sm text-gray-500">La nueva sucursal se asociara automaticamente con tu perfil. Sus servicios y horarios se configuran por separado.</p>
+        <?php endif; ?>
         
         <?php if (!empty($error)): ?>
         <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">

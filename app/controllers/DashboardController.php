@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/BaseController.php';
+require_once APP_PATH . '/services/LandingIntegrationService.php';
 
 class DashboardController extends BaseController {
     
@@ -193,7 +194,11 @@ class DashboardController extends BaseController {
         );
         
         if (!$specialist) {
-            return ['specialist' => null, 'upcomingAppointments' => []];
+            return [
+                'specialist' => null,
+                'upcomingAppointments' => [],
+                'landingStatus' => ['available' => false, 'landing' => null, 'public_url' => '']
+            ];
         }
         
         // Citas de hoy
@@ -230,7 +235,8 @@ class DashboardController extends BaseController {
             'specialist' => $specialist,
             'todayAppointments' => $todayAppointments,
             'pendingAppointments' => $pendingAppointments,
-            'upcomingAppointments' => $upcomingAppointments
+            'upcomingAppointments' => $upcomingAppointments,
+            'landingStatus' => (new LandingIntegrationService())->getStatus(currentUser())
         ];
     }
 

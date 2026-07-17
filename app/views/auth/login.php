@@ -56,18 +56,3 @@ function togglePasswordVisibility() {
     }
 }
 </script>
-
-<div class="mt-6 text-center">
-    <a href="<?= url('/recuperar-password') ?>" class="text-sm text-primary hover:underline">
-        &iquest;Olvidaste tu contrase&ntilde;a?
-    </a>
-</div>
-
-<hr class="my-6">
-
-<p class="text-center text-gray-600 text-sm">
-    &iquest;No tienes cuenta? 
-    <a href="<?= url('/registro') ?>" class="text-primary font-semibold hover:underline">
-        Reg&iacute;strate aqu&iacute;
-    </a>
-</p>

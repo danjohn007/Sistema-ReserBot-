@@ -1,12 +1,12 @@
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
-        <h2 class="text-2xl font-bold text-gray-800">Sucursales</h2>
-        <p class="text-sm text-gray-500">Gestiona las sucursales del sistema</p>
+        <h2 class="text-2xl font-bold text-gray-800"><?= hasRole(ROLE_SPECIALIST) ? 'Mis sucursales' : 'Sucursales' ?></h2>
+        <p class="text-sm text-gray-500"><?= hasRole(ROLE_SPECIALIST) ? 'Gestiona las ubicaciones donde atiendes' : 'Gestiona las sucursales del sistema' ?></p>
     </div>
-    <?php if (hasRole(ROLE_SUPERADMIN)): ?>
+    <?php if (hasAnyRole([ROLE_SUPERADMIN, ROLE_SPECIALIST])): ?>
     <a href="<?= url('/sucursales/crear') ?>"
        class="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:bg-secondary">
-        <i class="fas fa-plus mr-2"></i>Nueva Sucursal
+        <i class="fas fa-plus mr-2"></i>Nueva sucursal
     </a>
     <?php endif; ?>
 </div>
@@ -97,17 +97,21 @@
 <div class="border border-dashed border-gray-300 bg-white p-12 text-center">
     <i class="fas <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas' ? 'fa-eye-slash' : 'fa-building' ?> mb-4 text-6xl text-gray-300"></i>
     <h3 class="text-xl font-semibold text-gray-700">
-        <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas' ? 'No hay sucursales ocultas' : 'No hay sucursales visibles' ?>
+        <?= hasRole(ROLE_SPECIALIST)
+            ? 'Aun no tienes sucursales'
+            : (hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas' ? 'No hay sucursales ocultas' : 'No hay sucursales visibles') ?>
     </h3>
     <p class="mt-2 text-gray-500">
-        <?= hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas'
+        <?= hasRole(ROLE_SPECIALIST)
+            ? 'Agrega una ubicacion para configurar despues sus servicios y horarios.'
+            : (hasRole(ROLE_SUPERADMIN) && $visibilityView === 'ocultas'
             ? 'Las sucursales que ocultes apareceran en esta seccion.'
-            : 'Puedes agregar una sucursal nueva o mostrar alguna que este oculta.' ?>
+            : 'Puedes agregar una sucursal nueva o mostrar alguna que este oculta.') ?>
     </p>
-    <?php if (hasRole(ROLE_SUPERADMIN) && $visibilityView !== 'ocultas'): ?>
+    <?php if ((hasRole(ROLE_SUPERADMIN) && $visibilityView !== 'ocultas') || hasRole(ROLE_SPECIALIST)): ?>
     <a href="<?= url('/sucursales/crear') ?>"
        class="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-6 text-sm font-semibold text-white transition hover:bg-secondary">
-        <i class="fas fa-plus mr-2"></i>Agregar Sucursal
+        <i class="fas fa-plus mr-2"></i>Agregar sucursal
     </a>
     <?php endif; ?>
 </div>

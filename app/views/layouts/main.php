@@ -235,6 +235,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="<?= url('/sucursales') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/sucursales') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-building w-5"></i>
+                            <span>Mis Sucursales</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= url('/mi-landing') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mi-landing') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-window-maximize w-5"></i>
+                            <span>Mi landing</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="<?= url('/pagos') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/pagos') !== false ? 'active' : '' ?>">
                             <i class="fas fa-money-bill-wave w-5"></i>
                             <span>Pagos</span>
@@ -494,6 +506,18 @@
                     <a href="<?= url('/especialistas/mis-servicios') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mis-servicios') !== false ? 'active' : '' ?>">
                         <i class="fas fa-concierge-bell w-5"></i>
                         <span>Mis Servicios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/sucursales') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/sucursales') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-building w-5"></i>
+                        <span>Mis Sucursales</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= url('/mi-landing') ?>" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 <?= strpos($_SERVER['REQUEST_URI'], '/mi-landing') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-window-maximize w-5"></i>
+                        <span>Mi landing</span>
                     </a>
                 </li>
                 <li>

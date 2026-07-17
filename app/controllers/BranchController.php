@@ -11,7 +11,7 @@ class BranchController extends BaseController {
      * Lista de sucursales
      */
     public function index() {
-        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST]);
         
         $user = currentUser();
         $visibilityView = 'visibles';
@@ -38,15 +38,26 @@ class BranchController extends BaseController {
                 'visibles' => (int) ($counts['visibles'] ?? 0),
                 'ocultas' => (int) ($counts['ocultas'] ?? 0)
             ];
-        } else {
+        } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN) {
             $branches = $this->db->fetchAll(
                 "SELECT * FROM sucursales WHERE id = ?",
                 [$user['sucursal_id']]
             );
+        } else {
+            $branches = $this->db->fetchAll(
+                "SELECT DISTINCT s.*
+                 FROM sucursales s
+                 JOIN especialistas e ON e.sucursal_id = s.id
+                 WHERE e.usuario_id = ?
+                   AND e.autorizado = 1
+                   AND s.autorizado = 1
+                 ORDER BY s.nombre",
+                [$user['id']]
+            );
         }
         
         $this->render('branches/index', [
-            'title' => 'Sucursales',
+            'title' => $user['rol_id'] == ROLE_SPECIALIST ? 'Mis sucursales' : 'Sucursales',
             'branches' => $branches,
             'visibilityView' => $visibilityView,
             'visibilityCounts' => $visibilityCounts
@@ -96,7 +107,9 @@ class BranchController extends BaseController {
      * Crear sucursal
      */
     public function create() {
-        $this->requireRole([ROLE_SUPERADMIN]);
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_SPECIALIST]);
+
+        $user = currentUser();
         
         $error = '';
         
@@ -115,20 +128,63 @@ class BranchController extends BaseController {
             if (empty($nombre)) {
                 $error = 'El nombre de la sucursal es obligatorio.';
             } else {
-                $this->db->insert(
-                    "INSERT INTO sucursales (nombre, color, direccion, ciudad, estado, codigo_postal, telefono, email, horario_apertura, horario_cierre) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, $horario_apertura, $horario_cierre]
-                );
-                
-                logAction('branch_create', 'Sucursal creada: ' . $nombre);
-                setFlashMessage('success', 'Sucursal creada correctamente.');
-                redirect('/sucursales');
+                try {
+                    $this->db->beginTransaction();
+
+                    $branchId = $this->db->insert(
+                        "INSERT INTO sucursales
+                         (nombre, color, direccion, ciudad, estado, codigo_postal, telefono, email,
+                          horario_apertura, horario_cierre, activo, autorizado)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)",
+                        [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, $horario_apertura, $horario_cierre]
+                    );
+
+                    if ($user['rol_id'] == ROLE_SPECIALIST) {
+                        $profile = $this->db->fetch(
+                            "SELECT profesion, especialidad, descripcion, experiencia_anos, tarifa_base,
+                                    duracion_cita_default, foto, nombre_liga1, nombre_liga2, nombre_liga3
+                             FROM especialistas
+                             WHERE usuario_id = ? AND autorizado = 1
+                             ORDER BY activo DESC, id ASC
+                             LIMIT 1",
+                            [$user['id']]
+                        );
+
+                        if (!$profile) {
+                            throw new Exception('No se encontro un perfil profesional autorizado.');
+                        }
+
+                        $this->db->insert(
+                            "INSERT INTO especialistas
+                             (usuario_id, sucursal_id, profesion, especialidad, descripcion,
+                              experiencia_anos, tarifa_base, duracion_cita_default, foto, activo,
+                              autorizado, nombre_liga1, nombre_liga2, nombre_liga3)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?)",
+                            [
+                                $user['id'], $branchId, $profile['profesion'], $profile['especialidad'],
+                                $profile['descripcion'], $profile['experiencia_anos'], $profile['tarifa_base'],
+                                $profile['duracion_cita_default'], $profile['foto'], $profile['nombre_liga1'],
+                                $profile['nombre_liga2'], $profile['nombre_liga3']
+                            ]
+                        );
+                    }
+
+                    $this->db->commit();
+                    logAction('branch_create', 'Sucursal creada: ' . $nombre);
+                    setFlashMessage('success', $user['rol_id'] == ROLE_SPECIALIST
+                        ? 'Sucursal agregada a tu perfil correctamente. Ya puedes configurar sus servicios y horarios.'
+                        : 'Sucursal creada correctamente.');
+                    redirect('/sucursales');
+                } catch (Exception $e) {
+                    $this->db->rollBack();
+                    error_log('Error al crear sucursal: ' . $e->getMessage());
+                    $error = 'No se pudo crear la sucursal. Intenta nuevamente.';
+                }
             }
         }
         
         $this->render('branches/create', [
-            'title' => 'Nueva Sucursal',
+            'title' => 'Nueva sucursal',
             'error' => $error
         ]);
     }
@@ -137,7 +193,7 @@ class BranchController extends BaseController {
      * Editar sucursal
      */
     public function edit() {
-        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN]);
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST]);
         
         $id = $this->get('id');
         $user = currentUser();
@@ -145,6 +201,11 @@ class BranchController extends BaseController {
         // Verificar permisos
         if ($user['rol_id'] == ROLE_BRANCH_ADMIN && $user['sucursal_id'] != $id) {
             setFlashMessage('error', 'No tiene permisos para editar esta sucursal.');
+            redirect('/sucursales');
+        }
+
+        if ($user['rol_id'] == ROLE_SPECIALIST && !$this->specialistOwnsBranch($user['id'], $id)) {
+            setFlashMessage('error', 'No tienes permisos para editar esta sucursal.');
             redirect('/sucursales');
         }
         
@@ -188,7 +249,7 @@ class BranchController extends BaseController {
         }
         
         $this->render('branches/edit', [
-            'title' => 'Editar Sucursal',
+            'title' => 'Editar sucursal',
             'branch' => $branch,
             'error' => $error
         ]);
@@ -217,7 +278,7 @@ class BranchController extends BaseController {
      * Actualizar solo el color de una sucursal (AJAX)
      */
     public function updateColor() {
-        $this->requireAuth();
+        $this->requireRole([ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_SPECIALIST]);
         header('Content-Type: application/json');
         
         $id = $this->post('id');
@@ -236,6 +297,11 @@ class BranchController extends BaseController {
             echo json_encode(['success' => false, 'message' => 'No tiene permisos para modificar esta sucursal']);
             return;
         }
+
+        if ($user['rol_id'] == ROLE_SPECIALIST && !$this->specialistOwnsBranch($user['id'], $id)) {
+            echo json_encode(['success' => false, 'message' => 'No tienes permisos para modificar esta sucursal']);
+            return;
+        }
         
         $branch = $this->db->fetch("SELECT nombre FROM sucursales WHERE id = ?", [$id]);
         
@@ -251,5 +317,15 @@ class BranchController extends BaseController {
         } catch (Exception $e) {
             echo json_encode(['success' => false, 'message' => 'Error al actualizar el color']);
         }
+    }
+
+    private function specialistOwnsBranch($userId, $branchId) {
+        return (bool) $this->db->fetch(
+            "SELECT id
+             FROM especialistas
+             WHERE usuario_id = ? AND sucursal_id = ?
+             LIMIT 1",
+            [(int) $userId, (int) $branchId]
+        );
     }
 }

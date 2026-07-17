@@ -21,23 +21,23 @@
 // Helpers de presentación
 // ──────────────────────────────────────────────────────────────────────────────
 $sourceLabels = [
-    'liga1'   => 'Liga 1',
-    'liga2'   => 'Liga 2',
-    'liga3'   => 'Liga 3',
+    'liga1'   => 'WhatsApp de la landing',
+    'liga2'   => 'Instagram',
+    'liga3'   => 'Facebook',
     'directo' => 'Directo / Sin origen',
 ];
 
 $sourceColors = [
-    'liga1'   => ['bg' => '#16a34a', 'light' => '#dcfce7', 'text' => '#15803d'],  // green-600
-    'liga2'   => ['bg' => '#22c55e', 'light' => '#d1fae5', 'text' => '#16a34a'],  // green-500
-    'liga3'   => ['bg' => '#10b981', 'light' => '#ecfdf5', 'text' => '#059669'],  // emerald-500
+    'liga1'   => ['bg' => '#0e7490', 'light' => '#cffafe', 'text' => '#0e7490'],
+    'liga2'   => ['bg' => '#db2777', 'light' => '#fce7f3', 'text' => '#be185d'],
+    'liga3'   => ['bg' => '#2563eb', 'light' => '#dbeafe', 'text' => '#1d4ed8'],
     'directo' => ['bg' => '#3b82f6', 'light' => '#dbeafe', 'text' => '#2563eb'],  // blue-500
 ];
 
 $sourceIcons = [
     'liga1'   => 'fab fa-whatsapp',
-    'liga2'   => 'fab fa-whatsapp',
-    'liga3'   => 'fab fa-whatsapp',
+    'liga2'   => 'fab fa-instagram',
+    'liga3'   => 'fab fa-facebook-f',
     'directo' => 'fas fa-user',
 ];
 
@@ -181,9 +181,9 @@ $presets = [
                         class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         onchange="document.getElementById('filtrosForm').submit()">
                     <option value="" <?= $sourceFilter === '' ? 'selected' : '' ?>>Todos los orígenes</option>
-                    <option value="liga1"   <?= $sourceFilter === 'liga1'   ? 'selected' : '' ?>>Liga 1</option>
-                    <option value="liga2"   <?= $sourceFilter === 'liga2'   ? 'selected' : '' ?>>Liga 2</option>
-                    <option value="liga3"   <?= $sourceFilter === 'liga3'   ? 'selected' : '' ?>>Liga 3</option>
+                    <option value="liga1"   <?= $sourceFilter === 'liga1'   ? 'selected' : '' ?>>WhatsApp de la landing</option>
+                    <option value="liga2"   <?= $sourceFilter === 'liga2'   ? 'selected' : '' ?>>Instagram</option>
+                    <option value="liga3"   <?= $sourceFilter === 'liga3'   ? 'selected' : '' ?>>Facebook</option>
                     <option value="directo" <?= $sourceFilter === 'directo' ? 'selected' : '' ?>>Directo / Sin origen</option>
                 </select>
             </div>

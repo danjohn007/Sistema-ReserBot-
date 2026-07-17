@@ -61,6 +61,8 @@ $routes = [
     // Dashboard
     '/dashboard' => ['controller' => 'DashboardController', 'action' => 'index'],
     '/dashboard/guardar-nombres-ligas' => ['controller' => 'DashboardController', 'action' => 'guardarNombresLigas'],
+    '/mi-landing' => ['controller' => 'LandingController', 'action' => 'index'],
+    '/mi-landing/eliminar' => ['controller' => 'LandingController', 'action' => 'delete'],
 
     // Captura de solicitudes de registro
     '/solicitudes-registro' => ['controller' => 'RegistrationController', 'action' => 'index'],

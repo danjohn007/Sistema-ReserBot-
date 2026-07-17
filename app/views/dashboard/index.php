@@ -200,7 +200,7 @@ $rolId = $user['rol_id'];
 <!-- Two Column Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Upcoming Appointments -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="flex flex-col bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-800">
                 <?= $rolId == ROLE_CLIENT ? 'Mis Próximas Citas' : 'Próximas Citas' ?>
@@ -243,6 +243,10 @@ $rolId = $user['rol_id'];
             </div>
             <?php endforeach; ?>
         </div>
+        <?php endif; ?>
+
+        <?php if ($rolId == ROLE_SPECIALIST): ?>
+            <?php include VIEWS_PATH . '/dashboard/_reservation_channels.php'; ?>
         <?php endif; ?>
     </div>
     
@@ -332,232 +336,6 @@ $rolId = $user['rol_id'];
                 <i class="fas fa-money-bill-wave text-3xl text-emerald-600 mb-2"></i>
                 <p class="text-sm font-semibold text-gray-800">Administraci&oacute;n de pagos</p>
             </a>
-            <?php
-            $liga1 = e($specialist['nombre_liga1'] ?? 'Liga 1');
-            $liga2 = e($specialist['nombre_liga2'] ?? 'Liga 2');
-            $liga3 = e($specialist['nombre_liga3'] ?? 'Liga 3');
-            $nombreEsp = e($user['nombre'] . ' ' . $user['apellidos']);
-            $urlLiga1 = getWhatsAppUrl("Hola quiero reservar con " . $user["nombre"] . " " . $user["apellidos"]);
-            $urlLiga2 = getWhatsAppUrl("Hola me gustaria reservar con " . $user["nombre"] . " " . $user["apellidos"]);
-            $urlLiga3 = getWhatsAppUrl("Hola deseo reservar con " . $user["nombre"] . " " . $user["apellidos"]);
-            ?>
-            <button type="button" onclick="abrirLigaWhatsApp(this)"
-                    data-liga-url="<?= e($urlLiga1) ?>" data-liga-nombre="<?= $liga1 ?>" aria-haspopup="dialog"
-                    class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition cursor-pointer w-full">
-                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
-                <p class="text-sm font-semibold text-gray-800"><?= $liga1 ?></p>
-            </button>
-            <button type="button" onclick="abrirLigaWhatsApp(this)"
-                    data-liga-url="<?= e($urlLiga2) ?>" data-liga-nombre="<?= $liga2 ?>" aria-haspopup="dialog"
-                    class="p-4 bg-green-100 rounded-lg text-center hover:bg-green-200 transition cursor-pointer w-full">
-                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
-                <p class="text-sm font-semibold text-gray-800"><?= $liga2 ?></p>
-            </button>
-            <button type="button" onclick="abrirLigaWhatsApp(this)"
-                    data-liga-url="<?= e($urlLiga3) ?>" data-liga-nombre="<?= $liga3 ?>" aria-haspopup="dialog"
-                    class="p-4 bg-pink-100 rounded-lg text-center hover:bg-pink-200 transition cursor-pointer w-full col-span-2">
-                <i class="fab fa-whatsapp text-3xl text-green-600 mb-2"></i>
-                <p class="text-sm font-semibold text-gray-800"><?= $liga3 ?></p>
-            </button>
-
-            <div id="modalCompartirLiga" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-40 p-4"
-                 role="dialog" aria-modal="true" aria-labelledby="tituloCompartirLiga">
-                <div class="w-full max-w-md rounded-lg bg-white shadow-2xl" onclick="event.stopPropagation()">
-                    <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-                        <h3 id="tituloCompartirLiga" class="min-w-0 truncate text-base font-semibold text-gray-800">Compartir liga</h3>
-                        <button type="button" onclick="cerrarLigaWhatsApp()"
-                                class="ml-3 flex h-9 w-9 flex-shrink-0 items-center justify-center text-gray-500 hover:text-gray-800 transition"
-                                aria-label="Cerrar">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div class="space-y-3 p-5">
-                        <label for="urlCompartirLiga" class="sr-only">Liga de WhatsApp</label>
-                        <input id="urlCompartirLiga" type="text" readonly onclick="this.select()"
-                               class="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                        <div class="grid grid-cols-2 gap-3">
-                            <button id="btnCopiarLiga" type="button" onclick="copiarLigaDesdeModal()"
-                                    class="flex h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
-                                <i class="fas fa-copy mr-2"></i><span>Copiar</span>
-                            </button>
-                            <button type="button" onclick="compartirLigaWhatsApp()"
-                                    class="flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 transition">
-                                <i class="fas fa-share-alt mr-2"></i><span>Compartir</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botón para editar nombres -->
-            <div class="col-span-2 flex justify-end">
-                <button onclick="document.getElementById('formNombresLigas').classList.toggle('hidden')"
-                        class="text-xs text-gray-400 hover:text-gray-600 transition flex items-center gap-1">
-                    <i class="fas fa-pen text-xs"></i> Personalizar nombres de ligas
-                </button>
-            </div>
-
-            <!-- Formulario inline de edición -->
-            <div id="formNombresLigas" class="col-span-2 hidden bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombres de las ligas</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Liga 1</label>
-                        <input id="inp_liga1" type="text" maxlength="60" value="<?= $liga1 ?>"
-                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Liga 2</label>
-                        <input id="inp_liga2" type="text" maxlength="60" value="<?= $liga2 ?>"
-                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Liga 3</label>
-                        <input id="inp_liga3" type="text" maxlength="60" value="<?= $liga3 ?>"
-                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button onclick="document.getElementById('formNombresLigas').classList.add('hidden')"
-                            class="text-sm px-4 py-2 text-gray-600 hover:text-gray-800 transition">
-                        Cancelar
-                    </button>
-                    <button onclick="guardarNombresLigas()"
-                            id="btnGuardarLigas"
-                            class="text-sm px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
-                        <i class="fas fa-save mr-1"></i> Guardar
-                    </button>
-                </div>
-            </div>
-
-            <script>
-            let ligaWhatsAppActual = '';
-            let nombreLigaActual = '';
-            let botonLigaActual = null;
-
-            function abrirLigaWhatsApp(btn) {
-                ligaWhatsAppActual = btn.dataset.ligaUrl;
-                nombreLigaActual = btn.dataset.ligaNombre;
-                botonLigaActual = btn;
-
-                document.getElementById('tituloCompartirLiga').textContent = nombreLigaActual;
-                document.getElementById('urlCompartirLiga').value = ligaWhatsAppActual;
-
-                const modal = document.getElementById('modalCompartirLiga');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                document.body.classList.add('overflow-hidden');
-
-                setTimeout(function() {
-                    document.getElementById('urlCompartirLiga').focus();
-                }, 0);
-            }
-
-            function cerrarLigaWhatsApp() {
-                const modal = document.getElementById('modalCompartirLiga');
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.body.classList.remove('overflow-hidden');
-
-                if (botonLigaActual) {
-                    botonLigaActual.focus();
-                }
-            }
-
-            function copiarTextoLiga(url) {
-                if (navigator.clipboard && window.isSecureContext) {
-                    return navigator.clipboard.writeText(url);
-                }
-
-                const ta = document.createElement('textarea');
-                ta.value = url;
-                ta.style.position = 'fixed';
-                ta.style.opacity = '0';
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                return Promise.resolve();
-            }
-
-            function copiarLigaDesdeModal() {
-                copiarTextoLiga(ligaWhatsAppActual).then(function() {
-                    const btn = document.getElementById('btnCopiarLiga');
-                    btn.innerHTML = '<i class="fas fa-check mr-2 text-green-600"></i><span>Copiado</span>';
-                    btn.classList.add('border-green-400', 'text-green-700', 'bg-green-50');
-
-                    setTimeout(function() {
-                        btn.innerHTML = '<i class="fas fa-copy mr-2"></i><span>Copiar</span>';
-                        btn.classList.remove('border-green-400', 'text-green-700', 'bg-green-50');
-                    }, 1800);
-                }).catch(function() {
-                    alert('No se pudo copiar la liga. Selecciona el texto y cópialo manualmente.');
-                });
-            }
-
-            async function compartirLigaWhatsApp() {
-                const datosCompartir = {
-                    title: nombreLigaActual,
-                    text: 'Reserva tu cita desde esta liga:',
-                    url: ligaWhatsAppActual
-                };
-
-                if (navigator.share) {
-                    try {
-                        await navigator.share(datosCompartir);
-                    } catch (error) {
-                        if (error.name !== 'AbortError') {
-                            alert('No se pudo abrir el menú para compartir.');
-                        }
-                    }
-                    return;
-                }
-
-                const texto = datosCompartir.text + ' ' + ligaWhatsAppActual;
-                window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener,noreferrer');
-            }
-
-            document.getElementById('modalCompartirLiga').addEventListener('click', cerrarLigaWhatsApp);
-            document.addEventListener('keydown', function(event) {
-                const modal = document.getElementById('modalCompartirLiga');
-                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    cerrarLigaWhatsApp();
-                }
-            });
-
-            function guardarNombresLigas() {
-                const btn = document.getElementById('btnGuardarLigas');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
-
-                const body = new URLSearchParams({
-                    nombre_liga1: document.getElementById('inp_liga1').value,
-                    nombre_liga2: document.getElementById('inp_liga2').value,
-                    nombre_liga3: document.getElementById('inp_liga3').value,
-                });
-
-                fetch('<?= BASE_URL ?>/dashboard/guardar-nombres-ligas', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: body.toString()
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error al guardar: ' + (data.message || 'Intenta de nuevo'));
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
-                    }
-                })
-                .catch(() => {
-                    alert('Error de conexión');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
-                });
-            }
-            </script>
             <?php endif; ?>
         </div>
         <?php endif; ?>
