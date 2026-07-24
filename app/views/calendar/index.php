@@ -799,6 +799,8 @@ function hexToRgba(hex, alpha) {
 
 // Horarios de especialistas para businessHours
 const horariosEspecialistas = <?= json_encode($horariosEspecialistas ?? []) ?>;
+const horariosPorSucursal = <?= json_encode($branchSchedules ?? []) ?>;
+const especialistaPorSucursal = <?= json_encode($specialistBranchMap ?? []) ?>;
 
 // Función para convertir horarios a formato FullCalendar businessHours
 function convertirHorariosABusinessHours(horarios) {
@@ -810,7 +812,8 @@ function convertirHorariosABusinessHours(horarios) {
     const horariosPorDia = {};
     horarios.forEach(h => {
         // Convertir dia_semana (1=Lunes...7=Domingo) a daysOfWeek (0=Domingo, 1=Lunes...6=Sábado)
-        const diaFC = h.dia_semana === 7 ? 0 : h.dia_semana;
+        const diaSemana = parseInt(h.dia_semana, 10);
+        const diaFC = diaSemana === 7 ? 0 : diaSemana;
         
         if (!horariosPorDia[diaFC]) {
             horariosPorDia[diaFC] = [];
@@ -848,7 +851,11 @@ function generarEventosBloqueoVisual(fechaInicio, fechaFin, especialistaId) {
     
     // Obtener horarios del especialista seleccionado
     let horarios = [];
-    if (especialistaId && horariosEspecialistas[especialistaId]) {
+    const sucursalId = document.getElementById('filter_sucursal')?.value || '';
+    if (sucursalId && horariosPorSucursal[sucursalId]) {
+        horarios = horariosPorSucursal[sucursalId];
+        console.log('Usando horarios de la sucursal', sucursalId);
+    } else if (especialistaId && horariosEspecialistas[especialistaId]) {
         horarios = horariosEspecialistas[especialistaId];
         console.log('✓ Usando horarios del especialista', especialistaId);
     } else if (horariosEspecialistas['current']) {
@@ -905,8 +912,11 @@ function generarEventosBloqueoVisual(fechaInicio, fechaFin, especialistaId) {
 // Obtener businessHours inicial
 function getBusinessHours() {
     const especialistaId = document.getElementById('filter_especialista')?.value;
+    const sucursalId = document.getElementById('filter_sucursal')?.value || '';
     
-    if (especialistaId && horariosEspecialistas[especialistaId]) {
+    if (sucursalId && horariosPorSucursal[sucursalId]) {
+        return convertirHorariosABusinessHours(horariosPorSucursal[sucursalId]);
+    } else if (especialistaId && horariosEspecialistas[especialistaId]) {
         return convertirHorariosABusinessHours(horariosEspecialistas[especialistaId]);
     } else if (horariosEspecialistas['current']) {
         // Para especialistas que ven su propio calendario
@@ -2431,91 +2441,32 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
     modal.classList.remove('hidden');
     
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
-    // Si es especialista, determinar automáticamente la sucursal según el día
-    const usuarioId = <?= $user['id'] ?>;
-    document.getElementById('create_especialista_id').value = usuarioId;
-    
-    // Calcular el día de la semana (1=Lunes, 7=Domingo)
-    const dayOfWeek = fecha.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
-    const diaSemana = dayOfWeek === 0 ? 7 : dayOfWeek; // Convertir a formato MySQL (1-7)
-    
-    // Obtener la sucursal donde trabaja ese día
-    fetch(`<?= BASE_URL ?>/api/especialista-sucursal-dia?usuario_id=${usuarioId}&dia_semana=${diaSemana}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.sucursal_id) {
-                // Tiene horarios configurados: auto-seleccionar la sucursal
-                const sucursalSelect = document.getElementById('create_sucursal');
-                sucursalSelect.value = data.sucursal_id;
-                document.getElementById('create_especialista_id').value = data.especialista_id;
-                
-                // Cargar servicios automáticamente
-                loadServicesForCreate();
-            } else {
-                // NO tiene horarios configurados: Permitir creación manual (cita extraordinaria)
-                console.log('No hay horarios configurados para este día - Habilitando modo manual');
-                
-                // Marcar como cita extraordinaria y mostrar advertencia
-                const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
-                if (checkboxExtraordinaria) {
-                    checkboxExtraordinaria.checked = true;
-                }
-                
-                // Mostrar advertencia de cita extraordinaria
-                if (extraordinariaWarning) {
-                    extraordinariaWarning.innerHTML = `
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Cita Extraordinaria:</strong> No hay horarios configurados para este día. 
-                        Podrá crear la cita manualmente seleccionando sucursal y servicio.
-                    `;
-                    extraordinariaWarning.classList.remove('hidden');
-                }
-                
-                // Habilitar selector de sucursal manualmente (cargar todas las sucursales del especialista)
-                fetch(`<?= BASE_URL ?>/api/especialista-sucursales?usuario_id=${usuarioId}`)
-                    .then(response => response.json())
-                    .then(sucursales => {
-                        const sucursalSelect = document.getElementById('create_sucursal');
-                        sucursalSelect.innerHTML = '<option value="">-- Seleccione sucursal --</option>';
-                        
-                        if (sucursales && sucursales.length > 0) {
-                            sucursales.forEach(suc => {
-                                const option = document.createElement('option');
-                                option.value = suc.sucursal_id;
-                                option.textContent = suc.nombre;
-                                option.dataset.especialistaId = suc.especialista_id;
-                                sucursalSelect.appendChild(option);
-                            });
-                            
-                            // Si solo hay UNA sucursal, auto-seleccionarla
-                            if (sucursales.length === 1) {
-                                sucursalSelect.value = sucursales[0].sucursal_id;
-                                document.getElementById('create_especialista_id').value = sucursales[0].especialista_id;
-                                console.log('Auto-seleccionando única sucursal:', sucursales[0].nombre);
-                                // Cargar servicios automáticamente
-                                loadServicesForCreate();
-                            } else {
-                                // Hacer que al cambiar sucursal, cargue servicios
-                                sucursalSelect.onchange = function() {
-                                    const selectedOption = this.options[this.selectedIndex];
-                                    if (selectedOption && selectedOption.dataset.especialistaId) {
-                                        document.getElementById('create_especialista_id').value = selectedOption.dataset.especialistaId;
-                                        loadServicesForCreate();
-                                    }
-                                };
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al cargar sucursales:', error);
-                    });
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener sucursal:', error);
-            alert('Error al cargar la información. Por favor intente nuevamente.');
-            closeCreateModal();
-        });
+    const sucursalSelect = document.getElementById('create_sucursal');
+    const especialistaInput = document.getElementById('create_especialista_id');
+    const filtroSucursal = document.getElementById('filter_sucursal')?.value || '';
+    const diaSemana = fecha.getDay() === 0 ? 7 : fecha.getDay();
+    const sucursalesConHorario = Object.keys(especialistaPorSucursal).filter(sucursalId =>
+        (horariosPorSucursal[sucursalId] || []).some(horario =>
+            parseInt(horario.dia_semana, 10) === diaSemana
+        )
+    );
+    const sucursalesDisponibles = Object.keys(especialistaPorSucursal);
+
+    let sucursalInicial = '';
+    if (filtroSucursal && especialistaPorSucursal[filtroSucursal]) {
+        sucursalInicial = filtroSucursal;
+    } else if (sucursalesConHorario.length === 1) {
+        sucursalInicial = sucursalesConHorario[0];
+    } else if (sucursalesDisponibles.length === 1) {
+        sucursalInicial = sucursalesDisponibles[0];
+    }
+
+    sucursalSelect.value = sucursalInicial;
+    especialistaInput.value = sucursalInicial ? especialistaPorSucursal[sucursalInicial] : '';
+
+    if (sucursalInicial) {
+        loadServicesForCreate();
+    }
     <?php endif; ?>
 }
 
@@ -2528,37 +2479,42 @@ function closeCreateModal() {
 async function loadServicesForCreate() {
     const sucursalId = document.getElementById('create_sucursal').value;
     const especialistaId = document.getElementById('create_especialista_id').value;
+    const serviceSelect = document.getElementById('create_servicio');
+
+    serviceSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
+    document.getElementById('create_hora_inicio').value = '';
+    document.getElementById('create_time_section').style.display = 'none';
+    document.getElementById('service_details').classList.add('hidden');
     
-    if (!sucursalId) return;
+    if (!sucursalId) {
+        document.getElementById('create_especialista_id').value = '';
+        document.getElementById('create_service_section').style.display = 'none';
+        return;
+    }
     
-    // Si es especialista, obtener su especialista_id para esta sucursal
+    // Cada sucursal tiene un registro de especialista distinto.
     let finalEspecialistaId = especialistaId;
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
-    if (especialistaId) {
-        try {
-            const response = await fetch(`<?= BASE_URL ?>/api/especialista-sucursal?usuario_id=${especialistaId}&sucursal_id=${sucursalId}`);
-            const data = await response.json();
-            if (data.especialista_id) {
-                finalEspecialistaId = data.especialista_id;
-                document.getElementById('create_especialista_id').value = finalEspecialistaId;
-            }
-        } catch (error) {
-            console.error('Error loading specialist:', error);
-            return;
-        }
-    }
+    finalEspecialistaId = especialistaPorSucursal[sucursalId] || '';
+    document.getElementById('create_especialista_id').value = finalEspecialistaId;
     <?php endif; ?>
     
-    if (!finalEspecialistaId) return;
+    if (!finalEspecialistaId) {
+        document.getElementById('create_service_section').style.display = 'none';
+        return;
+    }
     
     // Cargar servicios (filtrar por categoría según si es consulta extraordinaria)
     try {
-        const esExtraordinariaParam = esConsultaExtraordinaria ? '&es_extraordinaria=1' : '';
-        const response = await fetch(`<?= BASE_URL ?>/api/servicios?especialista_id=${finalEspecialistaId}${esExtraordinariaParam}`);
+        const fecha = document.getElementById('create_fecha').value;
+        const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked;
+        const params = new URLSearchParams({ especialista_id: finalEspecialistaId });
+        if (fecha) params.set('fecha', fecha);
+        if (horaPreseleccionada) params.set('hora', horaPreseleccionada);
+        if (esExtraordinaria) params.set('es_extraordinaria', '1');
+
+        const response = await fetch(`<?= BASE_URL ?>/api/servicios?${params.toString()}`);
         const data = await response.json();
-        
-        const select = document.getElementById('create_servicio');
-        select.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
         
         if (data.services && data.services.length > 0) {
             data.services.forEach(service => {
@@ -2574,10 +2530,15 @@ async function loadServicesForCreate() {
                 // Debug
                 console.log(`Servicio: ${service.nombre}, es_emergencia DB: ${service.es_emergencia}, dataset: ${option.dataset.esEmergencia}`);
                 
-                select.appendChild(option);
+                serviceSelect.appendChild(option);
             });
-            document.getElementById('create_service_section').style.display = 'block';
+        } else {
+            const option = document.createElement('option');
+            option.textContent = 'No hay servicios configurados en esta sucursal';
+            option.disabled = true;
+            serviceSelect.appendChild(option);
         }
+        document.getElementById('create_service_section').style.display = 'block';
     } catch (error) {
         console.error('Error loading services:', error);
     }
@@ -2620,11 +2581,14 @@ function loadTimeSlotsForCreate() {
     
     // Cargar horarios disponibles
     const especialistaId = document.getElementById('create_especialista_id').value;
+    const sucursalId = document.getElementById('create_sucursal').value;
     const servicioId = selectedOption.value;
     const fecha = document.getElementById('create_fecha').value;
     const duracion = parseInt(selectedOption.dataset.duracion);
     
-    if (!especialistaId || !servicioId || !fecha) return;
+    if (!especialistaId || !sucursalId || !servicioId || !fecha) return;
+
+    document.getElementById('create_hora_inicio').value = '';
     
     // Debug: mostrar parámetros en consola
     console.log('Cargando disponibilidad con:', {
@@ -2651,7 +2615,14 @@ function loadTimeSlotsForCreate() {
     }
     
     // Si NO es extraordinaria, usar API normal
-    fetch(`<?= BASE_URL ?>/api/disponibilidad?especialista_id=${especialistaId}&servicio_id=${servicioId}&fecha=${fecha}`)
+    const availabilityParams = new URLSearchParams({
+        especialista_id: especialistaId,
+        servicio_id: servicioId,
+        fecha: fecha,
+        sucursal_id: sucursalId
+    });
+
+    fetch(`<?= BASE_URL ?>/api/disponibilidad?${availabilityParams.toString()}`)
         .then(response => response.json())
         .then(data => {
             console.log('===== DEBUG DISPONIBILIDAD =====');
@@ -2677,6 +2648,7 @@ function loadTimeSlotsForCreate() {
             const container = document.getElementById('time_slots_container');
             const noSlotsMsg = document.getElementById('no_slots_message');
             container.innerHTML = '';
+            noSlotsMsg.style.display = 'none';
             
             if (data.slots && data.slots.length > 0) {
                 data.slots.forEach(slot => {
@@ -2728,59 +2700,18 @@ function loadTimeSlotsForCreate() {
                 noSlotsMsg.style.display = 'none';
                 document.getElementById('create_time_section').style.display = 'block';
                 
-                // Si había hora pre-seleccionada pero no se encontró, activar modo extraordinario automáticamente
+                // Una hora no disponible no debe convertir silenciosamente la cita en extraordinaria.
                 if (horaPreseleccionada) {
                     const horaEncontrada = data.slots.some(slot => slot.hora_inicio.substring(0, 5) === horaPreseleccionada);
                     if (!horaEncontrada) {
-                        console.warn(`⚠️ Hora ${horaPreseleccionada} no disponible - Activando modo extraordinario automáticamente`);
-                        
-                        // Activar checkbox de cita extraordinaria
-                        const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
-                        if (checkboxExtraordinaria && !checkboxExtraordinaria.checked) {
-                            checkboxExtraordinaria.checked = true;
-                            
-                            // Mostrar advertencia
-                            const warning = document.getElementById('create_extraordinaria_warning');
-                            if (warning) {
-                                warning.innerHTML = `
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    <span><strong>Modo Extraordinario Activado:</strong> La hora seleccionada (${horaPreseleccionada}) no estaba disponible. Se muestran todos los horarios posibles.</span>
-                                `;
-                                warning.classList.remove('hidden');
-                            }
-                            
-                            // Recargar slots en modo extraordinario
-                            console.log('🔄 Recargando slots en modo extraordinario...');
-                            const container = document.getElementById('time_slots_container');
-                            generateAllTimeSlots(container, duracion, horaPreseleccionada);
-                        }
+                        noSlotsMsg.innerHTML = `<i class="fas fa-info-circle mr-1"></i>La hora ${horaPreseleccionada} no está disponible para este servicio. Selecciona uno de los horarios mostrados.`;
+                        noSlotsMsg.style.display = 'block';
                     }
                 }
             } else {
-                // No hay slots disponibles - Si hay hora preseleccionada, activar modo extraordinario
-                if (horaPreseleccionada) {
-                    console.warn('⚠️ No hay slots disponibles - Activando modo extraordinario automáticamente');
-                    
-                    const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
-                    if (checkboxExtraordinaria && !checkboxExtraordinaria.checked) {
-                        checkboxExtraordinaria.checked = true;
-                        
-                        const warning = document.getElementById('create_extraordinaria_warning');
-                        if (warning) {
-                            warning.innerHTML = `
-                                <i class="fas fa-info-circle mr-2"></i>
-                                <span><strong>Modo Extraordinario Activado:</strong> No hay horarios disponibles. Se muestran todos los horarios para creación manual.</span>
-                            `;
-                            warning.classList.remove('hidden');
-                        }
-                        
-                        const container = document.getElementById('time_slots_container');
-                        generateAllTimeSlots(container, duracion, horaPreseleccionada);
-                    }
-                } else {
-                    noSlotsMsg.style.display = 'block';
-                    document.getElementById('create_time_section').style.display = 'block';
-                }
+                noSlotsMsg.innerHTML = `<i class="fas fa-info-circle mr-1"></i>${data.message || 'No hay horarios disponibles para esta fecha y sucursal.'}`;
+                noSlotsMsg.style.display = 'block';
+                document.getElementById('create_time_section').style.display = 'block';
             }
         })
         .catch(error => {
@@ -2841,20 +2772,20 @@ async function submitCreateReservation() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: formData
         });
-        
-        if (response.ok) {
+
+        const data = await response.json();
+        if (response.ok && data.success) {
             const msgType = esExtraordinaria === '1' ? 'EXTRAORDINARIA ' : '';
-            alert(`Reservación ${msgType}creada exitosamente`);
+            alert(`Reservación ${msgType}creada exitosamente. Código: ${data.codigo}`);
             closeCreateModal();
             horaPreseleccionada = null; // Limpiar hora pre-seleccionada
             window.calendar.refetchEvents();
         } else {
-            const text = await response.text();
-            alert('Error al crear la reservación. Por favor intente nuevamente.');
-            console.error('Error:', text);
+            alert(data.message || 'Error al crear la reservación. Por favor intente nuevamente.');
         }
     } catch (error) {
         console.error('Error al crear reservación:', error);
@@ -2864,6 +2795,7 @@ async function submitCreateReservation() {
 
 // Toggle warning de cita extraordinaria en modal de calendario
 function toggleCreateExtraordinariaWarning(isChecked) {
+    esConsultaExtraordinaria = isChecked;
     const warning = document.getElementById('create_extraordinaria_warning');
     if (isChecked) {
         warning.innerHTML = `
@@ -2875,11 +2807,9 @@ function toggleCreateExtraordinariaWarning(isChecked) {
         warning.classList.add('hidden');
     }
     
-    // Recargar horarios si ya hay un servicio seleccionado
-    const servicioSelect = document.getElementById('create_servicio');
-    if (servicioSelect && servicioSelect.value) {
-        console.log('🔄 Checkbox extraordinaria cambió - Recargando slots...');
-        loadTimeSlotsForCreate();
+    // Los servicios extraordinarios pertenecen a una categoría distinta.
+    if (document.getElementById('create_sucursal')?.value) {
+        loadServicesForCreate();
     }
 }
 

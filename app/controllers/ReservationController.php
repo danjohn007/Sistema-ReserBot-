@@ -270,16 +270,23 @@ class ReservationController extends BaseController {
                 }
                 
                 if (!$error) {
-                    // Obtener información del servicio
-                    $service = $this->db->fetch(
-                        "SELECT s.*, 
+                    // Confirmar que sucursal, especialista y servicio pertenecen a la misma asignación.
+                    $serviceSql = "SELECT s.*, e.usuario_id,
                          COALESCE(es.precio_personalizado, s.precio) as precio,
                          COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos
                          FROM servicios s
-                         LEFT JOIN especialistas_servicios es ON s.id = es.servicio_id AND es.especialista_id = ?
-                         WHERE s.id = ?",
-                        [$especialista_id, $servicio_id]
-                    );
+                         JOIN especialistas_servicios es ON s.id = es.servicio_id
+                         JOIN especialistas e ON e.id = es.especialista_id
+                         WHERE s.id = ? AND e.id = ? AND e.sucursal_id = ?
+                           AND s.activo = 1 AND es.activo = 1 AND e.activo = 1";
+                    $serviceParams = [$servicio_id, $especialista_id, $sucursal_id];
+
+                    if ($user['rol_id'] == ROLE_SPECIALIST) {
+                        $serviceSql .= " AND e.usuario_id = ?";
+                        $serviceParams[] = $user['id'];
+                    }
+
+                    $service = $this->db->fetch($serviceSql, $serviceParams);
                     
                     if ($service) {
                         $duracion = $service['duracion_minutos'];
@@ -291,8 +298,8 @@ class ReservationController extends BaseController {
                             $conflict = $this->db->fetch(
                                 "SELECT id FROM reservaciones 
                                  WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')
-                                 AND ((hora_inicio <= ? AND hora_fin > ?) OR (hora_inicio < ? AND hora_fin >= ?))",
-                                [$especialista_id, $fecha_cita, $hora_inicio, $hora_inicio, $hora_fin, $hora_fin]
+                                 AND hora_inicio < ? AND hora_fin > ?",
+                                [$especialista_id, $fecha_cita, $hora_fin, $hora_inicio]
                             );
                             
                             if ($conflict) {
@@ -326,15 +333,31 @@ class ReservationController extends BaseController {
                                 
                                 $msgType = $es_extraordinaria ? 'EXTRAORDINARIA - ' : '';
                                 logAction('reservation_create', 'Reservación creada: ' . $msgType . $codigo);
+
+                                if ($this->isAjax()) {
+                                    $this->json([
+                                        'success' => true,
+                                        'message' => 'Reservación creada exitosamente.',
+                                        'codigo' => $codigo,
+                                        'es_extraordinaria' => (bool) $es_extraordinaria
+                                    ]);
+                                }
+
                                 setFlashMessage('success', 'Reservación creada exitosamente. Código: ' . $codigo);
                                 redirect('/reservaciones');
                             } else {
                                 $error = 'Error al crear la reservación.';
                             }
                         }
+                    } else {
+                        $error = 'La sucursal, el profesionista y el servicio seleccionados no coinciden.';
                     }
                 }
             }
+        }
+
+        if ($this->isPost() && $error && $this->isAjax()) {
+            $this->json(['success' => false, 'message' => $error], 422);
         }
         
         $this->render('reservations/create', [
@@ -816,14 +839,17 @@ class ReservationController extends BaseController {
         
         if (!$schedule) return [];
         
-        // Verificar bloqueos
-        $block = $this->db->fetch(
-            "SELECT id FROM bloqueos_horario 
-             WHERE especialista_id = ? AND ? BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)",
-            [$especialista_id, $fecha]
+        // Obtener bloqueos por intervalo para conservar los espacios no afectados.
+        $dayStart = $fecha . ' 00:00:00';
+        $dayEnd = date('Y-m-d H:i:s', strtotime($fecha . ' +1 day'));
+        $existingBlocks = $this->db->fetchAll(
+            "SELECT fecha_inicio, fecha_fin
+             FROM bloqueos_horario
+             WHERE especialista_id = ?
+               AND fecha_inicio < ?
+               AND fecha_fin > ?",
+            [$especialista_id, $dayEnd, $dayStart]
         );
-        
-        if ($block) return [];
         
         // Obtener citas existentes para ese día
         $existingAppointments = $this->db->fetchAll(
@@ -847,10 +873,24 @@ class ReservationController extends BaseController {
                 $apptStart = strtotime($fecha . ' ' . $appt['hora_inicio']);
                 $apptEnd = strtotime($fecha . ' ' . $appt['hora_fin']);
                 
-                if (($currentTime >= $apptStart && $currentTime < $apptEnd) ||
-                    ($currentTime + ($duracion * 60) > $apptStart && $currentTime + ($duracion * 60) <= $apptEnd)) {
+                if ($currentTime < $apptEnd && ($currentTime + ($duracion * 60)) > $apptStart) {
                     $available = false;
                     break;
+                }
+            }
+
+            if ($available) {
+                $slotStartTimestamp = $currentTime;
+                $slotEndTimestamp = $currentTime + ($duracion * 60);
+
+                foreach ($existingBlocks as $block) {
+                    $blockStart = strtotime($block['fecha_inicio']);
+                    $blockEnd = strtotime($block['fecha_fin']);
+
+                    if ($slotStartTimestamp < $blockEnd && $slotEndTimestamp > $blockStart) {
+                        $available = false;
+                        break;
+                    }
                 }
             }
             

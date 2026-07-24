@@ -18,6 +18,8 @@ class CalendarController extends BaseController {
         // Obtener sucursales y especialistas para filtros
         $branches = [];
         $specialists = [];
+        $specialistBranchMap = [];
+        $branchSchedules = [];
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
             $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE activo = 1 ORDER BY nombre");
@@ -69,15 +71,14 @@ class CalendarController extends BaseController {
                 $usuarioId = $especialista['usuario_id'] ?? null;
                 
                 if ($usuarioId) {
-                    // Obtener TODOS los horarios de este usuario en TODAS sus sucursales
+                    // Cada registro de especialista corresponde a una sucursal concreta.
                     $todosLosHorarios = $this->db->fetchAll(
-                        "SELECT DISTINCT h.dia_semana, h.hora_inicio, h.hora_fin, 
+                        "SELECT h.dia_semana, h.hora_inicio, h.hora_fin,
                          h.bloqueo_activo, h.hora_inicio_bloqueo, h.hora_fin_bloqueo
                          FROM horarios_especialistas h
-                         JOIN especialistas e ON h.especialista_id = e.id
-                         WHERE e.usuario_id = ? AND h.activo = 1
+                         WHERE h.especialista_id = ? AND h.activo = 1
                          ORDER BY h.dia_semana, h.hora_inicio",
-                        [$usuarioId]
+                        [$spec['id']]
                     );
                     $horariosEspecialistas[$spec['id']] = $todosLosHorarios;
                 }
@@ -85,7 +86,7 @@ class CalendarController extends BaseController {
         } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
             // Para especialistas: obtener sus propios horarios de TODAS sus sucursales
             $especialistaIds = $this->db->fetchAll(
-                "SELECT id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+                "SELECT id, sucursal_id FROM especialistas WHERE usuario_id = ? AND activo = 1",
                 [$user['id']]
             );
             
@@ -103,6 +104,9 @@ class CalendarController extends BaseController {
                 if (!empty($horarios)) {
                     $todosLosHorarios = array_merge($todosLosHorarios, $horarios);
                 }
+
+                $specialistBranchMap[(string) $esp['sucursal_id']] = (int) $esp['id'];
+                $branchSchedules[(string) $esp['sucursal_id']] = $horarios;
             }
             
             // Eliminar duplicados basados en dia_semana, hora_inicio, hora_fin
@@ -126,6 +130,8 @@ class CalendarController extends BaseController {
             'specialists' => $specialists,
             'currentSpecialistId' => $currentSpecialistId,
             'horariosEspecialistas' => $horariosEspecialistas,
+            'specialistBranchMap' => $specialistBranchMap,
+            'branchSchedules' => $branchSchedules,
             'user' => $user
         ]);
     }

@@ -122,8 +122,6 @@ class BranchController extends BaseController {
             $codigo_postal = $this->post('codigo_postal');
             $telefono = $this->post('telefono');
             $email = $this->post('email');
-            $horario_apertura = $this->post('horario_apertura');
-            $horario_cierre = $this->post('horario_cierre');
             
             if (empty($nombre)) {
                 $error = 'El nombre de la sucursal es obligatorio.';
@@ -133,10 +131,9 @@ class BranchController extends BaseController {
 
                     $branchId = $this->db->insert(
                         "INSERT INTO sucursales
-                         (nombre, color, direccion, ciudad, estado, codigo_postal, telefono, email,
-                          horario_apertura, horario_cierre, activo, autorizado)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)",
-                        [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, $horario_apertura, $horario_cierre]
+                         (nombre, color, direccion, ciudad, estado, codigo_postal, telefono, email, activo, autorizado)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1)",
+                        [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email]
                     );
 
                     if ($user['rol_id'] == ROLE_SPECIALIST) {
@@ -227,8 +224,6 @@ class BranchController extends BaseController {
             $codigo_postal = $this->post('codigo_postal');
             $telefono = $this->post('telefono');
             $email = $this->post('email');
-            $horario_apertura = $this->post('horario_apertura');
-            $horario_cierre = $this->post('horario_cierre');
             $activo = $this->post('activo') ? 1 : 0;
             
             if (empty($nombre)) {
@@ -236,10 +231,9 @@ class BranchController extends BaseController {
             } else {
                 $this->db->update(
                     "UPDATE sucursales SET nombre = ?, color = ?, direccion = ?, ciudad = ?, estado = ?, 
-                     codigo_postal = ?, telefono = ?, email = ?, horario_apertura = ?, 
-                     horario_cierre = ?, activo = ? WHERE id = ?",
-                    [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email, 
-                     $horario_apertura, $horario_cierre, $activo, $id]
+                     codigo_postal = ?, telefono = ?, email = ?, activo = ? WHERE id = ?",
+                    [$nombre, $color, $direccion, $ciudad, $estado, $codigo_postal, $telefono, $email,
+                     $activo, $id]
                 );
                 
                 logAction('branch_update', 'Sucursal actualizada: ' . $nombre);

@@ -61,9 +61,6 @@
                 <?php if ($branch['email']): ?>
                 <p class="break-all"><i class="fas fa-envelope w-5"></i><?= e($branch['email']) ?></p>
                 <?php endif; ?>
-                <?php if (!empty($branch['horario_apertura']) || !empty($branch['horario_cierre'])): ?>
-                <p><i class="fas fa-clock w-5"></i><?= formatTime($branch['horario_apertura']) ?> - <?= formatTime($branch['horario_cierre']) ?></p>
-                <?php endif; ?>
             </div>
         </div>
 

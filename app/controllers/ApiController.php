@@ -68,16 +68,22 @@ class ApiController extends BaseController {
             $this->json(['slots' => [], 'message' => 'El especialista no trabaja este día']);
         }
         
-        // Verificar bloqueos de fecha completa
-        $block = $this->db->fetch(
-            "SELECT id FROM bloqueos_horario 
-             WHERE especialista_id = ? AND ? BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)",
-            [$especialista_id, $fecha]
-        );
-        
-        if ($block) {
-            $this->json(['slots' => [], 'message' => 'El especialista no está disponible este día']);
+        // Validar bloqueos por intervalo; uno puntual no debe cancelar todo el día.
+        $dayStart = $fecha . ' 00:00:00';
+        $dayEnd = date('Y-m-d H:i:s', strtotime($fecha . ' +1 day'));
+        $queryBlocks = "SELECT fecha_inicio, fecha_fin
+                        FROM bloqueos_horario
+                        WHERE especialista_id = ?
+                          AND fecha_inicio < ?
+                          AND fecha_fin > ?";
+        $paramsBlocks = [$especialista_id, $dayEnd, $dayStart];
+
+        if ($sucursal_id) {
+            $queryBlocks .= " AND (sucursal_id = ? OR sucursal_id IS NULL)";
+            $paramsBlocks[] = $sucursal_id;
         }
+
+        $existingBlocks = $this->db->fetchAll($queryBlocks, $paramsBlocks);
         
         // Verificar feriado
         if (isHoliday($fecha)) {
@@ -104,7 +110,7 @@ class ApiController extends BaseController {
         $existingAppointments = $this->db->fetchAll($queryAppointments, $paramsAppointments);
         
         // Función auxiliar para verificar si un slot está disponible
-        $isSlotAvailable = function($slotStart, $slotEnd) use ($existingAppointments, $fecha) {
+        $isSlotAvailable = function($slotStart, $slotEnd) use ($existingAppointments, $existingBlocks, $fecha) {
             // Verificar si está en el pasado
             if ($fecha == date('Y-m-d') && $slotStart < time()) {
                 return false;
@@ -118,6 +124,15 @@ class ApiController extends BaseController {
                 if (($slotStart >= $apptStart && $slotStart < $apptEnd) ||
                     ($slotEnd > $apptStart && $slotEnd <= $apptEnd) ||
                     ($slotStart <= $apptStart && $slotEnd >= $apptEnd)) {
+                    return false;
+                }
+            }
+
+            foreach ($existingBlocks as $block) {
+                $blockStart = strtotime($block['fecha_inicio']);
+                $blockEnd = strtotime($block['fecha_fin']);
+
+                if ($slotStart < $blockEnd && $slotEnd > $blockStart) {
                     return false;
                 }
             }
@@ -141,6 +156,7 @@ class ApiController extends BaseController {
         error_log("[AVAILABILITY DEBUG] Bloqueo Activo: " . ($schedule['bloqueo_activo'] ? 'SI' : 'NO') . 
                   ", Bloqueo: " . ($schedule['hora_inicio_bloqueo'] ?? 'N/A') . "-" . ($schedule['hora_fin_bloqueo'] ?? 'N/A'));
         error_log("[AVAILABILITY DEBUG] Citas existentes: " . count($existingAppointments));
+        error_log("[AVAILABILITY DEBUG] Bloqueos aplicables: " . count($existingBlocks));
         foreach ($existingAppointments as $idx => $appt) {
             error_log("[AVAILABILITY DEBUG] Cita $idx: " . $appt['hora_inicio'] . " - " . $appt['hora_fin']);
         }
