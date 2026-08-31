@@ -332,7 +332,7 @@
                             <i class="fas fa-user-clock text-2xl"></i>
                         </div>
                         <div class="text-left">
-                            <h4 class="text-lg font-bold">Consulta Extraordinaria</h4>
+                            <h4 class="text-lg font-bold">Cita Extraordinaria</h4>
                             <p class="text-sm text-orange-100">Cita fuera de horario normal</p>
                         </div>
                     </div>
@@ -567,17 +567,17 @@
                 </div>
             </div>
             
-            <!-- Opción: Primera Consulta -->
+            <!-- Opción: Primera Cita -->
             <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <i class="fas fa-user-plus text-blue-600 text-xl"></i>
                         <div>
                             <label for="create_primera_consulta" class="font-semibold text-gray-900 cursor-pointer">
-                                Primera Consulta
+                                Primera Cita
                             </label>
                             <p class="text-sm text-gray-600">
-                                Marcar si es la primera vez que el paciente consulta
+                                Marcar si es la primera cita del cliente
                             </p>
                         </div>
                     </div>
@@ -1929,7 +1929,7 @@ document.addEventListener('keydown', function(e) {
 let selectedDateStr = null;
 let selectedHoraStr = null;
 
-// Variable global para indicar si estamos en modo consulta extraordinaria
+// Variable global para indicar si estamos en modo cita extraordinaria
 let esConsultaExtraordinaria = false;
 
 function openActionModal(dateStr, horaSeleccionada = null) {
@@ -2155,9 +2155,9 @@ function selectConsultaExtraordinariaAction() {
     
     closeActionModal();
     
-    // Abrir el modal de consulta extraordinaria con la fecha y hora guardadas
+    // Abrir el modal de cita extraordinaria con la fecha y hora guardadas
     if (fecha) {
-        openCreateModal(fecha, hora, true); // true = es consulta extraordinaria
+        openCreateModal(fecha, hora, true); // true = es cita extraordinaria
     }
 }
 
@@ -2306,7 +2306,7 @@ async function submitSurgerySchedule() {
 let horaPreseleccionada = null;
 
 function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = false) {
-    // Establecer el modo de consulta extraordinaria
+    // Establecer el modo de cita extraordinaria
     esConsultaExtraordinaria = esExtraordinaria;
     
     const modal = document.getElementById('createModal');
@@ -2316,7 +2316,7 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
     // Guardar hora pre-seleccionada para usar después
     horaPreseleccionada = horaSeleccionada;
     console.log('🕐 openCreateModal - Guardando horaPreseleccionada:', horaPreseleccionada);
-    console.log('📋 Modo Consulta Extraordinaria:', esConsultaExtraordinaria);
+    console.log('📋 Modo Cita Extraordinaria:', esConsultaExtraordinaria);
     
     // Extraer solo la fecha (YYYY-MM-DD) del dateStr
     // En vista mensual viene "2026-02-15"
@@ -2349,7 +2349,7 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
         extraordinariaWarning.classList.add('hidden');
     }
     
-    // Configurar el checkbox, título y colores según el tipo de consulta
+    // Configurar el checkbox, título y colores según el tipo de cita
     const checkboxExtraordinaria = document.getElementById('create_es_extraordinaria');
     const checkboxContainer = checkboxExtraordinaria?.closest('.flex');
     const checkboxPrimeraConsulta = document.getElementById('create_primera_consulta');
@@ -2360,14 +2360,14 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
     const submitBtn = document.getElementById('createModalSubmitBtn');
     
     if (esConsultaExtraordinaria) {
-        // CONSULTA EXTRAORDINARIA: Ocultar checkboxes y forzar valores
+        // CITA EXTRAORDINARIA: Ocultar checkboxes y forzar valores
         if (checkboxContainer) {
             checkboxContainer.style.display = 'none';
         }
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = true;
         }
-        // Mostrar checkbox de primera consulta en consultas extraordinarias con tema naranja
+        // Mostrar checkbox de primera cita en citas extraordinarias con tema naranja
         if (primeraConsultaContainer) {
             primeraConsultaContainer.style.display = 'block';
             primeraConsultaContainer.className = primeraConsultaContainer.className
@@ -2384,7 +2384,7 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
             checkboxPrimeraConsulta.checked = false;
         }
         if (modalTitle) {
-            modalTitle.innerHTML = '<i class="fas fa-user-clock mr-2"></i>Nueva Consulta Extraordinaria';
+            modalTitle.innerHTML = '<i class="fas fa-user-clock mr-2"></i>Nueva Cita Extraordinaria';
         }
         
         // Cambiar colores a naranja
@@ -2398,14 +2398,14 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
             submitBtn.className = 'px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-md hover:shadow-lg';
         }
     } else {
-        // CONSULTA NORMAL: Mostrar checkboxes y resetear
+        // CITA NORMAL: Mostrar checkboxes y resetear
         if (checkboxContainer) {
             checkboxContainer.style.display = 'flex';
         }
         if (checkboxExtraordinaria) {
             checkboxExtraordinaria.checked = false;
         }
-        // Mostrar checkbox de primera consulta en consultas normales con tema azul
+        // Mostrar checkbox de primera cita en citas normales con tema azul
         if (primeraConsultaContainer) {
             primeraConsultaContainer.style.display = 'block';
             primeraConsultaContainer.className = primeraConsultaContainer.className
@@ -2504,7 +2504,7 @@ async function loadServicesForCreate() {
         return;
     }
     
-    // Cargar servicios (filtrar por categoría según si es consulta extraordinaria)
+    // Cargar servicios (filtrar por categoría según si es cita extraordinaria)
     try {
         const fecha = document.getElementById('create_fecha').value;
         const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked;

@@ -94,7 +94,7 @@
                             <div class="flex items-center p-3 bg-blue-50 rounded-lg">
                                 <div class="w-2 h-8 bg-blue-500 rounded mr-3"></div>
                                 <div class="flex-1">
-                                    <p class="font-medium text-gray-800">Consulta General</p>
+                                    <p class="font-medium text-gray-800">Cita General</p>
                                     <p class="text-sm text-gray-500">10:00 AM - Dr. Martínez</p>
                                 </div>
                                 <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Confirmada</span>

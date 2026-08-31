@@ -318,13 +318,13 @@ $presets = [
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     FILA INFERIOR: Primera Consulta + Tabla de detalle
+     FILA INFERIOR: Primera Cita + Tabla de detalle
 ═════════════════════════════════════════════════════════════════════════════ -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
     <!-- Gráfica Primera vs Recurrente -->
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="text-base font-semibold text-gray-800 mb-1">Primera Consulta vs Recurrente</h3>
+        <h3 class="text-base font-semibold text-gray-800 mb-1">Primera Cita vs Recurrente</h3>
         <p class="text-xs text-gray-500 mb-4">Desglose por origen</p>
         <?php if (!empty($primeraVsRecurrente)): ?>
         <div style="height: 240px;">
@@ -351,7 +351,7 @@ $presets = [
                         <th class="px-3 py-2 text-right">%</th>
                         <th class="px-3 py-2 text-right">Completas</th>
                         <th class="px-3 py-2 text-right">Canceladas</th>
-                        <th class="px-3 py-2 text-right rounded-r-lg">1.ª Cons.</th>
+                        <th class="px-3 py-2 text-right rounded-r-lg">1.ª Cita</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels: pvLabels,
                 datasets: [
                     {
-                        label: 'Primera consulta',
+                        label: 'Primera cita',
                         data: pvPrimera,
                         backgroundColor: '#3b82f6',
                         borderRadius: 4,

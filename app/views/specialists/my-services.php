@@ -458,7 +458,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio *</label>
                     <input type="text" name="nombre" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="Ej: Consulta Especializada">
+                           placeholder="Ej: Cita Especializada">
                 </div>
                 
                 <div>
@@ -544,7 +544,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio *</label>
                     <input type="text" name="nombre" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                           placeholder="Ej: Consulta Urgente">
+                           placeholder="Ej: Cita Urgente">
                 </div>
                 
                 <div>
