@@ -19,7 +19,7 @@
                 </label>
                 <select id="filter_sucursal" 
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition" 
-                        onchange="filterCalendar()">
+                        onchange="filterCalendar('branch')">
                     <option value="">
                         <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
                         Todas mis sucursales
@@ -41,10 +41,10 @@
                 </label>
                 <select id="filter_especialista" 
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition" 
-                        onchange="filterCalendar()">
+                        onchange="filterCalendar('specialist')">
                     <option value="">Todos los especialistas</option>
                     <?php foreach ($specialists as $spec): ?>
-                    <option value="<?= $spec['id'] ?>">
+                    <option value="<?= $spec['id'] ?>" data-branch-id="<?= $spec['sucursal_id'] ?? '' ?>">
                         <?= e($spec['nombre'] . ' ' . $spec['apellidos']) ?>
                         <?= isset($spec['sucursal_nombre']) ? ' - ' . e($spec['sucursal_nombre']) : '' ?>
                     </option>
@@ -595,7 +595,6 @@
             </div>
             
             <!-- Cliente -->
-            <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-user mr-1"></i>Nombre del Cliente *
@@ -628,7 +627,6 @@
                        placeholder="cliente@ejemplo.com"
                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
             </div>
-            <?php endif; ?>
             
             <!-- Sucursal -->
             <?php if (!empty($branches)): ?>
@@ -636,12 +634,25 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-building mr-1"></i>Sucursal *
                 </label>
-                <select id="create_sucursal" required onchange="loadServicesForCreate()"
+                <select id="create_sucursal" required onchange="handleCreateBranchChange()"
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                     <option value="">-- Seleccione una sucursal --</option>
                     <?php foreach ($branches as $branch): ?>
                     <option value="<?= $branch['id'] ?>"><?= e($branch['nombre']) ?></option>
                     <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <p id="create_selection_message" class="hidden text-sm mt-2"></p>
+
+            <?php if ($user['rol_id'] != ROLE_SPECIALIST): ?>
+            <div id="create_specialist_section" style="display:none;">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user-tie mr-1"></i>Profesionista *
+                </label>
+                <select id="create_especialista_select" onchange="selectCreateSpecialist(this.value)"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    <option value="">-- Seleccione un profesionista --</option>
                 </select>
             </div>
             <?php endif; ?>
@@ -852,12 +863,12 @@ function generarEventosBloqueoVisual(fechaInicio, fechaFin, especialistaId) {
     // Obtener horarios del especialista seleccionado
     let horarios = [];
     const sucursalId = document.getElementById('filter_sucursal')?.value || '';
-    if (sucursalId && horariosPorSucursal[sucursalId]) {
-        horarios = horariosPorSucursal[sucursalId];
-        console.log('Usando horarios de la sucursal', sucursalId);
-    } else if (especialistaId && horariosEspecialistas[especialistaId]) {
+    if (especialistaId && horariosEspecialistas[especialistaId]) {
         horarios = horariosEspecialistas[especialistaId];
         console.log('✓ Usando horarios del especialista', especialistaId);
+    } else if (sucursalId && horariosPorSucursal[sucursalId]) {
+        horarios = horariosPorSucursal[sucursalId];
+        console.log('Usando horarios de la sucursal', sucursalId);
     } else if (horariosEspecialistas['current']) {
         horarios = horariosEspecialistas['current'];
         console.log('✓ Usando horarios current');
@@ -914,10 +925,10 @@ function getBusinessHours() {
     const especialistaId = document.getElementById('filter_especialista')?.value;
     const sucursalId = document.getElementById('filter_sucursal')?.value || '';
     
-    if (sucursalId && horariosPorSucursal[sucursalId]) {
-        return convertirHorariosABusinessHours(horariosPorSucursal[sucursalId]);
-    } else if (especialistaId && horariosEspecialistas[especialistaId]) {
+    if (especialistaId && horariosEspecialistas[especialistaId]) {
         return convertirHorariosABusinessHours(horariosEspecialistas[especialistaId]);
+    } else if (sucursalId && horariosPorSucursal[sucursalId]) {
+        return convertirHorariosABusinessHours(horariosPorSucursal[sucursalId]);
     } else if (horariosEspecialistas['current']) {
         // Para especialistas que ven su propio calendario
         return convertirHorariosABusinessHours(horariosEspecialistas['current']);
@@ -1129,7 +1140,26 @@ document.addEventListener('DOMContentLoaded', function() {
     calendar.render();
 });
 
-function filterCalendar() {
+function filterCalendar(source = '') {
+    const branchSelect = document.getElementById('filter_sucursal');
+    const specialistSelect = document.getElementById('filter_especialista');
+
+    if (branchSelect && specialistSelect) {
+        const branchId = branchSelect.value;
+
+        Array.from(specialistSelect.options).forEach(option => {
+            if (!option.value) return;
+            const belongsToBranch = !branchId || option.dataset.branchId === branchId;
+            option.hidden = !belongsToBranch;
+            option.disabled = !belongsToBranch;
+        });
+
+        const selectedOption = specialistSelect.selectedOptions[0];
+        if (source === 'branch' && branchId && selectedOption?.value && selectedOption.dataset.branchId !== branchId) {
+            specialistSelect.value = '';
+        }
+    }
+
     <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     // Limpiar colores de fondo antes de recargar eventos
     document.querySelectorAll('.fc-day').forEach(celda => {
@@ -1218,6 +1248,7 @@ function showToast(message, type = 'info') {
 }
 
 let currentEvent = null;
+let editAvailabilityRequestId = 0;
 
 function showEventModal(event) {
     currentEvent = event;
@@ -1548,6 +1579,7 @@ function toggleEditMode() {
 }
 
 function cancelEdit() {
+    editAvailabilityRequestId++;
     document.getElementById('modal-content').style.display = 'block';
     document.getElementById('modal-edit-content').style.display = 'none';
     document.getElementById('modal-footer-view').style.display = 'block';
@@ -1561,7 +1593,8 @@ async function loadAvailableTimesForEdit() {
     const sucursalId = document.getElementById('edit-sucursal-id').value;
     const reservacionId = document.getElementById('edit-reservacion-id').value;
     
-    if (!fecha || !especialistaId || !servicioId) return;
+    if (!fecha || !especialistaId || !servicioId || !sucursalId) return;
+    const requestId = ++editAvailabilityRequestId;
     
     const container = document.getElementById('edit-time-container');
     container.innerHTML = `
@@ -1575,7 +1608,8 @@ async function loadAvailableTimesForEdit() {
     
     try {
         const response = await fetch(`<?= BASE_URL ?>/api/disponibilidad?especialista_id=${especialistaId}&servicio_id=${servicioId}&fecha=${fecha}&sucursal_id=${sucursalId}&excluir_reservacion=${reservacionId}`);
-        const data = await response.json();
+        const data = await readJsonResponse(response);
+        if (requestId !== editAvailabilityRequestId) return;
         
         if (data.slots && data.slots.length > 0) {
             let slotsHTML = `
@@ -1605,18 +1639,19 @@ async function loadAvailableTimesForEdit() {
                     <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
                 </label>
                 <div class="text-center py-4 text-orange-600 bg-orange-50 rounded-lg">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>No hay horarios disponibles para esta fecha
+                    <i class="fas fa-exclamation-triangle mr-2"></i>${data.message || 'No hay horarios disponibles para esta fecha.'}
                 </div>
             `;
         }
     } catch (error) {
+        if (requestId !== editAvailabilityRequestId) return;
         console.error('Error al cargar horarios:', error);
         container.innerHTML = `
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 <i class="fas fa-clock mr-1 text-primary"></i>Nueva Hora
             </label>
             <div class="text-center py-4 text-red-600 bg-red-50 rounded-lg">
-                <i class="fas fa-times-circle mr-2"></i>Error al cargar horarios
+                <i class="fas fa-times-circle mr-2"></i>${error.message || 'Error al cargar horarios.'}
             </div>
         `;
     }
@@ -2304,6 +2339,140 @@ async function submitSurgerySchedule() {
 
 // Variable global para almacenar la hora pre-seleccionada
 let horaPreseleccionada = null;
+let createSpecialistRequestId = 0;
+let createServicesRequestId = 0;
+let createAvailabilityRequestId = 0;
+
+function setCreateSelectionMessage(message = '', type = 'info') {
+    const element = document.getElementById('create_selection_message');
+    if (!element) return;
+
+    if (!message) {
+        element.textContent = '';
+        element.className = 'hidden text-sm mt-2';
+        return;
+    }
+
+    const colors = type === 'error'
+        ? 'text-red-700 bg-red-50 border-red-200'
+        : type === 'success'
+            ? 'text-green-700 bg-green-50 border-green-200'
+            : 'text-blue-700 bg-blue-50 border-blue-200';
+    element.textContent = message;
+    element.className = `text-sm mt-2 px-3 py-2 border rounded-lg ${colors}`;
+}
+
+async function readJsonResponse(response) {
+    const rawResponse = await response.text();
+    let data;
+    try {
+        data = rawResponse ? JSON.parse(rawResponse) : {};
+    } catch (error) {
+        throw new Error('El servidor devolvió una respuesta inválida. Recarga la página e intenta nuevamente.');
+    }
+
+    if (!response.ok) {
+        throw new Error(data.message || data.error || 'No se pudo completar la solicitud.');
+    }
+
+    return data;
+}
+
+function selectCreateSpecialist(especialistaId) {
+    document.getElementById('create_especialista_id').value = especialistaId || '';
+    createServicesRequestId++;
+    createAvailabilityRequestId++;
+
+    if (especialistaId) {
+        setCreateSelectionMessage('Profesionista seleccionado. Ahora elige el servicio.', 'success');
+        loadServicesForCreate();
+    } else {
+        document.getElementById('create_service_section').style.display = 'none';
+        document.getElementById('create_time_section').style.display = 'none';
+        setCreateSelectionMessage('Selecciona un profesionista para consultar sus servicios.');
+    }
+}
+
+async function handleCreateBranchChange() {
+    const branchSelect = document.getElementById('create_sucursal');
+    const branchId = branchSelect?.value || '';
+    const specialistInput = document.getElementById('create_especialista_id');
+
+    createSpecialistRequestId++;
+    createServicesRequestId++;
+    createAvailabilityRequestId++;
+    specialistInput.value = '';
+    document.getElementById('create_service_section').style.display = 'none';
+    document.getElementById('create_time_section').style.display = 'none';
+
+    if (!branchId) {
+        setCreateSelectionMessage('Selecciona una sucursal para consultar profesionistas, servicios y horarios.');
+        <?php if ($user['rol_id'] != ROLE_SPECIALIST): ?>
+        document.getElementById('create_specialist_section').style.display = 'none';
+        <?php endif; ?>
+        return;
+    }
+
+    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+    const specialistId = especialistaPorSucursal[branchId] || '';
+    specialistInput.value = specialistId;
+    if (!specialistId) {
+        setCreateSelectionMessage('Tu perfil no está asociado de forma activa con esta sucursal.', 'error');
+        return;
+    }
+    setCreateSelectionMessage(`Sucursal seleccionada: ${branchSelect.options[branchSelect.selectedIndex].text}.`, 'success');
+    await loadServicesForCreate();
+    <?php else: ?>
+    const requestId = createSpecialistRequestId;
+    const specialistSection = document.getElementById('create_specialist_section');
+    const specialistSelect = document.getElementById('create_especialista_select');
+    specialistSection.style.display = 'block';
+    specialistSelect.innerHTML = '<option value="">Cargando profesionistas...</option>';
+    specialistSelect.disabled = true;
+    setCreateSelectionMessage('Consultando profesionistas de la sucursal...');
+
+    try {
+        const response = await fetch(`<?= BASE_URL ?>/api/especialistas?sucursal_id=${encodeURIComponent(branchId)}`);
+        const data = await readJsonResponse(response);
+        if (requestId !== createSpecialistRequestId || branchSelect.value !== branchId) return;
+
+        const specialists = Array.isArray(data.specialists) ? data.specialists : [];
+        specialistSelect.innerHTML = '<option value="">-- Seleccione un profesionista --</option>';
+        specialistSelect.disabled = false;
+
+        specialists.forEach(specialist => {
+            const option = document.createElement('option');
+            option.value = specialist.id;
+            option.textContent = `${specialist.nombre} ${specialist.apellidos}`.trim();
+            specialistSelect.appendChild(option);
+        });
+
+        if (specialists.length === 0) {
+            specialistSelect.innerHTML = '<option value="">No hay profesionistas activos en esta sucursal</option>';
+            specialistSelect.disabled = true;
+            setCreateSelectionMessage('Esta sucursal no tiene profesionistas activos para recibir citas.', 'error');
+            return;
+        }
+
+        const filteredSpecialist = document.getElementById('filter_especialista')?.value || '';
+        const initialSpecialist = specialists.some(item => String(item.id) === String(filteredSpecialist))
+            ? filteredSpecialist
+            : specialists.length === 1 ? specialists[0].id : '';
+
+        if (initialSpecialist) {
+            specialistSelect.value = initialSpecialist;
+            selectCreateSpecialist(initialSpecialist);
+        } else {
+            setCreateSelectionMessage('Selecciona el profesionista que atenderá la cita.');
+        }
+    } catch (error) {
+        if (requestId !== createSpecialistRequestId) return;
+        specialistSelect.innerHTML = '<option value="">No se pudieron cargar los profesionistas</option>';
+        specialistSelect.disabled = true;
+        setCreateSelectionMessage(error.message, 'error');
+    }
+    <?php endif; ?>
+}
 
 function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = false) {
     // Establecer el modo de cita extraordinaria
@@ -2440,55 +2609,76 @@ function openCreateModal(dateStr, horaSeleccionada = null, esExtraordinaria = fa
     // Mostrar el modal inmediatamente
     modal.classList.remove('hidden');
     
-    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     const sucursalSelect = document.getElementById('create_sucursal');
     const especialistaInput = document.getElementById('create_especialista_id');
     const filtroSucursal = document.getElementById('filter_sucursal')?.value || '';
+    const filtroEspecialista = document.getElementById('filter_especialista');
     const diaSemana = fecha.getDay() === 0 ? 7 : fecha.getDay();
-    const sucursalesConHorario = Object.keys(especialistaPorSucursal).filter(sucursalId =>
-        (horariosPorSucursal[sucursalId] || []).some(horario =>
-            parseInt(horario.dia_semana, 10) === diaSemana
-        )
-    );
-    const sucursalesDisponibles = Object.keys(especialistaPorSucursal);
-
+    const sucursalesDisponibles = Array.from(sucursalSelect?.options || [])
+        .map(option => option.value)
+        .filter(Boolean);
     let sucursalInicial = '';
-    if (filtroSucursal && especialistaPorSucursal[filtroSucursal]) {
-        sucursalInicial = filtroSucursal;
-    } else if (sucursalesConHorario.length === 1) {
-        sucursalInicial = sucursalesConHorario[0];
-    } else if (sucursalesDisponibles.length === 1) {
-        sucursalInicial = sucursalesDisponibles[0];
+
+    if (!sucursalSelect || sucursalesDisponibles.length === 0) {
+        setCreateSelectionMessage('No hay sucursales activas y autorizadas disponibles para crear la cita.', 'error');
+        return;
     }
 
-    sucursalSelect.value = sucursalInicial;
-    especialistaInput.value = sucursalInicial ? especialistaPorSucursal[sucursalInicial] : '';
+    if (filtroSucursal && sucursalesDisponibles.includes(String(filtroSucursal))) {
+        sucursalInicial = filtroSucursal;
+    } else {
+        <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+        const sucursalesConHorario = sucursalesDisponibles.filter(sucursalId =>
+            (horariosPorSucursal[sucursalId] || []).some(horario =>
+                parseInt(horario.dia_semana, 10) === diaSemana
+            )
+        );
+        sucursalInicial = sucursalesConHorario[0] || sucursalesDisponibles[0] || '';
+        <?php else: ?>
+        const sucursalDelFiltro = filtroEspecialista?.selectedOptions?.[0]?.dataset?.branchId || '';
+        sucursalInicial = sucursalesDisponibles.includes(String(sucursalDelFiltro))
+            ? String(sucursalDelFiltro)
+            : sucursalesDisponibles.length === 1 ? sucursalesDisponibles[0] : '';
+        <?php endif; ?>
+    }
+
+    if (sucursalSelect) sucursalSelect.value = sucursalInicial;
+    especialistaInput.value = '';
 
     if (sucursalInicial) {
-        loadServicesForCreate();
+        handleCreateBranchChange();
+    } else {
+        setCreateSelectionMessage('Selecciona una sucursal para consultar los horarios disponibles.');
     }
-    <?php endif; ?>
 }
 
 function closeCreateModal() {
     document.getElementById('createModal').classList.add('hidden');
     horaPreseleccionada = null; // Limpiar hora pre-seleccionada
     esConsultaExtraordinaria = false; // Resetear modo extraordinario
+    createSpecialistRequestId++;
+    createServicesRequestId++;
+    createAvailabilityRequestId++;
 }
 
 async function loadServicesForCreate() {
-    const sucursalId = document.getElementById('create_sucursal').value;
+    const sucursalId = document.getElementById('create_sucursal')?.value || '';
     const especialistaId = document.getElementById('create_especialista_id').value;
     const serviceSelect = document.getElementById('create_servicio');
+    const serviceSection = document.getElementById('create_service_section');
+    const requestId = ++createServicesRequestId;
+    createAvailabilityRequestId++;
 
-    serviceSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
+    serviceSelect.innerHTML = '<option value="">Cargando servicios...</option>';
+    serviceSelect.disabled = true;
+    serviceSection.style.display = 'block';
     document.getElementById('create_hora_inicio').value = '';
     document.getElementById('create_time_section').style.display = 'none';
     document.getElementById('service_details').classList.add('hidden');
     
     if (!sucursalId) {
         document.getElementById('create_especialista_id').value = '';
-        document.getElementById('create_service_section').style.display = 'none';
+        serviceSection.style.display = 'none';
         return;
     }
     
@@ -2500,21 +2690,27 @@ async function loadServicesForCreate() {
     <?php endif; ?>
     
     if (!finalEspecialistaId) {
-        document.getElementById('create_service_section').style.display = 'none';
+        serviceSection.style.display = 'none';
+        setCreateSelectionMessage('Selecciona un profesionista para consultar sus servicios.');
         return;
     }
     
-    // Cargar servicios (filtrar por categoría según si es cita extraordinaria)
+    // La disponibilidad, no la hora pulsada, determina qué espacios puede usar cada servicio.
     try {
-        const fecha = document.getElementById('create_fecha').value;
         const esExtraordinaria = document.getElementById('create_es_extraordinaria').checked;
         const params = new URLSearchParams({ especialista_id: finalEspecialistaId });
-        if (fecha) params.set('fecha', fecha);
-        if (horaPreseleccionada) params.set('hora', horaPreseleccionada);
         if (esExtraordinaria) params.set('es_extraordinaria', '1');
 
         const response = await fetch(`<?= BASE_URL ?>/api/servicios?${params.toString()}`);
-        const data = await response.json();
+        const data = await readJsonResponse(response);
+        if (requestId !== createServicesRequestId ||
+            document.getElementById('create_sucursal').value !== sucursalId ||
+            document.getElementById('create_especialista_id').value !== String(finalEspecialistaId)) {
+            return;
+        }
+
+        serviceSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
+        serviceSelect.disabled = false;
         
         if (data.services && data.services.length > 0) {
             data.services.forEach(service => {
@@ -2532,19 +2728,32 @@ async function loadServicesForCreate() {
                 
                 serviceSelect.appendChild(option);
             });
+            setCreateSelectionMessage('Servicios cargados. Selecciona uno para consultar sus horarios.', 'success');
         } else {
             const option = document.createElement('option');
-            option.textContent = 'No hay servicios configurados en esta sucursal';
+            option.textContent = esExtraordinaria
+                ? 'No hay servicios extraordinarios configurados'
+                : 'No hay servicios activos para este profesionista';
             option.disabled = true;
             serviceSelect.appendChild(option);
+            serviceSelect.disabled = true;
+            setCreateSelectionMessage(
+                esExtraordinaria
+                    ? 'No hay un servicio extraordinario activo para esta sucursal.'
+                    : 'El profesionista no tiene servicios activos en esta sucursal.',
+                'error'
+            );
         }
-        document.getElementById('create_service_section').style.display = 'block';
     } catch (error) {
+        if (requestId !== createServicesRequestId) return;
         console.error('Error loading services:', error);
+        serviceSelect.innerHTML = '<option value="">No se pudieron cargar los servicios</option>';
+        serviceSelect.disabled = true;
+        setCreateSelectionMessage(error.message, 'error');
     }
 }
 
-function loadTimeSlotsForCreate() {
+async function loadTimeSlotsForCreate() {
     const servicioSelect = document.getElementById('create_servicio');
     const selectedOption = servicioSelect.options[servicioSelect.selectedIndex];
     
@@ -2587,6 +2796,7 @@ function loadTimeSlotsForCreate() {
     const duracion = parseInt(selectedOption.dataset.duracion);
     
     if (!especialistaId || !sucursalId || !servicioId || !fecha) return;
+    const requestId = ++createAvailabilityRequestId;
 
     document.getElementById('create_hora_inicio').value = '';
     
@@ -2622,9 +2832,16 @@ function loadTimeSlotsForCreate() {
         sucursal_id: sucursalId
     });
 
-    fetch(`<?= BASE_URL ?>/api/disponibilidad?${availabilityParams.toString()}`)
-        .then(response => response.json())
-        .then(data => {
+    try {
+            const response = await fetch(`<?= BASE_URL ?>/api/disponibilidad?${availabilityParams.toString()}`);
+            const data = await readJsonResponse(response);
+            if (requestId !== createAvailabilityRequestId ||
+                document.getElementById('create_sucursal').value !== sucursalId ||
+                document.getElementById('create_especialista_id').value !== especialistaId ||
+                document.getElementById('create_servicio').value !== servicioId) {
+                return;
+            }
+
             console.log('===== DEBUG DISPONIBILIDAD =====');
             console.log('Parámetros enviados:', { especialistaId, servicioId, fecha, esEmergencia });
             console.log('Respuesta completa:', data);
@@ -2713,17 +2930,25 @@ function loadTimeSlotsForCreate() {
                 noSlotsMsg.style.display = 'block';
                 document.getElementById('create_time_section').style.display = 'block';
             }
-        })
-        .catch(error => {
-            console.error('Error loading time slots:', error);
-        });
+    } catch (error) {
+        if (requestId !== createAvailabilityRequestId) return;
+        console.error('Error loading time slots:', error);
+        container.innerHTML = `
+            <div class="col-span-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                <i class="fas fa-exclamation-triangle mr-1"></i>${error.message}
+            </div>
+        `;
+        const noSlotsMsg = document.getElementById('no_slots_message');
+        noSlotsMsg.innerHTML = '<i class="fas fa-info-circle mr-1"></i>No fue posible consultar los horarios. Recarga la página o intenta nuevamente.';
+        noSlotsMsg.style.display = 'block';
+    }
 }
 
 async function submitCreateReservation() {
     const nombreCliente = document.getElementById('create_nombre_cliente')?.value;
     const telefono = document.getElementById('create_telefono')?.value;
     const correo = document.getElementById('create_correo')?.value;
-    const sucursalId = document.getElementById('create_sucursal').value;
+    const sucursalId = document.getElementById('create_sucursal')?.value || '';
     const especialistaId = document.getElementById('create_especialista_id').value;
     const servicioId = document.getElementById('create_servicio').value;
     const fecha = document.getElementById('create_fecha').value;
@@ -2733,7 +2958,6 @@ async function submitCreateReservation() {
     const primeraConsulta = document.getElementById('create_primera_consulta').checked ? '1' : '0';
     
     // Validaciones
-    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     if (!nombreCliente) {
         alert('Por favor ingrese el nombre del cliente');
         return;
@@ -2744,7 +2968,6 @@ async function submitCreateReservation() {
         alert('El teléfono debe tener exactamente 10 dígitos');
         return;
     }
-    <?php endif; ?>
     
     if (!sucursalId || !especialistaId || !servicioId || !fecha || !horaInicio) {
         alert('Por favor complete todos los campos obligatorios');
@@ -2753,11 +2976,9 @@ async function submitCreateReservation() {
     
     // Crear FormData
     const formData = new URLSearchParams();
-    <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
     formData.append('nombre_cliente', nombreCliente);
     if (telefono) formData.append('telefono', telefono);
     if (correo) formData.append('correo', correo);
-    <?php endif; ?>
     formData.append('sucursal_id', sucursalId);
     formData.append('especialista_id', especialistaId);
     formData.append('servicio_id', servicioId);
@@ -2767,6 +2988,11 @@ async function submitCreateReservation() {
     formData.append('es_extraordinaria', esExtraordinaria);
     formData.append('primera_consulta', primeraConsulta);
     
+    const submitButton = document.getElementById('createModalSubmitBtn');
+    const originalButtonHtml = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Validando horario...';
+
     try {
         const response = await fetch('<?= BASE_URL ?>/reservaciones/nueva', {
             method: 'POST',
@@ -2777,19 +3003,20 @@ async function submitCreateReservation() {
             body: formData
         });
 
-        const data = await response.json();
-        if (response.ok && data.success) {
+        const data = await readJsonResponse(response);
+        if (data.success) {
             const msgType = esExtraordinaria === '1' ? 'EXTRAORDINARIA ' : '';
             alert(`Reservación ${msgType}creada exitosamente. Código: ${data.codigo}`);
             closeCreateModal();
             horaPreseleccionada = null; // Limpiar hora pre-seleccionada
             window.calendar.refetchEvents();
-        } else {
-            alert(data.message || 'Error al crear la reservación. Por favor intente nuevamente.');
         }
     } catch (error) {
         console.error('Error al crear reservación:', error);
-        alert('Error al crear la reservación. Por favor intente nuevamente.');
+        alert(error.message || 'Error al crear la reservación. Por favor intente nuevamente.');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonHtml;
     }
 }
 

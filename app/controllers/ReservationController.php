@@ -271,14 +271,18 @@ class ReservationController extends BaseController {
                 
                 if (!$error) {
                     // Confirmar que sucursal, especialista y servicio pertenecen a la misma asignación.
-                    $serviceSql = "SELECT s.*, e.usuario_id,
+                    $serviceSql = "SELECT s.*, e.usuario_id, es.es_emergencia,
                          COALESCE(es.precio_personalizado, s.precio) as precio,
                          COALESCE(es.duracion_personalizada, s.duracion_minutos) as duracion_minutos
                          FROM servicios s
                          JOIN especialistas_servicios es ON s.id = es.servicio_id
                          JOIN especialistas e ON e.id = es.especialista_id
+                         JOIN usuarios u ON u.id = e.usuario_id
+                         JOIN sucursales suc ON suc.id = e.sucursal_id
                          WHERE s.id = ? AND e.id = ? AND e.sucursal_id = ?
-                           AND s.activo = 1 AND es.activo = 1 AND e.activo = 1";
+                           AND s.activo = 1 AND es.activo = 1 AND e.activo = 1
+                           AND e.autorizado = 1 AND u.activo = 1
+                           AND suc.activo = 1 AND suc.autorizado = 1";
                     $serviceParams = [$servicio_id, $especialista_id, $sucursal_id];
 
                     if ($user['rol_id'] == ROLE_SPECIALIST) {
@@ -293,18 +297,16 @@ class ReservationController extends BaseController {
                         $precio = $service['precio'];
                         $hora_fin = date('H:i:s', strtotime($fecha_cita . ' ' . $hora_inicio) + ($duracion * 60));
                         
-                        // Verificar disponibilidad SOLO si NO es extraordinaria
+                        // Confirmar nuevamente la disponibilidad justo antes de guardar.
                         if (!$es_extraordinaria) {
-                            $conflict = $this->db->fetch(
-                                "SELECT id FROM reservaciones 
-                                 WHERE especialista_id = ? AND fecha_cita = ? AND estado NOT IN ('cancelada')
-                                 AND hora_inicio < ? AND hora_fin > ?",
-                                [$especialista_id, $fecha_cita, $hora_fin, $hora_inicio]
+                            $error = $this->validateRequestedSlot(
+                                $especialista_id,
+                                $sucursal_id,
+                                $fecha_cita,
+                                $hora_inicio,
+                                $duracion,
+                                !empty($service['es_emergencia'])
                             );
-                            
-                            if ($conflict) {
-                                $error = 'El horario seleccionado ya no está disponible. Por favor seleccione otro.';
-                            }
                         }
                         
                         if (!$error) {
@@ -677,10 +679,12 @@ class ReservationController extends BaseController {
         
         // Obtener la reservación actual
         $reservation = $this->db->fetch(
-            "SELECT r.*, e.usuario_id as especialista_usuario_id, s.duracion_minutos 
+            "SELECT r.*, e.usuario_id as especialista_usuario_id,
+                    COALESCE(es.es_emergencia, 0) as es_emergencia
              FROM reservaciones r
              JOIN especialistas e ON r.especialista_id = e.id
-             JOIN servicios s ON r.servicio_id = s.id
+             LEFT JOIN especialistas_servicios es
+                    ON es.especialista_id = r.especialista_id AND es.servicio_id = r.servicio_id
              WHERE r.id = ?",
             [$id]
         );
@@ -710,7 +714,7 @@ class ReservationController extends BaseController {
             $this->json(['success' => false, 'message' => 'No se puede reagendar una cita cancelada o completada'], 400);
         }
         
-        // Calcular hora_fin basada en la duración del servicio
+        // Calcular hora_fin basada en la duración guardada en la reservación.
         $duracion = $reservation['duracion_minutos'];
         $horaInicio = strtotime($fecha_cita . ' ' . $hora_inicio);
         $horaFin = date('H:i:s', $horaInicio + ($duracion * 60));
@@ -719,6 +723,22 @@ class ReservationController extends BaseController {
         $nuevaFechaHora = strtotime($fecha_cita . ' ' . $hora_inicio);
         if ($nuevaFechaHora < time()) {
             $this->json(['success' => false, 'message' => 'No puede agendar una cita en el pasado'], 400);
+        }
+
+        if (empty($reservation['es_extraordinaria'])) {
+            $availabilityError = $this->validateRequestedSlot(
+                $reservation['especialista_id'],
+                $reservation['sucursal_id'],
+                $fecha_cita,
+                $hora_inicio,
+                $duracion,
+                !empty($reservation['es_emergencia']),
+                $reservation['id']
+            );
+
+            if ($availabilityError) {
+                $this->json(['success' => false, 'message' => $availabilityError], 422);
+            }
         }
         
         // Actualizar la reservación
@@ -816,6 +836,108 @@ class ReservationController extends BaseController {
         $slots = $this->getAvailableSlots($especialista_id, $servicio_id, $fecha);
         
         $this->json(['slots' => $slots]);
+    }
+
+    /**
+     * Valida el espacio solicitado contra jornada, feriados, bloqueos y citas.
+     * Devuelve null cuando el espacio sigue disponible o un mensaje descriptivo.
+     */
+    private function validateRequestedSlot($especialistaId, $sucursalId, $fecha, $horaInicio, $duracion, $esEmergencia = false, $excludeReservationId = null) {
+        $dateObject = DateTime::createFromFormat('!Y-m-d', $fecha);
+        if (!$dateObject || $dateObject->format('Y-m-d') !== $fecha) {
+            return 'La fecha seleccionada no es válida.';
+        }
+
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $horaInicio)) {
+            return 'La hora seleccionada no es válida.';
+        }
+
+        $duracion = (int) $duracion;
+        if ($duracion <= 0) {
+            return 'El servicio no tiene una duración válida.';
+        }
+
+        $slotStart = strtotime($fecha . ' ' . $horaInicio);
+        $slotEnd = $slotStart + ($duracion * 60);
+        if ($slotStart < time()) {
+            return 'El horario seleccionado ya pasó. Elige otro espacio.';
+        }
+
+        $dayOfWeek = date('N', $slotStart);
+        $schedule = $this->db->fetch(
+            "SELECT he.*
+             FROM horarios_especialistas he
+             JOIN especialistas e ON e.id = he.especialista_id
+             JOIN usuarios u ON u.id = e.usuario_id
+             JOIN sucursales s ON s.id = e.sucursal_id
+             WHERE he.especialista_id = ? AND e.sucursal_id = ?
+               AND he.dia_semana = ? AND he.activo = 1 AND e.activo = 1
+               AND e.autorizado = 1 AND u.activo = 1
+               AND s.activo = 1 AND s.autorizado = 1
+             ORDER BY he.hora_inicio ASC
+             LIMIT 1",
+            [$especialistaId, $sucursalId, $dayOfWeek]
+        );
+
+        if (!$schedule) {
+            return 'El profesionista no tiene un horario activo para ese día en la sucursal seleccionada.';
+        }
+
+        if (isHoliday($fecha, $sucursalId)) {
+            return 'La sucursal no ofrece citas en esta fecha porque está marcada como día feriado.';
+        }
+
+        if ($esEmergencia) {
+            if (empty($schedule['emergencia_activa']) || empty($schedule['hora_inicio_emergencia']) || empty($schedule['hora_fin_emergencia'])) {
+                return 'Este servicio requiere un horario de emergencia, pero no hay uno configurado para ese día.';
+            }
+            $rangeStart = strtotime($fecha . ' ' . $schedule['hora_inicio_emergencia']);
+            $rangeEnd = strtotime($fecha . ' ' . $schedule['hora_fin_emergencia']);
+        } else {
+            $rangeStart = strtotime($fecha . ' ' . $schedule['hora_inicio']);
+            $rangeEnd = strtotime($fecha . ' ' . $schedule['hora_fin']);
+        }
+
+        if ($slotStart < $rangeStart || $slotEnd > $rangeEnd) {
+            return 'La cita completa no cabe dentro del horario configurado para ese día.';
+        }
+
+        if (!$esEmergencia && !empty($schedule['bloqueo_activo']) && $schedule['hora_inicio_bloqueo'] && $schedule['hora_fin_bloqueo']) {
+            $breakStart = strtotime($fecha . ' ' . $schedule['hora_inicio_bloqueo']);
+            $breakEnd = strtotime($fecha . ' ' . $schedule['hora_fin_bloqueo']);
+            if ($slotStart < $breakEnd && $slotEnd > $breakStart) {
+                return 'El horario seleccionado coincide con un bloqueo de la jornada.';
+            }
+        }
+
+        $slotStartDateTime = date('Y-m-d H:i:s', $slotStart);
+        $slotEndDateTime = date('Y-m-d H:i:s', $slotEnd);
+        $blockSql = "SELECT id FROM bloqueos_horario
+                     WHERE especialista_id = ?
+                       AND fecha_inicio < ? AND fecha_fin > ?
+                       AND (sucursal_id = ? OR sucursal_id IS NULL)
+                     LIMIT 1";
+        $block = $this->db->fetch($blockSql, [$especialistaId, $slotEndDateTime, $slotStartDateTime, $sucursalId]);
+        if ($block) {
+            return 'El horario seleccionado fue bloqueado. Actualiza los espacios y elige otro.';
+        }
+
+        $conflictSql = "SELECT id FROM reservaciones
+                        WHERE especialista_id = ? AND sucursal_id = ? AND fecha_cita = ?
+                          AND estado NOT IN ('cancelada')
+                          AND hora_inicio < ? AND hora_fin > ?";
+        $conflictParams = [$especialistaId, $sucursalId, $fecha, date('H:i:s', $slotEnd), date('H:i:s', $slotStart)];
+        if ($excludeReservationId) {
+            $conflictSql .= " AND id != ?";
+            $conflictParams[] = $excludeReservationId;
+        }
+        $conflictSql .= " LIMIT 1";
+
+        if ($this->db->fetch($conflictSql, $conflictParams)) {
+            return 'El horario acaba de ser ocupado por otra cita. Actualiza los espacios y elige otro.';
+        }
+
+        return null;
     }
     
     /**

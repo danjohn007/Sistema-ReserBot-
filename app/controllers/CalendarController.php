@@ -22,22 +22,25 @@ class CalendarController extends BaseController {
         $branchSchedules = [];
         
         if ($user['rol_id'] == ROLE_SUPERADMIN) {
-            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE activo = 1 ORDER BY nombre");
+            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE activo = 1 AND autorizado = 1 ORDER BY nombre");
             $specialists = $this->db->fetchAll(
-                "SELECT e.id, u.nombre, u.apellidos, s.nombre as sucursal_nombre
+                "SELECT e.id, e.sucursal_id, u.nombre, u.apellidos, s.nombre as sucursal_nombre
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
                  JOIN sucursales s ON e.sucursal_id = s.id
-                 WHERE e.activo = 1
+                 WHERE e.activo = 1 AND e.autorizado = 1 AND u.activo = 1
+                   AND s.activo = 1 AND s.autorizado = 1
                  ORDER BY u.nombre, u.apellidos"
             );
         } elseif ($user['rol_id'] == ROLE_BRANCH_ADMIN || $user['rol_id'] == ROLE_RECEPTIONIST) {
-            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE id = ?", [$user['sucursal_id']]);
+            $branches = $this->db->fetchAll("SELECT id, nombre, color FROM sucursales WHERE id = ? AND activo = 1 AND autorizado = 1", [$user['sucursal_id']]);
             $specialists = $this->db->fetchAll(
-                "SELECT e.id, u.nombre, u.apellidos
+                "SELECT e.id, e.sucursal_id, u.nombre, u.apellidos
                  FROM especialistas e
                  JOIN usuarios u ON e.usuario_id = u.id
-                 WHERE e.sucursal_id = ? AND e.activo = 1
+                 JOIN sucursales s ON s.id = e.sucursal_id
+                 WHERE e.sucursal_id = ? AND e.activo = 1 AND e.autorizado = 1 AND u.activo = 1
+                   AND s.activo = 1 AND s.autorizado = 1
                  ORDER BY u.nombre, u.apellidos",
                 [$user['sucursal_id']]
             );
@@ -47,7 +50,8 @@ class CalendarController extends BaseController {
                 "SELECT DISTINCT s.id, s.nombre, s.color 
                  FROM sucursales s
                  JOIN especialistas e ON s.id = e.sucursal_id
-                 WHERE e.usuario_id = ? AND e.activo = 1 AND s.activo = 1
+                 WHERE e.usuario_id = ? AND e.activo = 1 AND e.autorizado = 1
+                   AND s.activo = 1 AND s.autorizado = 1
                  ORDER BY s.nombre",
                 [$user['id']]
             );
@@ -81,12 +85,24 @@ class CalendarController extends BaseController {
                         [$spec['id']]
                     );
                     $horariosEspecialistas[$spec['id']] = $todosLosHorarios;
+
+                    $branchId = (string) ($spec['sucursal_id'] ?? '');
+                    if ($branchId !== '' && !empty($todosLosHorarios)) {
+                        $branchSchedules[$branchId] = array_merge(
+                            $branchSchedules[$branchId] ?? [],
+                            $todosLosHorarios
+                        );
+                    }
                 }
             }
         } elseif ($user['rol_id'] == ROLE_SPECIALIST) {
             // Para especialistas: obtener sus propios horarios de TODAS sus sucursales
             $especialistaIds = $this->db->fetchAll(
-                "SELECT id, sucursal_id FROM especialistas WHERE usuario_id = ? AND activo = 1",
+                "SELECT e.id, e.sucursal_id
+                 FROM especialistas e
+                 JOIN sucursales s ON s.id = e.sucursal_id
+                 WHERE e.usuario_id = ? AND e.activo = 1 AND e.autorizado = 1
+                   AND s.activo = 1 AND s.autorizado = 1",
                 [$user['id']]
             );
             

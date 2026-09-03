@@ -447,14 +447,14 @@ class SpecialistController extends BaseController {
                     return;
                 }
                 
-                // Eliminar horarios anteriores de esta sucursal específica
-                $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$form_specialist_id]);
-                
-                // Guardar nuevos horarios
+                // Validar toda la semana antes de reemplazar los horarios actuales.
+                $scheduleRows = [];
+                $dayNames = getDaysOfWeek();
                 for ($day = 1; $day <= 7; $day++) {
                     $inicio = $this->post('hora_inicio_' . $day);
                     $fin = $this->post('hora_fin_' . $day);
                     $activo = $this->post('activo_' . $day) ? 1 : 0;
+                    $dayName = $dayNames[$day] ?? ('Día ' . $day);
                     
                     // Bloqueo
                     $bloqueo_activo = $this->post('bloqueo_activo_' . $day) ? 1 : 0;
@@ -466,37 +466,55 @@ class SpecialistController extends BaseController {
                     $hora_inicio_emergencia = $this->post('hora_inicio_emergencia_' . $day);
                     $hora_fin_emergencia = $this->post('hora_fin_emergencia_' . $day);
                     
-                    if ($activo && $inicio && $fin) {
+                    if ($activo) {
+                        if (!$inicio || !$fin) {
+                            setFlashMessage('error', "Completa la hora de inicio y fin de {$dayName}.");
+                            redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                            return;
+                        }
+
                         // Validar que la hora de inicio sea menor que la hora de fin
                         if (strtotime($inicio) >= strtotime($fin)) {
-                            setFlashMessage('error', 'La hora de inicio debe ser menor que la hora de fin.');
+                            setFlashMessage('error', "En {$dayName}, la hora de inicio debe ser menor que la hora de fin.");
                             redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                             return;
                         }
                         
                         // Validar bloqueo si está activo
-                        if ($bloqueo_activo && $hora_inicio_bloqueo && $hora_fin_bloqueo) {
+                        if ($bloqueo_activo) {
+                            if (!$hora_inicio_bloqueo || !$hora_fin_bloqueo) {
+                                setFlashMessage('error', "Completa el horario de bloqueo de {$dayName} o desactívalo.");
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                                return;
+                            }
+
                             // El bloqueo debe estar dentro del horario laboral
                             if (strtotime($hora_inicio_bloqueo) < strtotime($inicio) || 
                                 strtotime($hora_fin_bloqueo) > strtotime($fin)) {
-                                setFlashMessage('error', 'El horario de bloqueo debe estar dentro del horario laboral.');
+                                setFlashMessage('error', "El bloqueo de {$dayName} debe estar dentro del horario laboral.");
                                 redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
                             
                             // La hora de inicio del bloqueo debe ser menor que la de fin
                             if (strtotime($hora_inicio_bloqueo) >= strtotime($hora_fin_bloqueo)) {
-                                setFlashMessage('error', 'La hora de inicio del bloqueo debe ser menor que la hora de fin.');
+                                setFlashMessage('error', "En {$dayName}, el inicio del bloqueo debe ser menor que su fin.");
                                 redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
                         }
                         
                         // Validar horario de emergencia si está activo
-                        if ($emergencia_activa && $hora_inicio_emergencia && $hora_fin_emergencia) {
+                        if ($emergencia_activa) {
+                            if (!$hora_inicio_emergencia || !$hora_fin_emergencia) {
+                                setFlashMessage('error', "Completa el horario de emergencia de {$dayName} o desactívalo.");
+                                redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                                return;
+                            }
+
                             // La hora de inicio de emergencia debe ser menor que la de fin
                             if (strtotime($hora_inicio_emergencia) >= strtotime($hora_fin_emergencia)) {
-                                setFlashMessage('error', 'La hora de inicio de emergencia debe ser menor que la hora de fin.');
+                                setFlashMessage('error', "En {$dayName}, el inicio de emergencia debe ser menor que su fin.");
                                 redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
@@ -508,7 +526,7 @@ class SpecialistController extends BaseController {
                                  strtotime($hora_fin_emergencia) <= strtotime($fin)) ||
                                 (strtotime($hora_inicio_emergencia) <= strtotime($inicio) && 
                                  strtotime($hora_fin_emergencia) >= strtotime($fin))) {
-                                setFlashMessage('error', 'El horario de emergencia no puede estar dentro del horario laboral normal. Debe estar FUERA del horario regular.');
+                                setFlashMessage('error', "El horario de emergencia de {$dayName} debe estar fuera del horario regular.");
                                 redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                 return;
                             }
@@ -521,28 +539,55 @@ class SpecialistController extends BaseController {
                                      strtotime($hora_fin_emergencia) <= strtotime($hora_fin_bloqueo)) ||
                                     (strtotime($hora_inicio_emergencia) <= strtotime($hora_inicio_bloqueo) && 
                                      strtotime($hora_fin_emergencia) >= strtotime($hora_fin_bloqueo))) {
-                                    setFlashMessage('error', 'El horario de emergencia no puede estar dentro del horario de bloqueo.');
+                                    setFlashMessage('error', "El horario de emergencia de {$dayName} no puede cruzarse con su bloqueo.");
                                     redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
                                     return;
                                 }
                             }
                         }
-                        
+
+                        $scheduleRows[] = [
+                            $form_specialist_id,
+                            $day,
+                            $inicio,
+                            $fin,
+                            $bloqueo_activo ? $hora_inicio_bloqueo : null,
+                            $bloqueo_activo ? $hora_fin_bloqueo : null,
+                            $bloqueo_activo,
+                            $emergencia_activa ? $hora_inicio_emergencia : null,
+                            $emergencia_activa ? $hora_fin_emergencia : null,
+                            $emergencia_activa
+                        ];
+                    }
+                }
+
+                $transactionStarted = false;
+                try {
+                    $this->db->beginTransaction();
+                    $transactionStarted = true;
+                    $this->db->delete("DELETE FROM horarios_especialistas WHERE especialista_id = ?", [$form_specialist_id]);
+
+                    foreach ($scheduleRows as $scheduleRow) {
                         $this->db->insert(
                             "INSERT INTO horarios_especialistas 
                              (especialista_id, dia_semana, hora_inicio, hora_fin, activo, 
                               hora_inicio_bloqueo, hora_fin_bloqueo, bloqueo_activo,
                               hora_inicio_emergencia, hora_fin_emergencia, emergencia_activa) 
                              VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)",
-                            [$form_specialist_id, $day, $inicio, $fin, 
-                             $bloqueo_activo ? $hora_inicio_bloqueo : null, 
-                             $bloqueo_activo ? $hora_fin_bloqueo : null, 
-                             $bloqueo_activo,
-                             $emergencia_activa ? $hora_inicio_emergencia : null,
-                             $emergencia_activa ? $hora_fin_emergencia : null,
-                             $emergencia_activa]
+                            $scheduleRow
                         );
                     }
+
+                    $this->db->commit();
+                    $transactionStarted = false;
+                } catch (Exception $e) {
+                    if ($transactionStarted) {
+                        $this->db->rollBack();
+                    }
+                    error_log('Error al guardar horarios: ' . $e->getMessage());
+                    setFlashMessage('error', 'No se pudieron guardar los horarios. Tus horarios anteriores se conservaron; intenta nuevamente.');
+                    redirect('/especialistas/horarios?specialist_id=' . $form_specialist_id);
+                    return;
                 }
                 
                 setFlashMessage('success', 'Horarios actualizados correctamente.');

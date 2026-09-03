@@ -15,29 +15,73 @@ class ApiController extends BaseController {
         $servicio_id = $this->get('servicio_id');
         $fecha = $this->get('fecha');
         $sucursal_id = $this->get('sucursal_id');
-        $excluir_reservacion = $this->get('excluir_reservacion'); // Nueva línea
+        $excluir_reservacion = $this->get('excluir_reservacion');
         
         if (!$especialista_id || !$servicio_id || !$fecha) {
-            $this->json(['error' => 'Parámetros incompletos'], 400);
+            $this->json([
+                'slots' => [],
+                'reason' => 'missing_parameters',
+                'message' => 'Selecciona sucursal, profesionista, servicio y fecha para consultar horarios.'
+            ], 400);
+        }
+
+        $dateObject = DateTime::createFromFormat('!Y-m-d', $fecha);
+        if (!$dateObject || $dateObject->format('Y-m-d') !== $fecha) {
+            $this->json([
+                'slots' => [],
+                'reason' => 'invalid_date',
+                'message' => 'La fecha seleccionada no es válida.'
+            ], 400);
+        }
+
+        if ($fecha < date('Y-m-d')) {
+            $this->json([
+                'slots' => [],
+                'reason' => 'past_date',
+                'message' => 'No se pueden reservar horarios en una fecha pasada.'
+            ]);
         }
         
         // Verificar si el servicio es de emergencia y obtener duración personalizada
-        $servicioEspecialista = $this->db->fetch(
+        $serviceSql =
             "SELECT es.es_emergencia, es.duracion_personalizada, s.duracion_minutos, s.nombre 
              FROM especialistas_servicios es 
              JOIN servicios s ON es.servicio_id = s.id
-             WHERE es.especialista_id = ? AND es.servicio_id = ?",
-            [$especialista_id, $servicio_id]
-        );
+             JOIN especialistas e ON e.id = es.especialista_id
+             JOIN usuarios u ON u.id = e.usuario_id
+             JOIN sucursales suc ON suc.id = e.sucursal_id
+             WHERE es.especialista_id = ? AND es.servicio_id = ?
+               AND es.activo = 1 AND s.activo = 1 AND e.activo = 1
+               AND e.autorizado = 1 AND u.activo = 1
+               AND suc.activo = 1 AND suc.autorizado = 1";
+        $serviceParams = [$especialista_id, $servicio_id];
+
+        if ($sucursal_id) {
+            $serviceSql .= " AND e.sucursal_id = ?";
+            $serviceParams[] = $sucursal_id;
+        }
+
+        $servicioEspecialista = $this->db->fetch($serviceSql, $serviceParams);
         
         if (!$servicioEspecialista) {
-            $this->json(['error' => 'El especialista no ofrece este servicio'], 404);
+            $this->json([
+                'slots' => [],
+                'reason' => 'service_not_assigned',
+                'message' => 'Este servicio no está activo para el profesionista en la sucursal seleccionada.'
+            ], 404);
         }
         
         $esServicioEmergencia = $servicioEspecialista['es_emergencia'];
         
         // Usar duración personalizada si existe, de lo contrario usar la duración base del servicio
-        $duracion = $servicioEspecialista['duracion_personalizada'] ?? $servicioEspecialista['duracion_minutos'];
+        $duracion = (int) ($servicioEspecialista['duracion_personalizada'] ?? $servicioEspecialista['duracion_minutos']);
+        if ($duracion <= 0) {
+            $this->json([
+                'slots' => [],
+                'reason' => 'invalid_duration',
+                'message' => 'El servicio no tiene una duración válida. Revísala en Mis Servicios.'
+            ], 422);
+        }
         
         // DEBUG: Log para verificar el tipo de servicio y duración
         error_log("[AVAILABILITY DEBUG] Especialista: $especialista_id, Servicio: $servicio_id, es_emergencia: " . ($esServicioEmergencia ? '1' : '0'));
@@ -61,11 +105,17 @@ class ApiController extends BaseController {
             $query .= " AND e.sucursal_id = ?";
             $params[] = $sucursal_id;
         }
+
+        $query .= " ORDER BY he.hora_inicio ASC LIMIT 1";
         
         $schedule = $this->db->fetch($query, $params);
         
         if (!$schedule) {
-            $this->json(['slots' => [], 'message' => 'El especialista no trabaja este día']);
+            $this->json([
+                'slots' => [],
+                'reason' => 'no_schedule',
+                'message' => 'El profesionista no tiene un horario activo para este día en la sucursal seleccionada.'
+            ]);
         }
         
         // Validar bloqueos por intervalo; uno puntual no debe cancelar todo el día.
@@ -86,8 +136,12 @@ class ApiController extends BaseController {
         $existingBlocks = $this->db->fetchAll($queryBlocks, $paramsBlocks);
         
         // Verificar feriado
-        if (isHoliday($fecha)) {
-            $this->json(['slots' => [], 'message' => 'Este día es feriado']);
+        if (isHoliday($fecha, $sucursal_id ?: null)) {
+            $this->json([
+                'slots' => [],
+                'reason' => 'holiday',
+                'message' => 'La sucursal no ofrece citas en esta fecha porque está marcada como día feriado.'
+            ]);
         }
         
         // Obtener citas existentes del especialista en la sucursal específica
@@ -258,9 +312,40 @@ class ApiController extends BaseController {
         // DEBUG: Log de resultados
         error_log("[AVAILABILITY DEBUG] Total slots generados: " . count($slots));
         
-        // Retornar con información de debug
+        $message = null;
+        $reason = null;
+        if (empty($slots)) {
+            $reason = 'no_available_slots';
+            $rangeStart = null;
+            $rangeEnd = null;
+
+            if ($esServicioEmergencia && !empty($schedule['hora_inicio_emergencia']) && !empty($schedule['hora_fin_emergencia'])) {
+                $rangeStart = strtotime($fecha . ' ' . $schedule['hora_inicio_emergencia']);
+                $rangeEnd = strtotime($fecha . ' ' . $schedule['hora_fin_emergencia']);
+            } elseif (!$esServicioEmergencia) {
+                $rangeStart = strtotime($fecha . ' ' . $schedule['hora_inicio']);
+                $rangeEnd = strtotime($fecha . ' ' . $schedule['hora_fin']);
+            }
+
+            if ($esServicioEmergencia && (!$schedule['emergencia_activa'] || !$schedule['hora_inicio_emergencia'] || !$schedule['hora_fin_emergencia'])) {
+                $message = 'Este servicio requiere un horario de emergencia, pero no hay uno configurado para este día.';
+            } elseif ($rangeStart && $rangeEnd && (($rangeEnd - $rangeStart) < ($duracion * 60))) {
+                $message = 'La duración del servicio es mayor que el horario disponible configurado para este día.';
+            } elseif ($fecha === date('Y-m-d') && $rangeEnd && $rangeEnd <= time()) {
+                $message = 'El horario de atención de hoy ya terminó. Selecciona otra fecha.';
+            } elseif (!empty($existingAppointments) || !empty($existingBlocks) || !empty($schedule['bloqueo_activo'])) {
+                $message = 'No quedan espacios que permitan acomodar la duración de la cita; los horarios están ocupados o bloqueados.';
+            } else {
+                $message = $fecha === date('Y-m-d')
+                    ? 'Ya no queda tiempo suficiente hoy para completar la duración de esta cita.'
+                    : 'No hay un espacio continuo suficiente para completar la duración de esta cita.';
+            }
+        }
+
         $this->json([
             'slots' => $slots,
+            'reason' => $reason,
+            'message' => $message,
             'debug' => [
                 'fecha' => $fecha,
                 'horario_normal' => $schedule['hora_inicio'] . ' - ' . $schedule['hora_fin'],
@@ -288,7 +373,9 @@ class ApiController extends BaseController {
                     u.nombre, u.apellidos
              FROM especialistas e
              JOIN usuarios u ON e.usuario_id = u.id
-             WHERE e.sucursal_id = ? AND e.activo = 1
+             JOIN sucursales s ON e.sucursal_id = s.id
+             WHERE e.sucursal_id = ? AND e.activo = 1 AND e.autorizado = 1
+               AND u.activo = 1 AND s.activo = 1 AND s.autorizado = 1
              ORDER BY u.nombre, u.apellidos",
             [$sucursal_id]
         );
@@ -352,8 +439,13 @@ class ApiController extends BaseController {
                             es.es_emergencia
                      FROM servicios s
                      JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN especialistas e ON e.id = es.especialista_id
+                     JOIN usuarios u ON u.id = e.usuario_id
+                     JOIN sucursales suc ON suc.id = e.sucursal_id
                      JOIN categorias_servicios c ON s.categoria_id = c.id
                      WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND c.id = 9
+                       AND e.activo = 1 AND e.autorizado = 1 AND u.activo = 1
+                       AND suc.activo = 1 AND suc.autorizado = 1
                      ORDER BY s.nombre",
                     [$especialista_id]
                 );
@@ -367,9 +459,14 @@ class ApiController extends BaseController {
                             es.es_emergencia
                      FROM servicios s
                      JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN especialistas e ON e.id = es.especialista_id
+                     JOIN usuarios u ON u.id = e.usuario_id
+                     JOIN sucursales suc ON suc.id = e.sucursal_id
                      JOIN categorias_servicios c ON s.categoria_id = c.id
                      WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 
                            AND es.es_emergencia = ? AND c.id != 9
+                           AND e.activo = 1 AND e.autorizado = 1 AND u.activo = 1
+                           AND suc.activo = 1 AND suc.autorizado = 1
                      ORDER BY c.nombre, s.nombre",
                     [$especialista_id, $es_horario_emergencia ? 1 : 0]
                 );
@@ -383,8 +480,13 @@ class ApiController extends BaseController {
                             es.es_emergencia
                      FROM servicios s
                      JOIN especialistas_servicios es ON s.id = es.servicio_id
+                     JOIN especialistas e ON e.id = es.especialista_id
+                     JOIN usuarios u ON u.id = e.usuario_id
+                     JOIN sucursales suc ON suc.id = e.sucursal_id
                      JOIN categorias_servicios c ON s.categoria_id = c.id
                      WHERE es.especialista_id = ? AND s.activo = 1 AND es.activo = 1 AND c.id != 9
+                       AND e.activo = 1 AND e.autorizado = 1 AND u.activo = 1
+                       AND suc.activo = 1 AND suc.autorizado = 1
                      ORDER BY es.es_emergencia DESC, c.nombre, s.nombre",
                     [$especialista_id]
                 );
