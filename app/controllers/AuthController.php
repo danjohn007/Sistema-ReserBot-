@@ -11,9 +11,9 @@ class AuthController extends BaseController {
      * Muestra el formulario de login
      */
     public function login() {
-        // Si ya está logueado, redirigir al dashboard
+        // Si ya está logueado, abrir su vista principal.
         if (isLoggedIn()) {
-            redirect('/dashboard');
+            redirect(getDefaultAuthenticatedPath());
         }
         
         $error = '';
@@ -72,7 +72,7 @@ class AuthController extends BaseController {
                     logAction('login', 'Inicio de sesión exitoso', ['email' => $email]);
                     
                     setFlashMessage('success', '¡Bienvenido(a), ' . $user['nombre'] . '!');
-                    redirect('/dashboard');
+                    redirect(getDefaultAuthenticatedPath($user));
                 } else {
                     $error = 'Credenciales incorrectas. Verifique su correo y contraseña.';
                     logAction('login_failed', 'Intento de inicio de sesión fallido', ['email' => $email]);
@@ -91,7 +91,7 @@ class AuthController extends BaseController {
      */
     public function register() {
         if (isLoggedIn()) {
-            redirect('/dashboard');
+            redirect(getDefaultAuthenticatedPath());
         }
         
         $error = '';
@@ -170,7 +170,7 @@ class AuthController extends BaseController {
      */
     public function forgotPassword() {
         if (isLoggedIn()) {
-            redirect('/dashboard');
+            redirect(getDefaultAuthenticatedPath());
         }
         
         $error = '';

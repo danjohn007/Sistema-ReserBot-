@@ -69,6 +69,31 @@ function currentUser() {
 }
 
 /**
+ * Obtiene la primera vista disponible según el rol autenticado.
+ */
+function getDefaultAuthenticatedPath($user = null) {
+    $user = $user ?: currentUser();
+
+    if (!$user) {
+        return '/login';
+    }
+
+    if ((int) $user['rol_id'] === ROLE_REGISTRATION) {
+        return '/solicitudes-registro';
+    }
+
+    if ((int) $user['rol_id'] === ROLE_CLIENT) {
+        return '/mis-citas';
+    }
+
+    if (in_array((int) $user['rol_id'], [ROLE_SUPERADMIN, ROLE_BRANCH_ADMIN, ROLE_RECEPTIONIST, ROLE_SPECIALIST], true)) {
+        return '/calendario';
+    }
+
+    return '/dashboard';
+}
+
+/**
  * Verifica si el usuario tiene un rol específico
  */
 function hasRole($roleId) {

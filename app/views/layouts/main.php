@@ -95,7 +95,7 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-white shadow-lg fixed h-screen z-30 hidden md:flex md:flex-col">
             <div class="p-4 border-b flex-shrink-0">
-                <a href="<?= url('/dashboard') ?>" class="flex items-center justify-center">
+                <a href="<?= url(getDefaultAuthenticatedPath()) ?>" class="flex items-center justify-center">
                     <img src="<?= asset('images/logo.png') ?>" alt="Logo" class="h-16 w-auto object-contain">
                 </a>
             </div>

@@ -11,9 +11,9 @@ class HomeController extends BaseController {
      * Página de inicio pública
      */
     public function index() {
-        // Si está logueado, redirigir al dashboard
+        // Si está logueado, abrir su vista principal.
         if (isLoggedIn()) {
-            redirect('/dashboard');
+            redirect(getDefaultAuthenticatedPath());
         }
         
         // Obtener datos para la landing page

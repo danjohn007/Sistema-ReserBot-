@@ -1,61 +1,17 @@
 <div class="space-y-6">
-    <!-- Header with Filters -->
+    <!-- Calendar heading and reference information -->
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">
                     <i class="fas fa-calendar-alt text-primary mr-2"></i>Calendario de Citas
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">Visualiza y gestiona tus citas programadas</p>
             </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="flex flex-wrap gap-4">
-            <?php if (!empty($branches)): ?>
-            <div class="flex-1 min-w-[200px]">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-building text-gray-400 mr-1"></i>Sucursal
-                </label>
-                <select id="filter_sucursal" 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition" 
-                        onchange="filterCalendar('branch')">
-                    <option value="">
-                        <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
-                        Todas mis sucursales
-                        <?php else: ?>
-                        Todas las sucursales
-                        <?php endif; ?>
-                    </option>
-                    <?php foreach ($branches as $branch): ?>
-                    <option value="<?= $branch['id'] ?>"><?= e($branch['nombre']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            
-            <?php if (!empty($specialists)): ?>
-            <div class="flex-1 min-w-[200px]">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-user-md text-gray-400 mr-1"></i>Especialista
-                </label>
-                <select id="filter_especialista" 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition" 
-                        onchange="filterCalendar('specialist')">
-                    <option value="">Todos los especialistas</option>
-                    <?php foreach ($specialists as $spec): ?>
-                    <option value="<?= $spec['id'] ?>" data-branch-id="<?= $spec['sucursal_id'] ?? '' ?>">
-                        <?= e($spec['nombre'] . ' ' . $spec['apellidos']) ?>
-                        <?= isset($spec['sucursal_nombre']) ? ' - ' . e($spec['sucursal_nombre']) : '' ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            
+            <div class="flex flex-wrap gap-4">
             <!-- Colores de Sucursales -->
             <?php if (!empty($branches) && count($branches) > 1): ?>
-            <div class="flex-1 min-w-[200px]">
+            <div class="min-w-[220px]">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-palette text-gray-400 mr-1"></i>Colores de Sucursales
                 </label>
@@ -80,7 +36,7 @@
             <?php endif; ?>
             
             <!-- Estado Legend -->
-            <div class="flex-1 min-w-[200px]">
+            <div class="min-w-[240px]">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-info-circle text-gray-400 mr-1"></i>Leyenda de Estados
                 </label>
@@ -97,6 +53,80 @@
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" style="background-color: #F97316; color: white;">
                         <i class="fas fa-user-times mr-1"></i>No Asisti&oacute;
                     </span>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Persistent calendar controls -->
+    <div id="calendar-sticky-toolbar"
+         class="bg-white border border-gray-200 rounded-lg shadow-md p-4"
+         style="position: sticky; top: 68px; z-index: 18;">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
+            <div class="flex flex-1 flex-wrap gap-3">
+                <?php if (!empty($branches)): ?>
+                <div class="flex-1 min-w-[220px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-building text-gray-400 mr-1"></i>Sucursal
+                    </label>
+                    <select id="filter_sucursal"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
+                            onchange="filterCalendar('branch')">
+                        <option value="">
+                            <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
+                            Todas mis sucursales
+                            <?php else: ?>
+                            Todas las sucursales
+                            <?php endif; ?>
+                        </option>
+                        <?php foreach ($branches as $branch): ?>
+                        <option value="<?= $branch['id'] ?>"><?= e($branch['nombre']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($specialists)): ?>
+                <div class="flex-1 min-w-[220px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-user-md text-gray-400 mr-1"></i>Especialista
+                    </label>
+                    <select id="filter_especialista"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition"
+                            onchange="filterCalendar('specialist')">
+                        <option value="">Todos los especialistas</option>
+                        <?php foreach ($specialists as $spec): ?>
+                        <option value="<?= $spec['id'] ?>" data-branch-id="<?= $spec['sucursal_id'] ?? '' ?>">
+                            <?= e($spec['nombre'] . ' ' . $spec['apellidos']) ?>
+                            <?= isset($spec['sucursal_nombre']) ? ' - ' . e($spec['sucursal_nombre']) : '' ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div>
+                    <label for="quick_create_date" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-calendar-day text-gray-400 mr-1"></i>Fecha para nueva cita
+                    </label>
+                    <input type="date" id="quick_create_date"
+                           value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>"
+                           class="w-full sm:w-auto px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openGeneralCreateModal(false)"
+                            class="h-[42px] px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm whitespace-nowrap"
+                            title="Crear una cita con disponibilidad normal">
+                        <i class="fas fa-calendar-plus mr-2"></i>Nueva cita
+                    </button>
+                    <button type="button" onclick="openGeneralCreateModal(true)"
+                            class="h-[42px] px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-sm whitespace-nowrap"
+                            title="Crear una cita que puede empalmarse con otra">
+                        <i class="fas fa-user-clock mr-2"></i>Extraordinaria
+                    </button>
                 </div>
             </div>
         </div>
@@ -204,27 +234,65 @@
 .fc-timegrid-event {
     min-height: 35px !important;
     padding: 2px 4px !important;
-    min-width: 140px !important; /* Ancho mínimo para que se vea el texto completo */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important; /* Sombra para diferenciar eventos solapados */
+    min-width: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
 }
 
 .fc-timegrid-event .fc-event-main {
     padding: 0 !important;
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .fc-timegrid-event .fc-event-title {
     white-space: normal !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     line-height: 1.25 !important;
     font-size: 0.8em !important;
     text-align: left !important;
-    word-wrap: break-word !important;
+    overflow-wrap: anywhere !important;
+}
+
+.calendar-event-content,
+.calendar-event-service,
+.calendar-event-client {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.calendar-event-service,
+.calendar-event-client {
+    display: block;
+    text-overflow: ellipsis;
+}
+
+.calendar-event-service {
+    font-weight: 600;
+}
+
+.calendar-event-client {
+    margin-top: 2px;
+    font-size: 0.85em;
 }
 
 /* Cuando hay eventos simultáneos, ajustar posición */
 .fc-timegrid-col-events {
     margin-right: 0 !important;
+}
+
+.fc-timegrid-event-harness {
+    min-width: 0 !important;
+}
+
+@media (max-width: 767px) {
+    #calendar-sticky-toolbar {
+        top: 61px !important;
+        max-height: calc(100vh - 72px);
+        overflow-y: auto;
+    }
 }
 
 /* Animación de pulso para horario pre-seleccionado */
@@ -1023,12 +1091,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cliente = info.event.extendedProps.cliente || '';
                     const precio = info.event.extendedProps.precio || '';
                     
-                    titleEl.innerHTML = `
-                        <div style="line-height: 1.2;">
-                            <div style="font-weight: 500;">${servicio}</div>
-                            <div style="font-size: 0.85em; margin-top: 2px;">${cliente} ${precio}</div>
-                        </div>
-                    `;
+                    titleEl.textContent = '';
+                    const content = document.createElement('div');
+                    content.className = 'calendar-event-content';
+
+                    const serviceLine = document.createElement('div');
+                    serviceLine.className = 'calendar-event-service';
+                    serviceLine.textContent = servicio;
+
+                    const clientLine = document.createElement('div');
+                    clientLine.className = 'calendar-event-client';
+                    clientLine.textContent = `${cliente} ${precio}`.trim();
+
+                    content.append(serviceLine, clientLine);
+                    titleEl.appendChild(content);
                 }
             }
             
@@ -1044,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const icon = document.createElement('i');
                     icon.className = 'fas fa-user-clock mr-1';
                     icon.style.color = '#ff6b00';
-                    const firstDiv = titleEl.querySelector('div > div:first-child');
+                    const firstDiv = titleEl.querySelector('.calendar-event-service');
                     if (firstDiv) {
                         firstDiv.prepend(icon);
                     } else {
@@ -1055,12 +1131,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add hover effect
             info.el.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.02)';
-                this.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
             });
             info.el.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-                this.style.boxShadow = 'none';
+                this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
             });
             
             <?php if ($user['rol_id'] == ROLE_SPECIALIST): ?>
@@ -1106,8 +1180,8 @@ document.addEventListener('DOMContentLoaded', function() {
         slotMinTime: '07:00:00',
         slotMaxTime: '21:00:00',
         slotMinHeight: 50, // Aumentar altura de cada slot de 30 minutos para mejor visibilidad
-        slotEventOverlap: true, // Permitir que eventos se solapen visualmente
-        eventMinWidth: 120, // Ancho mínimo de eventos para que se vea el texto
+        slotEventOverlap: false, // Dividir horizontalmente el espacio entre citas simultáneas
+        eventOrderStrict: true,
         allDaySlot: false,
         nowIndicator: true,
         editable: false,
@@ -1966,6 +2040,30 @@ let selectedHoraStr = null;
 
 // Variable global para indicar si estamos en modo cita extraordinaria
 let esConsultaExtraordinaria = false;
+
+function openGeneralCreateModal(esExtraordinaria = false) {
+    const dateInput = document.getElementById('quick_create_date');
+    const fecha = dateInput?.value || '';
+
+    if (!fecha) {
+        alert('Selecciona la fecha de la cita.');
+        dateInput?.focus();
+        return;
+    }
+
+    const [year, month, day] = fecha.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+        alert('No se pueden crear citas en fechas anteriores.');
+        dateInput?.focus();
+        return;
+    }
+
+    openCreateModal(fecha, null, esExtraordinaria);
+}
 
 function openActionModal(dateStr, horaSeleccionada = null) {
     const modal = document.getElementById('actionModal');

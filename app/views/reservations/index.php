@@ -4,6 +4,15 @@
 </div>
 
 <?php if (!empty($allSpecialists) && count($allSpecialists) > 1): ?>
+<?php
+$specialistTabFilters = array_filter([
+    'estado' => $currentFilters['estado'] ?? '',
+    'fecha' => $currentFilters['fecha'] ?? '',
+    'busqueda' => $currentFilters['busqueda'] ?? ''
+], function ($value) {
+    return $value !== '' && $value !== null;
+});
+?>
 <!-- Tabs para múltiples sucursales (especialistas) -->
 <style>
     .hide-scrollbar::-webkit-scrollbar {
@@ -17,7 +26,8 @@
 <div class="mb-6 border-b border-gray-200 overflow-x-auto hide-scrollbar bg-white rounded-xl shadow-sm" style="max-width: 100%;">
     <nav class="-mb-px flex space-x-2 p-4" aria-label="Tabs" style="min-width: min-content;">
         <?php foreach ($allSpecialists as $spec): ?>
-        <a href="<?= url('/reservaciones?specialist_id=' . $spec['id']) ?>" 
+        <?php $tabQuery = http_build_query(array_merge($specialistTabFilters, ['specialist_id' => $spec['id']])); ?>
+        <a href="<?= url('/reservaciones?' . $tabQuery) ?>"
            class="<?= $spec['id'] == $currentSpecialistId ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex-shrink-0">
             <i class="fas fa-building mr-1 text-xs"></i><?= e($spec['sucursal_nombre']) ?>
         </a>
@@ -49,6 +59,17 @@
         <!-- Hidden input para mantener el specialist_id en los filtros -->
         <input type="hidden" name="specialist_id" value="<?= $currentSpecialistId ?>">
         <?php endif; ?>
+
+        <div class="flex-1 min-w-[240px]">
+            <label for="reservation-search" class="block text-sm font-medium text-gray-700 mb-1">Buscar por cliente</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true"></i>
+                <input type="search" id="reservation-search" name="busqueda"
+                       value="<?= e($currentFilters['busqueda'] ?? '') ?>"
+                       placeholder="Nombre del cliente"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+            </div>
+        </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>

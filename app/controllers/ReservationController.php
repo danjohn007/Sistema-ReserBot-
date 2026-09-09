@@ -20,6 +20,7 @@ class ReservationController extends BaseController {
         $estado = $this->get('estado');
         $fecha = $this->get('fecha');
         $sucursal_id = $this->get('sucursal_id');
+        $busqueda = html_entity_decode(trim((string) $this->get('busqueda', '')), ENT_QUOTES, 'UTF-8');
         
         $sql = "SELECT r.*, 
                        COALESCE(CONCAT(u.nombre, ' ', u.apellidos), r.nombre_cliente, 'Cliente sin registro') as cliente_nombre_completo,
@@ -93,6 +94,13 @@ class ReservationController extends BaseController {
             $sql .= " AND r.fecha_cita = ?";
             $filters[] = $fecha;
         }
+
+        if ($busqueda !== '') {
+            $sql .= " AND (CONCAT_WS(' ', u.nombre, u.apellidos) LIKE ? OR r.nombre_cliente LIKE ?)";
+            $searchTerm = '%' . $busqueda . '%';
+            $filters[] = $searchTerm;
+            $filters[] = $searchTerm;
+        }
         
         if ($sucursal_id && $user['rol_id'] == ROLE_SUPERADMIN) {
             $sql .= " AND r.sucursal_id = ?";
@@ -118,7 +126,8 @@ class ReservationController extends BaseController {
             'currentFilters' => [
                 'estado' => $estado,
                 'fecha' => $fecha,
-                'sucursal_id' => $sucursal_id
+                'sucursal_id' => $sucursal_id,
+                'busqueda' => $busqueda
             ]
         ]);
     }
