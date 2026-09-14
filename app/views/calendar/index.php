@@ -125,7 +125,7 @@
                     <button type="button" onclick="openGeneralCreateModal(true)"
                             class="h-[42px] px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-sm whitespace-nowrap"
                             title="Crear una cita que puede empalmarse con otra">
-                        <i class="fas fa-user-clock mr-2"></i>Extraordinaria
+                        <i class="fas fa-user-clock mr-2"></i>Nueva cita extraordinaria
                     </button>
                 </div>
             </div>
